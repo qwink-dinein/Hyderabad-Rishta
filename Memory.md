@@ -5,6 +5,7 @@
 
 ## Snapshot
 - **Latest (after V1):** premium UI redesign per Design PRD v1.0. UI only, no backend or logic changes. Reference image is in `docs/design/reference-ui.jpg`; the spec is summarised in `design.md`. To compare with V1: `git diff 4636968 -- src/`.
+- **CHECKPOINT V2 (LATEST) = commit `774ea9f34f3ebe0babe44520b297af610262c5fb`** (tag `v2` locally). Owner asked to be able to jump back to it anytime with all functionality intact. Full feature list, verification and restore commands are in `CHECKPOINTS.md`. Restore with `git diff v2` / `git checkout v2 -- <path>` / `git revert v2..HEAD`. Never move or delete it.
 - **CHECKPOINT V1 = commit `4636968089a30394f9c9ca594b1a06783c1c4775`** (tag `v1` locally; pushing tags is blocked here) (2026-10-28, owner asked to save it). Full feature list, verification results and revert commands are in `CHECKPOINTS.md`. If anything breaks, compare with `git diff v1` and restore from there. Never move or delete the tag.
 - **What:** Hyderabad Rishta — Muslim matrimony app (PRD v1.1 in `PRD.md`). Owner: mukarramjahmm.
 - **Repo:** `qwink-dinein/Hyderabad-Rishta`, working branch `claude/sharp-bell-xxyxmj`.

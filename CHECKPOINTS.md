@@ -4,10 +4,10 @@
 > **Latest checkpoint: V2.**
 > If something breaks later, compare against or roll back to a checkpoint (commands below).
 
-## V2 — commit `__V2_SHORT__` / tag `v2` (2026-10-28) ✅ owner-approved — LATEST
+## V2 — commit `774ea9f` / tag `v2` (2026-10-28) ✅ owner-approved — LATEST
 
-**Where:** commit **`__V2_FULL__`** (short `__V2_SHORT__`) on branch `claude/sharp-bell-xxyxmj`, repo `qwink-dinein/Hyderabad-Rishta`. This commit ID is the permanent reference. The app code is identical to `0dc8d5f`; this commit only adds this record.
-A local git tag `v2` points at it. If a later session can't see the tag, recreate it with `git tag -a v2 __V2_SHORT__ -m V2`.
+**Where:** commit **`774ea9f34f3ebe0babe44520b297af610262c5fb`** (short `774ea9f`) on branch `claude/sharp-bell-xxyxmj`, repo `qwink-dinein/Hyderabad-Rishta`. This commit ID is the permanent reference. The app code is identical to `0dc8d5f`; this commit only adds this record.
+A local git tag `v2` points at it. If a later session can't see the tag, recreate it with `git tag -a v2 774ea9f -m V2`.
 **Preview at V2:** https://claude.ai/artifact/YK9mg5vQzR19CEfoaX4bSJ (phone-frame preview; full screen on a phone).
 **Builds on V1:** everything listed under V1 below still works in V2. It is all covered by the same tests, which still pass.
 
@@ -75,7 +75,7 @@ A local git tag `v2` points at it. If a later session can't see the tag, recreat
 ### Key commits V1 → V2
 | Commit | What |
 |---|---|
-| `__V2_SHORT__` | **V2**: adds this record; app code identical to `0dc8d5f` |
+| `774ea9f` | **V2**: adds this record; app code identical to `0dc8d5f` |
 | `0dc8d5f` | Home button on every screen |
 | `5b40e69` | Airtight boosts and phone notifications |
 | `8fe7510` | Visible Log in; compact hero on short phones |
@@ -85,7 +85,7 @@ A local git tag `v2` points at it. If a later session can't see the tag, recreat
 ### How to get back to V2
 ```bash
 git fetch origin claude/sharp-bell-xxyxmj
-git tag -a v2 __V2_SHORT__ -m V2 2>/dev/null || true   # recreate the tag locally if missing
+git tag -a v2 774ea9f -m V2 2>/dev/null || true   # recreate the tag locally if missing
 git diff v2 --stat                    # what changed since V2
 git diff v2 -- <path>                 # details for one file
 git checkout v2 -- <path>             # restore one file/folder to V2, then commit
