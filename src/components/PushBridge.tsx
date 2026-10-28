@@ -13,6 +13,7 @@ import { useSession } from '@/state/session';
 import { colors, maxContentWidth, motion, radius, shadow, space } from '@/theme/tokens';
 import { Icon } from './ui/Icon';
 import { Text } from './ui/Text';
+import { safeDeepLink } from '@/domain/security';
 
 /**
  * Glue between the session and phone notifications, mounted once at the root:
@@ -38,7 +39,7 @@ export function PushBridge() {
       onTap: (deepLink, notificationId) => {
         if (notificationId) backend.markNotificationRead(notificationId).catch(() => undefined);
         qc.invalidateQueries({ queryKey: qk.notifications });
-        router.push((deepLink || '/notifications') as Href);
+        router.push(safeDeepLink(deepLink) as Href); // a push payload is untrusted input
       },
       onReceive: () => qc.invalidateQueries({ queryKey: qk.notifications }),
     });
@@ -92,7 +93,7 @@ function ArrivalBanner() {
           onPress={() => {
             backend.markNotificationRead(current.id).catch(() => undefined);
             setCurrent(null);
-            router.push((current.deepLink || '/notifications') as Href);
+            router.push(safeDeepLink(current.deepLink) as Href);
           }}
           accessibilityRole="button"
           accessibilityLiveRegion="polite"

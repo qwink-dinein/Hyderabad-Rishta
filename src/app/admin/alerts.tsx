@@ -10,6 +10,7 @@ import { adminAlertText } from '@/domain/adminAlerts';
 import { qk, useNotifications } from '@/hooks/queries';
 import { backend } from '@/services';
 import { colors, space } from '@/theme/tokens';
+import { safeDeepLink } from '@/domain/security';
 
 /** Admin bell: reports, payments, approvals, account deletions and security changes. */
 export default function AdminAlerts() {
@@ -46,7 +47,7 @@ export default function AdminAlerts() {
                 onPress={async () => {
                   await backend.markNotificationRead(n.id).catch(() => undefined);
                   refresh();
-                  if (n.deepLink) router.push(n.deepLink as Href);
+                  if (n.deepLink) router.push(safeDeepLink(n.deepLink) as Href);
                 }}
                 testID={`alert-${n.params.kind}`}
               >

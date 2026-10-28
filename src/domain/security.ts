@@ -70,3 +70,16 @@ export function biodataProblem(b: Biodata): string | null {
   if (bad) return bad;
   return new TextEncoder().encode(JSON.stringify(text)).length > MAX_BIODATA_TEXT_BYTES ? 'v.tooLong' : null;
 }
+
+const UPLOAD_TYPES = /^image\/(jpeg|jpg|png|webp|heic|heif)$/i;
+const UPLOAD_EXT = /\.(jpe?g|png|webp|heic|heif)$/i;
+
+/** Checks a picked original before compression: real photo types only (no svg/gif/pdf), at most 5 MB. */
+export function uploadProblem(a: { mimeType?: string | null; fileName?: string | null; uri: string; fileSize?: number | null }): string | null {
+  const dataType = /^data:([^;,]+)/.exec(a.uri)?.[1];
+  const type = a.mimeType || dataType;
+  const typeOk = type ? UPLOAD_TYPES.test(type) : UPLOAD_EXT.test(a.fileName || a.uri.split('?')[0]);
+  if (!typeOk) return 'v.photoType';
+  const size = a.fileSize ?? (a.uri.startsWith('data:') ? dataUriBytes(a.uri) : 0);
+  return size > MAX_UPLOAD_BYTES ? 'v.photoTooLarge' : null;
+}

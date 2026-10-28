@@ -5,17 +5,19 @@ import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from 'react-i18next';
 import { uid } from '@/domain/format';
 import type { Photo } from '@/domain/types';
+import { AppError } from '@/services/backend';
+import { preparePhoto } from '@/services/photos';
 import { colors, radius, space } from '@/theme/tokens';
 import { Icon } from './ui/Icon';
 import { Text } from './ui/Text';
 
 const MAX_PHOTOS = 3;
-const MAX_BYTES = 1.5 * 1024 * 1024;
 
 /**
  * Optional photos with THREE always-visible, labelled slots (Main photo, Photo 2, Photo 3) so
  * people immediately understand they can add up to three. Add / preview / replace / remove,
- * size validation and progress. Demo stores a compressed data URI; production uploads to private
+ * size validation and progress. Originals up to 5 MB are accepted and shrunk on the phone
+ * (services/photos.ts). Demo stores the compressed data URI; production uploads to private
  * Supabase Storage with signed URLs (Architecture.md).
  */
 export function PhotoPicker({ photos, onChange }: { photos: Photo[]; onChange: (p: Photo[]) => void }) {
@@ -30,18 +32,21 @@ export function PhotoPicker({ photos, onChange }: { photos: Photo[]; onChange: (
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) return;
     }
-    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 5], quality: 0.5, base64: Platform.OS === 'web' });
+    // quality 1: keep the original so the 5 MB limit applies to what the member picked; we compress after.
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 5], quality: 1 });
     if (res.canceled || !res.assets[0]) return;
-    const a = res.assets[0];
-    const size = a.fileSize ?? (a.base64 ? a.base64.length * 0.75 : 0);
-    if (size > MAX_BYTES) return setError(t('v.photoTooLarge'));
     setBusySlot(slot);
-    for (const p of [25, 60, 90]) {
-      setProgress(p);
-      await new Promise((r) => setTimeout(r, 90));
+    setProgress(25);
+    let uri: string;
+    try {
+      uri = await preparePhoto(res.assets[0]);
+    } catch (e) {
+      setBusySlot(null);
+      return setError(t(e instanceof AppError && e.message.startsWith('v.') ? e.message : 'v.photoInvalid'));
     }
+    setProgress(90);
+    await new Promise((r) => setTimeout(r, 90));
     setBusySlot(null);
-    const uri = a.base64 ? `data:${a.mimeType ?? 'image/jpeg'};base64,${a.base64}` : a.uri;
     if (replaceId) onChange(photos.map((p) => (p.id === replaceId ? { id: uid('ph_'), uri } : p)));
     else onChange([...photos, { id: uid('ph_'), uri }].slice(0, MAX_PHOTOS));
   };

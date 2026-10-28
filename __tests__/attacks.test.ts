@@ -1,5 +1,5 @@
 import { DEMO_ADMIN_PHONE, DEMO_OTP, DEMO_SUBADMIN_PHONE, DEMO_USER_PHONE } from '@/data/seed';
-import { MAX_PHOTO_BYTES, safeDeepLink } from '@/domain/security';
+import { MAX_PHOTO_BYTES, MAX_UPLOAD_BYTES, safeDeepLink, uploadProblem } from '@/domain/security';
 import { EMPTY_FILTERS } from '@/domain/search';
 import { AppError } from '@/services/backend';
 import { DemoBackend, RESEND_COOLDOWN_MS } from '@/services/demo/demoBackend';
@@ -223,5 +223,22 @@ describe('Links stay inside the app', () => {
     const edited = await b.adminSaveAnnouncement({ ...base, id: ok.id, status: 'published', createdBy: 'u_x' } as never);
     expect(edited.status).toBe('draft');
     expect(edited.createdBy).toBe('u_admin');
+  });
+});
+
+describe('Photo uploads (owner request: allow up to 5 MB)', () => {
+  it('accepts real photo types up to 5 MB, before compression', () => {
+    expect(MAX_UPLOAD_BYTES).toBe(5 * 1024 * 1024);
+    expect(uploadProblem({ mimeType: 'image/jpeg', uri: 'file:///a.jpg', fileSize: 4.9 * 1024 * 1024 })).toBeNull();
+    expect(uploadProblem({ mimeType: 'image/heic', uri: 'ph://x', fileSize: 3_000_000 })).toBeNull();
+    expect(uploadProblem({ uri: 'file:///DCIM/IMG_1.PNG', fileSize: 1000 })).toBeNull();
+    expect(uploadProblem({ uri: jpeg(4_000_000) })).toBeNull();
+  });
+  it('refuses bigger files and non-photos (svg can carry scripts)', () => {
+    expect(uploadProblem({ mimeType: 'image/jpeg', uri: 'file:///a.jpg', fileSize: 5 * 1024 * 1024 + 1 })).toBe('v.photoTooLarge');
+    expect(uploadProblem({ uri: jpeg(6_000_000) })).toBe('v.photoTooLarge');
+    expect(uploadProblem({ mimeType: 'image/svg+xml', uri: 'file:///a.svg', fileSize: 10 })).toBe('v.photoType');
+    expect(uploadProblem({ mimeType: 'application/pdf', uri: 'file:///a.pdf', fileSize: 10 })).toBe('v.photoType');
+    expect(uploadProblem({ uri: 'file:///a.gif', fileSize: 10 })).toBe('v.photoType');
   });
 });

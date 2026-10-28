@@ -107,6 +107,9 @@ export const TRASH_RETENTION_MS = 30 * 86400 * 1000;
 export const RECOVERY_CODE_COUNT = 10;
 export const MAX_SUB_ADMINS = 10;
 const MAX_RECOVERY_FAILURES_PER_HOUR = 5;
+export const MAX_NOTIFICATIONS_PER_USER = 200;
+export const MAX_ANALYTICS = 2000;
+const IMPRESSION_RETENTION_MS = 180 * 86400000;
 
 export function freshDb(now = new Date()): DemoDb {
   const seed = buildSeed(now);
@@ -201,7 +204,10 @@ export class DemoBackend implements Backend {
     if (this.latency) await new Promise((r) => setTimeout(r, this.latency));
     this.processScheduled(db);
     const result = await fn(db);
-    if (write) await this.persist();
+    if (write) {
+      this.prune(db);
+      await this.persist();
+    }
     return result;
   }
 
@@ -387,6 +393,27 @@ export class DemoBackend implements Backend {
   private project(db: DemoDb, viewer: User, p: Profile) {
     const owner = db.users.find((u) => u.id === p.userId);
     return projectProfile(p, this.scopesFor(db, p.userId, viewer.id), owner, this.now());
+  }
+
+  /**
+   * Keeps the stored document small on a phone: only data nobody reads back, or that has a stated
+   * lifetime, is dropped. Lifetime totals members/admins see (views, audit, orders) are never pruned.
+   */
+  private prune(db: DemoDb) {
+    const now = this.now().getTime();
+    const perUser = new Map<string, number>();
+    if (db.notifications.length > MAX_NOTIFICATIONS_PER_USER) {
+      db.notifications = db.notifications.filter((n) => {
+        const c = (perUser.get(n.userId) ?? 0) + 1;
+        perUser.set(n.userId, c);
+        return c <= MAX_NOTIFICATIONS_PER_USER; // list is newest-first
+      });
+    }
+    db.idem = db.idem.filter((x) => now - new Date(x.at).getTime() < 86400000);
+    db.otps = db.otps.filter((o) => now - o.issuedAt < OTP_TTL_MS || o.resends.some((t) => now - t < OTP_TTL_MS));
+    if (db.analytics.length > MAX_ANALYTICS) db.analytics = db.analytics.slice(-MAX_ANALYTICS);
+    const oldestDay = dayKey(new Date(now - IMPRESSION_RETENTION_MS));
+    if (db.boostImpressions.length && db.boostImpressions[0].day < oldestDay) db.boostImpressions = db.boostImpressions.filter((i) => i.day >= oldestDay);
   }
 
   private processScheduled(db: DemoDb) {
@@ -757,9 +784,10 @@ export class DemoBackend implements Backend {
       page = Math.max(0, Math.floor(Number(page) || 0));
       const mine = this.myProfile(db, u.id);
       const shortlisted = new Set(db.shortlists.filter((s) => s.userId === u.id).map((s) => s.profileId));
+      const users = new Map(db.users.map((x) => [x.id, x]));
       const candidates = db.profiles.filter((p) => {
         if (p.userId === u.id || p.status !== 'published' || p.deletedAt) return false;
-        const owner = db.users.find((x) => x.id === p.userId);
+        const owner = users.get(p.userId);
         if (!owner || owner.deactivatedAt || owner.deletedAt) return false;
         return !this.isBlockedBetween(db, u.id, p);
       });

@@ -339,7 +339,11 @@ const en = {
     range: 'Max must be greater than min',
     phone: 'Enter a valid mobile number',
     otp: 'Enter the 6-digit code',
-    photoTooLarge: 'This photo is too large. Please choose one under 1.5 MB.',
+    photoTooLarge: 'This photo is too large. Please choose one under 5 MB.',
+    photoType: 'Please choose a JPG, PNG, WEBP or HEIC photo.',
+    photoInvalid: 'This photo could not be used. Please choose another one.',
+    tooMany: 'Too many items selected',
+    invalid: 'Something in this form is not valid',
     fixErrors: 'Please fix the highlighted fields',
   },
   err: {

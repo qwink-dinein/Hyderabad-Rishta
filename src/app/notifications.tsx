@@ -15,6 +15,7 @@ import { NOTIFICATION_ICONS as ICONS, useNotificationText } from '@/hooks/useNot
 import { backend, type NotificationView } from '@/services';
 import { useSession } from '@/state/session';
 import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
+import { safeDeepLink } from '@/domain/security';
 
 
 /** In-app notification centre (PRD §14): unread count, mark read / all, deep links, announcements. */
@@ -32,7 +33,7 @@ export default function Notifications() {
       await backend.markNotificationRead(n.id).catch(() => undefined);
       if (n.deepLink) {
         if (n.announcementId) await backend.recordNotificationClick(n.id).catch(() => undefined);
-        router.push(n.deepLink as Href);
+        router.push(safeDeepLink(n.deepLink) as Href);
       }
       qc.invalidateQueries({ queryKey: qk.notifications });
     },
