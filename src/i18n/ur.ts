@@ -95,7 +95,7 @@ const ur: DeepPartial<Translation> = {
     promptTitle: 'کوئی دلچسپی نہ چھوٹے',
     promptBody: 'جب کوئی دلچسپی ظاہر کرے، جواب دے یا آپ کی پروفائل دیکھے تو الرٹ پائیں۔ کون سے الرٹس، یہ آپ طے کریں۔',
   },
-  nav: { home: 'ہوم', profile: 'پروفائل', bellUnread_one: 'اطلاعات، {{count}} غیر پڑھی', bellUnread_other: 'اطلاعات، {{count}} غیر پڑھی', discover: 'تلاش', shortlist: 'پسندیدہ', requests: 'درخواستیں', notifications: 'اطلاعات', dashboard: 'میری پروفائل' },
+  nav: { goHome: 'ہوم پر جائیں', home: 'ہوم', profile: 'پروفائل', bellUnread_one: 'اطلاعات، {{count}} غیر پڑھی', bellUnread_other: 'اطلاعات، {{count}} غیر پڑھی', discover: 'تلاش', shortlist: 'پسندیدہ', requests: 'درخواستیں', notifications: 'اطلاعات', dashboard: 'میری پروفائل' },
   landing: {
     tagline: 'ایمان · خاندان · بہتر مستقبل',
     carouselLabel: 'نمایاں باتیں',
@@ -486,6 +486,9 @@ const ur: DeepPartial<Translation> = {
     to: 'بنام: {{name}}',
   },
   connect: {
+    leaveTitle: 'بھیجے بغیر چھوڑیں؟',
+    leaveBody: 'آپ کی دلچسپی ابھی نہیں بھیجی گئی۔ یہاں لکھا ہوا حذف ہو جائے گا۔',
+    leave: 'چھوڑیں',
     title: 'آپ کیسے رابطہ کرنا چاہیں گے؟',
     optA: 'تعارف بھیجیں',
     optADesc: 'پہلے اپنا تعارف کرائیں۔ آپ کا فون نمبر نجی رہے گا۔',

@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
-import { Banner, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
+import { Banner, confirm, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { Field, TextField } from '@/components/ui/forms';
 import { Icon } from '@/components/ui/Icon';
 import { Card, Header, Row, Screen } from '@/components/ui/layout';
@@ -11,6 +11,7 @@ import { Text } from '@/components/ui/Text';
 import { ProfilePhoto } from '@/components/ProfileCard';
 import { maskPhone, uid } from '@/domain/format';
 import { celebrate } from '@/services/feedback';
+import { useGoHome } from '@/hooks/useGoHome';
 import { useProfile, useSendRequest } from '@/hooks/queries';
 import { useSession } from '@/state/session';
 import { colors, radius, space } from '@/theme/tokens';
@@ -37,6 +38,7 @@ export default function Connect() {
   const [consent, setConsent] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const idempotencyKey = useMemo(() => uid('int_'), []);
+  const goHome = useGoHome();
 
   if (isLoading || !profile || !user) return <Loading />;
   const masked = maskPhone(user.phone);
@@ -98,7 +100,19 @@ export default function Connect() {
   );
 
   return (
-    <Screen header={<Header title={t('profile.expressInterest')} />} footer={footer}>
+    <Screen
+      header={
+        <Header
+          title={t('profile.expressInterest')}
+          onHome={async () => {
+            // Nothing is sent until they confirm — but don't silently throw away a message they typed.
+            if ((message.trim() || mode) && !(await confirm({ title: t('connect.leaveTitle'), body: t('connect.leaveBody'), confirmLabel: t('connect.leave'), danger: true }))) return;
+            goHome();
+          }}
+        />
+      }
+      footer={footer}
+    >
       <View style={{ gap: space.lg, paddingTop: space.lg }}>
         <View style={{ alignItems: 'center', gap: space.xs }}>
           <View style={styles.avatar}>

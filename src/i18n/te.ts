@@ -95,7 +95,7 @@ const te: DeepPartial<Translation> = {
     promptTitle: 'ఏ ఆసక్తినీ మిస్ కాకండి',
     promptBody: 'ఎవరైనా ఆసక్తి చూపినప్పుడు, స్పందించినప్పుడు లేదా మీ ప్రొఫైల్ చూసినప్పుడు హెచ్చరిక పొందండి. ఏ హెచ్చరికలో మీరే ఎంచుకోండి.',
   },
-  nav: { home: 'హోమ్', profile: 'ప్రొఫైల్', bellUnread_one: 'నోటిఫికేషన్లు, {{count}} చదవనివి', bellUnread_other: 'నోటిఫికేషన్లు, {{count}} చదవనివి', discover: 'అన్వేషణ', shortlist: 'షార్ట్‌లిస్ట్', requests: 'అభ్యర్థనలు', notifications: 'హెచ్చరికలు', dashboard: 'నా ప్రొఫైల్' },
+  nav: { goHome: 'హోమ్‌కి వెళ్ళండి', home: 'హోమ్', profile: 'ప్రొఫైల్', bellUnread_one: 'నోటిఫికేషన్లు, {{count}} చదవనివి', bellUnread_other: 'నోటిఫికేషన్లు, {{count}} చదవనివి', discover: 'అన్వేషణ', shortlist: 'షార్ట్‌లిస్ట్', requests: 'అభ్యర్థనలు', notifications: 'హెచ్చరికలు', dashboard: 'నా ప్రొఫైల్' },
   landing: {
     tagline: 'విశ్వాసం · కుటుంబం · మంచి భవిష్యత్తు',
     carouselLabel: 'ముఖ్యాంశాలు',
@@ -486,6 +486,9 @@ const te: DeepPartial<Translation> = {
     to: 'కు: {{name}}',
   },
   connect: {
+    leaveTitle: 'పంపకుండా వెళ్ళాలా?',
+    leaveBody: 'మీ ఆసక్తి ఇంకా పంపబడలేదు. ఇక్కడ టైప్ చేసినది తొలగించబడుతుంది.',
+    leave: 'వెళ్ళు',
     title: 'మీరు ఎలా సంప్రదించాలనుకుంటున్నారు?',
     optA: 'పరిచయం పంపండి',
     optADesc: 'ముందుగా మిమ్మల్ని పరిచయం చేసుకోండి. మీ ఫోన్ నంబర్ గోప్యంగా ఉంటుంది.',

@@ -58,6 +58,9 @@ Scale (pt): display 34 (hero) · h1 27 (screen titles) · h2 20 (card titles 18�
 - **HeroCarousel** — swipe (paging ScrollView), dots, prev/next, pause. ~6 s autoplay that stops on interaction, when the app is backgrounded, and entirely under Reduce Motion. No sound or video.
 - **Landing actions** — a three-level hierarchy: **Create your biodata** (filled emerald, primary) › **Find your match** (outlined) › **Already registered? Log in** (tertiary: a soft-gold pill with a person icon and an arrow, 48 pt tall). On phones shorter than 800 pt or narrower than 360 pt, the hero switches to compact mode (smaller art and headline, dots plus pause only), so all three stay in the first screen from 320 × 640 upwards.
 - **LanguageSwitcher** — full names, or `compact` (EN / اردو / తె) in headers. Accessibility labels always use full names.
+- **Header (stack screens)** — Back and **Home** sit side by side on the start side, and the title stays centred. Home goes to the right place for the person using the app: the member Home tab, the admin dashboard, or the landing page when signed out. It also clears the screens stacked on top, so Back doesn't walk through them again. Guarded screens:
+  - the biodata wizard saves the draft first
+  - the connect screen asks before discarding a typed message
 - **TabHeader / BellButton** — brand or title on the start side; bell (plus optional settings) on the end side.
 - **Button** — primary (emerald), secondary (outlined), ghost, gold, danger, light. Pill; 52 pt md / 38 pt sm; optional trailing `arrow` (mirrors in RTL); press scale 0.985.
 - **Field / TextField / Select** — label above, hint or inline error, 52 pt inputs with a 14 pt radius. `Select.displayValue` gives a compact closed state (e.g. "+91").

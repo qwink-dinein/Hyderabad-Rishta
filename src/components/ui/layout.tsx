@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { colors, maxContentWidth, radius, shadow, space } from '@/theme/tokens';
 import { useSession } from '@/state/session';
 import { isRTL } from '@/i18n';
+import { useGoHome } from '@/hooks/useGoHome';
 import { Icon } from './Icon';
 import { Text } from './Text';
 
@@ -51,29 +52,39 @@ export function Screen({
 }
 
 /** Stack header with back button and optional right action. Mirrors in RTL. */
-export function Header({ title, right, onBack, back = true }: { title: string; right?: ReactNode; onBack?: () => void; back?: boolean }) {
+/**
+ * `home` (default on): a Home button beside Back so people can return home from any screen.
+ * Pass `onHome` when leaving needs a guard (e.g. save a draft or confirm discarding a message).
+ */
+export function Header({ title, right, onBack, back = true, home = true, onHome }: { title: string; right?: ReactNode; onBack?: () => void; back?: boolean; home?: boolean; onHome?: () => void }) {
   const { t } = useTranslation();
   const rtl = isRTL(useSession((s) => s.lang));
+  const goHome = useGoHome();
   return (
     <View style={styles.header}>
       <View style={styles.headerInner}>
-        {back ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('common.back')}
-            hitSlop={12}
-            onPress={onBack ?? (() => (router.canGoBack() ? router.back() : router.replace('/')))}
-            style={styles.headerBtn}
-          >
-            <Icon name={rtl ? 'chevronRight' : 'chevronLeft'} />
-          </Pressable>
-        ) : (
-          <View style={styles.headerBtn} />
-        )}
+        <View style={styles.headerStart}>
+          {back ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('common.back')}
+              hitSlop={8}
+              onPress={onBack ?? (() => (router.canGoBack() ? router.back() : goHome()))}
+              style={styles.iconBtn}
+            >
+              <Icon name={rtl ? 'chevronRight' : 'chevronLeft'} />
+            </Pressable>
+          ) : null}
+          {home ? (
+            <Pressable accessibilityRole="button" accessibilityLabel={t('nav.goHome')} hitSlop={4} onPress={onHome ?? goHome} style={styles.iconBtn} testID="header-home">
+              <Icon name="home" size={21} />
+            </Pressable>
+          ) : null}
+        </View>
         <Text variant="h3" numberOfLines={1} style={styles.headerTitle} center accessibilityRole="header">
           {title}
         </Text>
-        <View style={[styles.headerBtn, { alignItems: 'flex-end' }]}>{right}</View>
+        <View style={[styles.headerEnd, { alignItems: 'flex-end' }]}>{right}</View>
       </View>
     </View>
   );
@@ -141,7 +152,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md,
     minHeight: 54,
   },
-  headerBtn: { minWidth: 64, minHeight: 44, justifyContent: 'center' },
+  // Equal side widths keep the title centred.
+  headerStart: { minWidth: 88, minHeight: 44, flexDirection: 'row', alignItems: 'center' },
+  headerEnd: { minWidth: 88, minHeight: 44, justifyContent: 'center' },
+  iconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { flex: 1 },
   card: { backgroundColor: colors.white, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, ...shadow.card },
   sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

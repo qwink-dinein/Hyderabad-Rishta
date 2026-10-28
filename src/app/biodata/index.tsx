@@ -14,6 +14,7 @@ import type { Biodata } from '@/domain/types';
 import { emptyBiodata, STEP_KEYS, stepErrors } from '@/domain/validation';
 import { useMyProfile, useSaveDraft } from '@/hooks/queries';
 import { haptic, playSound } from '@/services/feedback';
+import { useGoHome } from '@/hooks/useGoHome';
 import { useOptions } from '@/hooks/useOptions';
 import { useSession } from '@/state/session';
 import { colors, radius, space } from '@/theme/tokens';
@@ -33,6 +34,7 @@ export default function BiodataWizard() {
   const [bd, setBd] = useState<Biodata | null>(null);
   const [step, setStep] = useState(0);
   const [showErrors, setShowErrors] = useState(false);
+  const goHome = useGoHome();
   const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
 
   // Initialise once from the saved draft (or a blank biodata) and resume at the last step.
@@ -411,7 +413,17 @@ export default function BiodataWizard() {
   const maxReachable = Math.max(profile?.lastStep ?? 0, step);
   return (
     <Screen
-      header={<Header title={profile ? t('wizard.editTitle') : t('wizard.title')} onBack={() => (step > 0 ? go(step - 1, false) : router.canGoBack() ? router.back() : router.replace('/dashboard'))} />}
+      header={
+        <Header
+          title={profile ? t('wizard.editTitle') : t('wizard.title')}
+          onBack={() => (step > 0 ? go(step - 1, false) : router.canGoBack() ? router.back() : router.replace('/dashboard'))}
+          onHome={async () => {
+            // Keep what they typed: save the draft (only if there is something to save), then go home.
+            if (profile || bd.basic.fullName.trim()) await save.mutateAsync({ biodata: bd, step }).catch(() => undefined);
+            goHome();
+          }}
+        />
+      }
       scrollProps={{ ref: scrollRef } as never}
       footer={
         <Row gap={space.sm}>

@@ -65,6 +65,7 @@
 | T-058 | Sound effects (off by default, original chimes) + haptics with Settings toggles; animated success toast | ✅ |
 | T-059 | Boost guarantee: Featured for all eligible viewers regardless of filters, fair rotation, impressions/reach proof, ending/ended notices, paused-boost warning, insert hardening (no self-granted boosts) | ✅ |
 | T-060 | Switch accessibility on web (`aria-checked`) — found by the push e2e | ✅ |
+| T-061 | Home button on every non-tab screen (member Home / admin dashboard / landing), stack cleared, wizard saves draft, connect screen confirms discard | ✅ |
 | T-033 | Bug: "Send contact request" greyed out — button now always tappable with clear guidance; edits keep a live profile live; demo starts with approval off | ✅ |
 
 ## Phase 2 (next)

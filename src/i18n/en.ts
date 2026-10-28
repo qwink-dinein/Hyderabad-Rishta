@@ -93,6 +93,7 @@ const en = {
     promptBody: 'Get an alert when someone shows interest, replies or views your profile. You choose which alerts.',
   },
   nav: {
+    goHome: 'Go to Home',
     home: 'Home',
     profile: 'Profile',
     bellUnread_one: 'Notifications, {{count}} unread',
@@ -510,6 +511,9 @@ const en = {
     to: 'To: {{name}}',
   },
   connect: {
+    leaveTitle: 'Leave without sending?',
+    leaveBody: 'Your interest hasn’t been sent. What you typed here will be discarded.',
+    leave: 'Leave',
     title: 'How would you like to connect?',
     optA: 'Send an Introduction',
     optADesc: 'Introduce yourself first. Your phone number will remain private.',
