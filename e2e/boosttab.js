@@ -47,7 +47,11 @@ const step = async (name, fn) => {
     await page.getByTestId('boost-cta').click();
     await page.getByRole('button', { name: 'Simulate successful payment' }).click();
     await page.getByTestId('boost-status').waitFor({ timeout: 8000 });
-    await page.getByText(/day(s)? left/).waitFor();
+    await page.getByText('7 days left').waitFor(); // a fresh 7-day boost
+    // One boost at a time: no "Boost for…" button while it runs, just when it can be boosted again.
+    await page.getByTestId('boost-again-after').waitFor();
+    if (await page.getByTestId('boost-cta').count()) throw new Error('Boost button still offered during an active boost');
+    await page.screenshot({ path: `${SHOTS}/b5-boost-active-no-rebuy.png`, fullPage: true });
     await page.goto(BASE + '/home');
     await page.getByTestId('tab-boost').waitFor();
     await page.waitForTimeout(600);

@@ -390,6 +390,7 @@ const en = {
     step: "Step {{n}} of {{total}}",
   },
   boost: {
+    againAfter: "You can boost again after {{date}}, when this boost ends.",
     title: "Boost",
     heroTitle: "Be seen first",
     heroBody: "A boost places your profile in Featured, at the top of Home and Discover, for every member looking for your profile type.",
@@ -413,6 +414,7 @@ const en = {
     summaryNone: "Not boosted. Boosted profiles appear first for members looking for you.",
   },
   err: {
+    boost_active: "Your profile is already boosted. You can boost again when it ends.",
     invalid_pin: "Incorrect PIN.",
     pin_locked: "Too many wrong PINs. Please reset your PIN.",
     pin_not_set: "Set up a PIN after verifying your number with an OTP.",

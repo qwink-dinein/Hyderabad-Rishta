@@ -1,6 +1,7 @@
 import { DEMO_ADMIN_PHONE, DEMO_OTP, DEMO_USER_PHONE } from '@/data/seed';
 import { BOOST_REMINDER_EVERY_MS, boostNudge, boostReminderDue } from '@/domain/featured';
 import { CATEGORY } from '@/domain/push';
+import { AppError } from '@/services/backend';
 import { DemoBackend, RESEND_COOLDOWN_MS } from '@/services/demo/demoBackend';
 import { memoryKV } from '@/services/storage';
 
@@ -74,5 +75,68 @@ describe('demo backend reminders', () => {
     expect(await reminders(b)).toHaveLength(3);
     const n = (await b.getNotifications()).find((x) => x.type === 'boost_started')!;
     expect(n.deepLink).toBe('/boost');
+  });
+});
+
+describe('one boost at a time (owner rule 2026-10-28)', () => {
+  async function login(b: DemoBackend, phone: string) {
+    await b.logout();
+    clock += RESEND_COOLDOWN_MS + 1;
+    await b.requestOtp('+91', phone);
+    await b.verifyOtp('+91', phone, DEMO_OTP);
+  }
+  async function code(p: Promise<unknown>, c: string) {
+    const e = await p.then(() => null, (x: unknown) => x);
+    expect(e).toBeInstanceOf(AppError);
+    expect((e as AppError).code).toBe(c);
+    return e as AppError;
+  }
+  async function setBoost(b: DemoBackend, mode: 'free' | 'paid') {
+    await login(b, DEMO_ADMIN_PHONE);
+    const cfg = await b.getPricing();
+    await b.adminUpdatePricing({ ...cfg, boostDays: 7, boost: { bride: { mode, amount: mode === 'paid' ? 499 : 0 }, groom: { mode, amount: mode === 'paid' ? 499 : 0 } } });
+    await login(b, DEMO_USER_PHONE);
+  }
+
+  it('free boost: a second boost while the first runs is refused, until it ends', async () => {
+    const b = new DemoBackend({ storage: memoryKV(), now });
+    await setBoost(b, 'free');
+    const first = await b.startBoost();
+    const until = first.profile.boostUntil;
+    const e = await code(b.startBoost(), 'boost_active');
+    expect(e.details?.until).toBe(until);
+    clock += 3 * DAY;
+    await code(b.startBoost(), 'boost_active');
+    expect((await b.getMyProfile())!.boostUntil).toBe(until); // never extended
+    clock += 5 * DAY; // ended
+    const again = await b.startBoost();
+    expect(new Date(again.profile.boostUntil!).getTime()).toBeGreaterThan(new Date(until!).getTime());
+  });
+
+  it('paid boost: repeat taps reuse ONE pending order; after paying, no new order', async () => {
+    const b = new DemoBackend({ storage: memoryKV(), now });
+    await setBoost(b, 'paid');
+    const a = await b.startBoost();
+    const c = await b.startBoost();
+    expect(c.order.id).toBe(a.order.id);
+    expect((await b.getMyOrders()).filter((o) => o.kind === 'boost' && o.status === 'pending')).toHaveLength(1);
+    await b.completePayment(a.order.id, 'success');
+    await code(b.startBoost(), 'boost_active');
+    expect((await b.getMyOrders()).filter((o) => o.kind === 'boost')).toHaveLength(1);
+  });
+
+  it('two phones: paying the same order twice is refused; a stray unpaid order is cancelled, never charged', async () => {
+    const storage = memoryKV();
+    const b = new DemoBackend({ storage, now });
+    await setBoost(b, 'paid');
+    const a = await b.startBoost();
+    await b.completePayment(a.order.id, 'success');
+    await code(b.completePayment(a.order.id, 'success'), 'invalid_state'); // second phone, same order
+    // A stray pending boost order (e.g. from an old app version) while the boost runs:
+    const db = (b as unknown as { db: { orders: { id: string; status: string }[] } }).db;
+    db.orders.unshift({ ...(await b.getMyOrders())[0], id: 'o_stray', status: 'pending' } as never);
+    await code(b.completePayment('o_stray', 'success'), 'boost_active');
+    expect((await b.getMyOrders()).find((o) => o.id === 'o_stray')!.status).toBe('cancelled');
+    expect((await b.getMyOrders()).filter((o) => o.kind === 'boost' && o.status === 'paid')).toHaveLength(1);
   });
 });

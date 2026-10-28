@@ -40,6 +40,7 @@ export type ErrorCode =
   | 'not_accepting'
   | 'incomplete_biodata'
   | 'profile_removed'
+  | 'boost_active'
   | 'invalid_pin'
   | 'pin_locked'
   | 'pin_not_set'

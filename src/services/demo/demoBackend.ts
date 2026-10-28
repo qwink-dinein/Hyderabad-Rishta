@@ -5,7 +5,7 @@ import { DECLINE_COOLDOWN_DAYS, isActiveRequest, PHONE_CONSENT_TEXT, pokeEligibi
 import { maskPhone, uid } from '@/domain/format';
 import { announcementStats, audienceFor, dashboardMetrics, isAnnouncementLive } from '@/domain/metrics';
 import { resolvePricing, validatePricing } from '@/domain/pricing';
-import { mergeScopes, NO_CONSENT, profileTypeOf, projectProfile } from '@/domain/privacy';
+import { isBoostActive, mergeScopes, NO_CONSENT, profileTypeOf, projectProfile } from '@/domain/privacy';
 import { matchesFilters, sortProfiles, type SearchFilters } from '@/domain/search';
 import { boostNoticeDue, BOOST_ENDING_NOTICE_MS, boostReminderDue, dayKey, isFeaturable, rotateFeatured } from '@/domain/featured';
 import { isRateLimitExempt, prefsOf, PUSH_HOURLY_CAP, pushAllowed, pushContent, CATEGORY, VIEW_NOTICE_WINDOW_MS } from '@/domain/push';
@@ -965,8 +965,13 @@ export class DemoBackend implements Backend {
       const p = this.myProfile(db, u.id);
       if (!p) throw new AppError('not_found');
       if (p.status !== 'published') throw new AppError('invalid_state');
+      // One boost at a time: no buying another while the current one runs (owner rule 2026-10-28).
+      if (isBoostActive(p, this.now())) throw new AppError('boost_active', undefined, { until: p.boostUntil });
       const pricing = resolvePricing(db.pricing, profileTypeOf(p));
       if (pricing.boost.mode === 'disabled') throw new AppError('fee_disabled');
+      // A boost already waiting for payment is reused — repeat taps never create a second order.
+      const open = db.orders.find((o) => o.profileId === p.id && o.kind === 'boost' && o.status === 'pending');
+      if (open) return { profile: clone(p), order: { ...open } };
       const order: Order = {
         id: uid('o_'),
         userId: u.id,
@@ -986,10 +991,10 @@ export class DemoBackend implements Backend {
   }
 
   private applyBoost(db: DemoDb, p: Profile, order: Order) {
-    // Extends an active boost rather than overwriting it; duration comes from the ORDER's terms.
-    const active = !!p.boostUntil && new Date(p.boostUntil).getTime() > this.now().getTime();
-    const base = Math.max(this.now().getTime(), p.boostUntil ? new Date(p.boostUntil).getTime() : 0);
-    if (!active) p.boostStartedAt = this.iso(); // an extension keeps the original start (reach keeps counting)
+    // Never stacks on a running boost (callers check first; this is the last line of defence).
+    if (isBoostActive(p, this.now())) throw new AppError('boost_active', undefined, { until: p.boostUntil });
+    const base = this.now().getTime();
+    p.boostStartedAt = this.iso();
     p.boostUntil = new Date(base + (order.terms.boostDays ?? db.pricing.boostDays) * 86400000).toISOString();
     // A boost of 24 h or less has no separate "ending soon" notice.
     p.boostNotices = new Date(p.boostUntil).getTime() - this.now().getTime() <= BOOST_ENDING_NOTICE_MS ? { ending: p.boostUntil } : {};
@@ -1004,6 +1009,11 @@ export class DemoBackend implements Backend {
       if (order.status !== 'pending') throw new AppError('invalid_state');
       const p = db.profiles.find((x) => x.id === order.profileId);
       if (!p) throw new AppError('not_found');
+      // A boost started meanwhile (another device / free boost): cancel this one BEFORE charging.
+      if (order.kind === 'boost' && outcome === 'success' && isBoostActive(p, this.now())) {
+        order.status = 'cancelled';
+        throw new AppError('boost_active', undefined, { until: p.boostUntil });
+      }
       this.alertAdmins(db, 'payment', { code: p.code, status: outcome === 'success' ? 'paid' : 'failed', amount: String(order.amount), item: order.kind }, '/admin/orders');
       if (outcome === 'failure') {
         order.status = 'failed';

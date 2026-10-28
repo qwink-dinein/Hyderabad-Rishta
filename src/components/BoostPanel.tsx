@@ -22,16 +22,17 @@ export function BoostPanel() {
   const errMsg = useErrorMessage();
   const invalidate = useInvalidateProfileState();
   const { data: profile } = useMyProfile();
-  const { data: m } = useDashboard();
+  const { data: m, dataUpdatedAt } = useDashboard();
   const { data: pricing } = usePricing();
   const [order, setOrder] = useState<Order | null>(null);
   const [busy, setBusy] = useState(false);
-  const [openedAt] = useState(() => Date.now());
   if (!profile || !pricing) return null;
 
   const type = profileTypeOf(profile);
   const price = resolvePricing(pricing, type);
-  const daysLeft = m?.boostUntil ? Math.max(1, Math.ceil((new Date(m.boostUntil).getTime() - openedAt) / 86400000)) : 0;
+  // Measured from when this status was fetched (refreshes with the data); a 1 h tolerance keeps a
+  // brand-new 7-day boost at "7 days left", not 8.
+  const daysLeft = m?.boostUntil ? Math.max(1, Math.ceil((new Date(m.boostUntil).getTime() - dataUpdatedAt - 3600000) / 86400000)) : 0;
 
   const boost = async () => {
     setBusy(true);
@@ -81,7 +82,15 @@ export function BoostPanel() {
       ) : (
         <Text variant="body">{t('dashboard.boostNone')}</Text>
       )}
-      {price.boost.mode === 'disabled' ? (
+      {m?.boostActive ? (
+        // One boost at a time: no "boost again" while this one runs (the backend refuses it too).
+        <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center', padding: space.md, borderRadius: radius.md, backgroundColor: colors.sage }} testID="boost-again-after">
+          <Icon name="clock" size={18} color={colors.emerald} />
+          <Text variant="label" color={colors.emerald} style={{ flex: 1 }}>
+            {t('boost.againAfter', { date: formatDate(m.boostUntil) })}
+          </Text>
+        </View>
+      ) : price.boost.mode === 'disabled' ? (
         <Text variant="caption">{t('boost.disabled')}</Text>
       ) : (
         <Button

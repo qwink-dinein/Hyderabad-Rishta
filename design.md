@@ -69,6 +69,10 @@ Scale (pt): display 34 (hero) · h1 27 (screen titles) · h2 20 (card titles 18�
   - a "N saved profiles" row on Home;
   - the profile hearts, as before.
   - `/shortlist` is now a stack screen with Back and Home; old links still work.
+- **One boost at a time** (owner rule): while a boost runs, the Boost screen shows "You can boost again after {date}" instead of a Boost button.
+  - The backend refuses a second boost (`boost_active`) and repeat taps reuse one unpaid order.
+  - A payment for a stray second order is cancelled before charging. Boosts never stack or extend.
+  - SQL: `orders_one_open_boost`, `orders_boost_guard`, and `apply_boost` refuses while a boost is active.
 - **Profile tab:** keeps a one-line boost summary plus an "Open Boost" button. The full boost flow lives on the Boost tab.
 
 ## 6. Components (Design PRD §19)

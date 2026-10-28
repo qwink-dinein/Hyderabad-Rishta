@@ -111,7 +111,7 @@ describe('boost visibility (backend)', () => {
     expect((await b.getFeatured()).map((p) => p.id)).toContain('p_4');
   });
 
-  it('records unique reach for the owner and keeps the start date when extended', async () => {
+  it('records unique reach for the owner; a second boost during the first is refused', async () => {
     const b = make();
     await freeBoost(b, BRIDE2);
     const started = (await b.getDashboard()).boostStartedAt;
@@ -123,7 +123,7 @@ describe('boost visibility (backend)', () => {
     await as(b, BRIDE2);
     const d = await b.getDashboard();
     expect(d.featuredReach).toBeGreaterThanOrEqual(2);
-    await b.startBoost(); // extend
+    await code(b.startBoost(), 'boost_active'); // owner rule: no boosting again mid-boost
     expect((await b.getDashboard()).boostStartedAt).toBe(started);
   });
 
