@@ -9,6 +9,7 @@ import type { Announcement, Biodata, ContactRequest, ConsentRecord, Profile, Use
 export const DEMO_OTP = '123456';
 export const DEMO_ADMIN_PHONE = '9000000000';
 export const DEMO_USER_PHONE = '9000000001';
+export const DEMO_SUBADMIN_PHONE = '9000000009';
 
 function rng(seed: number) {
   let s = seed >>> 0;
@@ -62,7 +63,8 @@ export function buildSeed(now = new Date('2026-10-01T09:00:00Z')): SeedData {
   const r = rng(42);
   const iso = (daysAgo: number) => new Date(now.getTime() - daysAgo * 86400000).toISOString();
   const users: User[] = [
-    { id: 'u_admin', countryCode: '+91', phone: DEMO_ADMIN_PHONE, role: 'admin', language: 'en', createdAt: iso(90) },
+    { id: 'u_admin', countryCode: '+91', phone: DEMO_ADMIN_PHONE, role: 'master', language: 'en', createdAt: iso(90) },
+    { id: 'u_sub', countryCode: '+91', phone: DEMO_SUBADMIN_PHONE, role: 'admin', language: 'en', createdAt: iso(80) },
   ];
   const profiles: Profile[] = [];
 

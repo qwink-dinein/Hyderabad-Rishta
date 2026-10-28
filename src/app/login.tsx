@@ -10,6 +10,7 @@ import { Field, Select, TextField } from '@/components/ui/forms';
 import { Header, Row, Screen } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { COUNTRY_CODES } from '@/domain/options';
+import { isAdminRole } from '@/domain/types';
 import { otpSchema, phoneSchema } from '@/domain/validation';
 import { backend, backendInfo } from '@/services';
 import { AppError } from '@/services/backend';
@@ -72,7 +73,7 @@ export default function Login() {
       if (user.language !== lang) await backend.setLanguage(lang);
       setUser({ ...user, language: lang });
       await changeLanguage(lang);
-      if (user.role === 'admin') router.replace('/admin');
+      if (isAdminRole(user.role)) router.replace('/admin');
       else if (isNew || next === 'biodata') router.replace('/biodata');
       else router.replace('/discover');
     } catch (e) {
@@ -173,6 +174,7 @@ export default function Login() {
         <Text variant="caption" center>
           {t('auth.terms')}
         </Text>
+        <Button label={t('auth.masterRecovery')} kind="ghost" size="sm" onPress={() => router.push('/recover')} />
       </View>
     </Screen>
   );

@@ -9,6 +9,7 @@ import { confirm, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { Card, Header, InfoRow, Row, Screen, Section } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { maskPhone, profileCode } from '@/domain/format';
+import { isAdminRole } from '@/domain/types';
 import { qk, useBlocked } from '@/hooks/queries';
 import { backend, backendInfo } from '@/services';
 import { DemoBackend } from '@/services/demo/demoBackend';
@@ -59,7 +60,7 @@ export default function Settings() {
             <InfoRow label={t('settings.phone')} value={`${user.countryCode} ${maskPhone(user.phone)}`} />
             <Text variant="caption">{t('settings.phoneHelp')}</Text>
           </Card>
-          {user.role === 'admin' ? <Button label={t('settings.admin')} onPress={() => router.push('/admin')} /> : null}
+          {isAdminRole(user.role) ? <Button label={t('settings.admin')} onPress={() => router.push('/admin')} /> : null}
         </Section>
       ) : null}
 

@@ -100,7 +100,7 @@ const step = async (name, fn) => {
     await page.goto(BASE + '/admin/announcements');
     await page.getByText('New announcement').waitFor();
     await page.goto(BASE + '/admin/profiles');
-    await page.getByText('Profile review').first().waitFor();
+    await page.getByRole('radio', { name: 'Pending' }).waitFor();
   });
   await step('non-admin cannot open admin', async () => {
     await page.goto(BASE + '/settings');

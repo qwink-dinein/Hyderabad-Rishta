@@ -1,6 +1,7 @@
 import type { SearchFilters } from '@/domain/search';
 import type { AnnouncementStats } from '@/domain/metrics';
 import type {
+  AdminMember,
   Announcement,
   AnnouncementDelivery,
   AnnouncementSegment,
@@ -18,6 +19,7 @@ import type {
   ProfileStatus,
   PublicProfile,
   Report,
+  SecurityStatus,
   User,
 } from '@/domain/types';
 
@@ -34,7 +36,10 @@ export type ErrorCode =
   | 'fee_disabled'
   | 'not_accepting'
   | 'incomplete_biodata'
-  | 'invalid_state';
+  | 'invalid_state'
+  | 'account_removed'
+  | 'account_suspended'
+  | 'invalid_recovery_code';
 
 /** All backend failures carry a stable code; the UI maps it to `err.<code>`. */
 export class AppError extends Error {
@@ -86,6 +91,23 @@ export interface AdminStats {
   simulatedRevenue: number;
   requests: number;
   acceptedRequests: number;
+  trash: number;
+  requireApproval: boolean;
+}
+
+export interface AdminRequestRow extends ContactRequest {
+  fromName: string;
+  toName: string;
+}
+
+export interface TrashItem {
+  kind: 'user' | 'profile';
+  id: string;
+  label: string;
+  deletedAt: string;
+  deletedBy?: string;
+  reason?: string;
+  purgeAt: string;
 }
 
 export interface RecipientRow {
@@ -170,4 +192,32 @@ export interface Backend {
   adminAudiencePreview(segment: AnnouncementSegment): Promise<number>;
   adminRecipientReport(id: string): Promise<RecipientRow[]>;
   adminAuditLog(): Promise<AuditEvent[]>;
+
+  // admin — full moderation rights (master + sub-admins)
+  adminSetRequireApproval(requireApproval: boolean): Promise<{ requireApproval: boolean; pending: number }>;
+  adminApproveAllPending(): Promise<number>;
+  adminDeleteProfile(profileId: string, reason: string): Promise<void>;
+  adminRemovePhoto(profileId: string, photoId: string): Promise<void>;
+  adminDeleteUser(userId: string, reason: string): Promise<void>;
+  adminListRequests(): Promise<AdminRequestRow[]>;
+  adminDeleteRequest(requestId: string): Promise<void>;
+  adminDeleteReport(reportId: string): Promise<void>;
+  adminDeleteAnnouncement(id: string): Promise<void>;
+  adminCancelOrder(orderId: string): Promise<void>;
+  adminListTrash(): Promise<TrashItem[]>;
+
+  // master only
+  masterRestore(kind: 'user' | 'profile', id: string): Promise<void>;
+  masterPurge(kind: 'user' | 'profile', id: string): Promise<void>;
+  masterListAdmins(): Promise<AdminMember[]>;
+  masterAddSubAdmin(countryCode: string, phone: string): Promise<{ id: string }>;
+  masterRemoveSubAdmin(userId: string): Promise<void>;
+  masterTransfer(toUserId: string, otp: string): Promise<void>;
+  masterSecurityStatus(): Promise<SecurityStatus>;
+  masterGenerateRecoveryCodes(otp: string): Promise<string[]>;
+  masterSetBackupPhone(countryCode: string, phone: string, otp: string): Promise<void>;
+  masterCancelRecovery(): Promise<void>;
+
+  // public (logged out): lost-phone recovery for the master account
+  recoverMaster(countryCode: string, phone: string, otp: string, code: string): Promise<{ status: 'completed' | 'pending'; completesAt?: string }>;
 }

@@ -29,7 +29,8 @@ npm install
 | Account | Mobile |
 |---|---|
 | Member with a published profile & incoming requests | `9000000001` |
-| Admin console | `9000000000` |
+| Master admin | `9000000000` |
+| Sub-admin | `9000000009` |
 | New user (goes straight to biodata) | any other number |
 
 All profiles are **fictional demo data**. Payments are **simulated** and clearly labelled. Reset any time from *Settings → Reset demo data*.

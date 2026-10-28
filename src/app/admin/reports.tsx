@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
-import { Badge, EmptyState, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
+import { Badge, confirm, EmptyState, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { Card, Header, Row, Screen } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { formatDate, profileCode } from '@/domain/format';
@@ -48,6 +48,21 @@ export default function AdminReports() {
                   <Button label="Dismiss" size="sm" kind="ghost" onPress={() => resolve(r.id, 'dismissed')} />
                 </Row>
               ) : null}
+              <Button
+                label="Delete report"
+                size="sm"
+                kind="ghost"
+                style={{ alignSelf: 'flex-start' }}
+                onPress={async () => {
+                  if (!(await confirm({ title: 'Delete this report?', confirmLabel: 'Delete', danger: true }))) return;
+                  try {
+                    await backend.adminDeleteReport(r.id);
+                    qc.invalidateQueries({ queryKey: ['admin'] });
+                  } catch (e) {
+                    toast(errMsg(e), 'danger');
+                  }
+                }}
+              />
             </Card>
           ))
         )}

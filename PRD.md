@@ -35,6 +35,7 @@ Legend: ✅ done & tested · 🟡 done on demo backend / partially · ⏳ planne
 | 13 | Dashboard metrics from recorded events | ✅ | Owner views excluded; 30-min view de-dupe. |
 | 14 | Notification centre + admin announcements + honest analytics | 🟡 | In-app inbox, segments, schedule, expiry, multilingual, recipient report (audited). **Push delivery** = Phase 2 (reported as "not configured", never faked). |
 | 15 | Admin dashboard (moderation, users, pricing, orders, reports, audit) | ✅ | All admin calls authorised server-side. |
+| 15+ | **Owner addition:** full admin rights, one-click approval switch, master + sub-admins, lost-phone recovery, Trash | ✅ | Architecture §9; demo + Postgres + E2E tested. |
 | 16 | Privacy & safety (deactivate, delete, block, report, rate limits) | ✅ | Legal pages are **drafts** pending lawyer review. |
 | 17 | Supabase schema, RLS, RPCs | 🟡 | Migration + RLS tested on PostgreSQL 16. App ↔ Supabase adapter = Phase 2. |
 | 18 | iOS / Android / Web, localhost, Expo Go, README, ≥30 seed profiles | ✅ | 32 fictional profiles. |

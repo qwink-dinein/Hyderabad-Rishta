@@ -32,6 +32,9 @@ Reset everything: Settings → “Reset demo data”.
 | 2026-10-28 | Editing a live profile no longer sends it back to pending | Hiding a member mid-conversation is hostile; moderation of edits → T-116. |
 | 2026-10-28 | Maslak = sunni/shia/just_muslim/other/prefer_not + `subMaslak` (schools) | Owner request; old top-level ahle_hadith/deobandi/barelvi moved under Sunni. Demo DB schema v4 (old local data reseeds). |
 | 2026-10-28 | `children` required when marital status ≠ never married | Owner request. |
+| 2026-10-28 | Roles: `user` / `admin` (sub-admin) / `master` (exactly one) | Owner request; see Architecture §9. Demo: master 9000000000, sub-admin 9000000009. |
+| 2026-10-28 | Admin deletes are soft (Trash 30 days); audit + orders append-only | Mistakes must be recoverable; financial/legal records are never deletable. |
+| 2026-10-28 | Master recovery = code + OTP; backup phone instant, new phone 72 h time-lock | Single stolen code can't silently take over. Demo DB schema v5. |
 | 2026-10-28 | Named the design doc `design.md` (owner wrote “design.ms”) | Renders on GitHub; mention if owner prefers otherwise. |
 
 ## Gotchas

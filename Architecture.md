@@ -120,3 +120,49 @@ Column-level grants stop users changing `role`, profile `status`, `boost_until`,
 
 ### Expo Go vs development builds
 Everything in the MVP runs in **Expo Go** (no custom native modules). A **development build** will be required for: remote push notifications on Android (Expo Go SDK 53+ removed it), Razorpay/Stripe native SDKs, and SMS auto-read of OTP on Android.
+
+## 9. Admin governance (master, sub-admins, Trash, recovery)
+
+### Roles & powers
+| Capability | Member | Sub-admin | Master |
+|---|---|---|---|
+| Approve / reject / pause / resume / delete profiles, remove photos | – | ✅ | ✅ |
+| One-click **manual approval ON/OFF**, approve all pending | – | ✅ | ✅ |
+| Suspend / reactivate / delete **members** | – | ✅ | ✅ |
+| Suspend / delete **sub-admins** | – | ❌ | ✅ |
+| Act on the **master** account | – | ❌ | ❌ (only transfer/recovery) |
+| Delete requests, reports, announcements; cancel pending orders | – | ✅ | ✅ |
+| View Trash | – | ✅ | ✅ |
+| Restore / erase from Trash | – | ❌ | ✅ |
+| Add / remove sub-admins (max 10) | – | ❌ | ✅ |
+| Transfer master role (fresh OTP required) | – | ❌ | ✅ |
+| Recovery codes, backup phone, cancel a recovery | – | ❌ | ✅ |
+| Delete audit log or payment records | ❌ | ❌ | ❌ (append-only, enforced by DB triggers) |
+
+Role is re-checked on **every** request, so demotion/suspension/deletion takes effect on the next call.
+
+### Invariants (enforced in both DemoBackend and Postgres)
+1. **Exactly one master** — unique partial index `one_master`; transfer and recovery swap roles atomically.
+2. Nobody can act on themselves or on the master; only the master acts on sub-admins (`assert_can_manage`).
+3. Admin deletes are **soft** (Trash, 30-day window, then auto-erased). Member self-deletion is immediate (privacy right).
+4. `audit_events` cannot be updated/deleted; `orders` cannot be deleted (erased members' orders are detached, not removed).
+5. Admin **suspension** survives re-login; a member's **self**-deactivation is undone by logging in.
+
+### Lost-phone recovery (master)
+```
+Master loses phone
+   │  opens app on any phone → "Master admin: lost your phone?"
+   ▼
+Enter phone in hand → OTP proves possession  +  one recovery code (bcrypt-hashed, single-use)
+   │
+   ├─ phone == verified backup phone ──► master role moves immediately
+   │
+   └─ any other phone ──► 72-hour time-lock; all admins alerted; real master can CANCEL
+                           └─ not cancelled → completes automatically (pg_cron job)
+After any recovery: old master → member; all codes + backup phone cleared → new master must set up again.
+```
+- Guessing is rate-limited (5 failures/hour, global) and audited; only one recovery can be in flight.
+- Step-up: generating codes and transferring master need a fresh OTP (DB: session `iat` < 5 min).
+- **Break-glass** (phone + codes + backup all lost): `break_glass_set_master(cc, phone, ticket)` — not callable from the app; run in the Supabase SQL editor by the technical owner after out-of-band identity checks (two people, ticket logged). Audited.
+
+Tests: `__tests__/governance.test.ts` (20), `supabase/tests/20_governance.test.sql`, `e2e/admin.js`.

@@ -38,9 +38,9 @@ export function dashboardMetrics(
 
 /** Which users an announcement targets. Deactivated users and admins are excluded. */
 export function audienceFor(segment: AnnouncementSegment, users: User[], profiles: Profile[]): User[] {
-  const byUser = new Map(profiles.map((p) => [p.userId, p]));
+  const byUser = new Map(profiles.filter((p) => !p.deletedAt).map((p) => [p.userId, p]));
   return users.filter((u) => {
-    if (u.deactivatedAt || u.role === 'admin') return false;
+    if (u.deactivatedAt || u.deletedAt || u.role !== 'user') return false;
     const p = byUser.get(u.id);
     switch (segment) {
       case 'all':

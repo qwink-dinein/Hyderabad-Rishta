@@ -38,6 +38,12 @@
 | T-030 | Draft privacy policy & terms screens | ✅ (draft) |
 | T-031 | Owner feedback: "number of children" (required unless never married) | ✅ |
 | T-032 | Owner feedback: maslak dropdown + dependent sub-maslak (Sunni: Hanafi/Shafi'i/…; Shia: Ithna Ashari/Bohra/…), searchable filter | ✅ |
+| T-034 | Admin full rights: approve/pause/resume/delete profiles, remove photos, delete users/requests/reports/announcements, cancel orders | ✅ |
+| T-035 | One-click manual-approval switch + approve-all | ✅ |
+| T-036 | Master + sub-admins (max 10), transfer with step-up OTP, single-master DB constraint | ✅ |
+| T-037 | Master lost-phone recovery: hashed one-time codes, verified backup phone, 72 h time-lock + cancel, break-glass | ✅ |
+| T-038 | Trash (soft delete, 30-day auto-erase, master restore/erase); append-only audit & orders | ✅ |
+| T-039 | Bug: admin-suspended accounts were reactivated by logging in | ✅ fixed |
 | T-033 | Bug: "Send contact request" greyed out — button now always tappable with clear guidance; edits keep a live profile live; demo starts with approval off | ✅ |
 
 ## Phase 2 (next)
@@ -58,6 +64,8 @@
 | T-113 | Admin console translations (currently English-only) | ⏳ low priority |
 | T-114 | EAS build profiles + app icons/splash in brand colours | ⏳ |
 | T-115 | Replace carousel line-art with licensed photography (optional) | ⏳ |
+| T-117 | Edge Functions for Supabase: OTP to backup phone → `set_master_backup_phone`; `auth.admin.signOut` on delete/suspend; schedule `run_governance_jobs` with pg_cron | ⏳ |
+| T-118 | SMS + email alert to the master's primary AND backup phone when a recovery starts | ⏳ |
 | T-116 | Post-edit moderation queue (re-review edited live profiles without hiding them) | ⏳ |
 
 ## Known issues / tech debt

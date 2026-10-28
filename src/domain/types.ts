@@ -4,7 +4,9 @@
  */
 
 export type Lang = 'en' | 'ur' | 'te';
-export type Role = 'user' | 'admin';
+/** `admin` = sub-admin (everything except team & recovery); `master` = exactly one owner account. */
+export type Role = 'user' | 'admin' | 'master';
+export const isAdminRole = (r?: Role) => r === 'admin' || r === 'master';
 
 /** What the profile owner is looking for. The profile itself is the opposite type. */
 export type LookingFor = 'bride' | 'groom';
@@ -23,6 +25,12 @@ export interface User {
   language: Lang;
   createdAt: string;
   deactivatedAt?: string;
+  /** Who deactivated: the user themself (undone by logging in) or an admin (a suspension). */
+  deactivatedBy?: string;
+  /** Soft-deleted by an admin (in Trash, restorable by the master for 30 days). */
+  deletedAt?: string;
+  deletedBy?: string;
+  deleteReason?: string;
 }
 
 export interface Photo {
@@ -142,6 +150,9 @@ export interface Profile {
   updatedAt: string;
   /** Last completed wizard step — powers "save and continue". */
   lastStep: number;
+  deletedAt?: string;
+  deletedBy?: string;
+  deleteReason?: string;
 }
 
 /** Scopes a profile owner can consent to share after a request is accepted. */
@@ -253,6 +264,7 @@ export type NotificationType =
   | 'boost_started'
   | 'payment'
   | 'safety'
+  | 'security'
   | 'announcement';
 
 export interface AppNotification {
@@ -355,4 +367,29 @@ export interface DashboardMetrics {
   requestsAccepted: number;
   boostActive: boolean;
   boostUntil?: string;
+}
+
+/** Master-admin account protection (one row). Codes are stored only as salted hashes. */
+export interface MasterSecurity {
+  recoveryCodes: { hash: string; usedAt?: string }[];
+  codesGeneratedAt?: string;
+  salt: string;
+  backupPhone?: { countryCode: string; phone: string; verifiedAt: string };
+  pendingRecovery?: { countryCode: string; phone: string; startedAt: string; completesAt: string };
+  failedAttempts: string[];
+}
+
+export interface SecurityStatus {
+  codesRemaining: number;
+  codesGeneratedAt?: string;
+  backupPhoneMasked?: string;
+  pendingRecovery?: { phoneMasked: string; startedAt: string; completesAt: string };
+}
+
+export interface AdminMember {
+  id: string;
+  role: Role;
+  phoneMasked: string;
+  createdAt: string;
+  deactivatedAt?: string;
 }

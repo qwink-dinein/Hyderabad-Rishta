@@ -1,6 +1,7 @@
 import { View } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
-import { Badge, Banner, EmptyState, Loading } from '@/components/ui/feedback';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/Button';
+import { Badge, Banner, confirm, EmptyState, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { Card, Header, Row, Screen } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { formatDate, formatMoney } from '@/domain/format';
@@ -9,11 +10,14 @@ import { backend } from '@/services';
 import { space } from '@/theme/tokens';
 
 export default function AdminOrders() {
+  const qc = useQueryClient();
+  const toast = useToast((s) => s.show);
+  const errMsg = useErrorMessage();
   const { data, isLoading } = useQuery({ queryKey: qk.admin('orders'), queryFn: () => backend.adminListOrders() });
   return (
     <Screen header={<Header title="Orders & payments" />}>
       <View style={{ gap: space.sm, paddingTop: space.lg }}>
-        <Banner tone="warning">Simulated orders are never counted as real revenue.</Banner>
+        <Banner tone="warning">Simulated orders are never counted as real revenue. Orders are financial records: pending ones can be cancelled, none can be deleted.</Banner>
         {isLoading ? (
           <Loading />
         ) : !data?.length ? (
@@ -34,6 +38,23 @@ export default function AdminOrders() {
                 {formatDate(o.createdAt)} · profile {o.profileId} · pricing v{o.terms.pricingVersion}
                 {o.terms.boostDays ? ` · ${o.terms.boostDays} days` : ''} · auto-renew: no
               </Text>
+              {o.status === 'pending' ? (
+                <Button
+                  label="Cancel order"
+                  size="sm"
+                  kind="ghost"
+                  style={{ alignSelf: 'flex-start' }}
+                  onPress={async () => {
+                    if (!(await confirm({ title: 'Cancel this pending order?', confirmLabel: 'Cancel order', danger: true }))) return;
+                    try {
+                      await backend.adminCancelOrder(o.id);
+                      qc.invalidateQueries({ queryKey: ['admin'] });
+                    } catch (e) {
+                      toast(errMsg(e), 'danger');
+                    }
+                  }}
+                />
+              ) : null}
             </Card>
           ))
         )}

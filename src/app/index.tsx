@@ -8,6 +8,7 @@ import { Banner } from '@/components/ui/feedback';
 import { Icon, StarMotif, type IconName } from '@/components/ui/Icon';
 import { Card, Row, Screen } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
+import { isAdminRole } from '@/domain/types';
 import { backendInfo } from '@/services';
 import { useSession } from '@/state/session';
 import { colors, space } from '@/theme/tokens';
@@ -16,7 +17,7 @@ import { colors, space } from '@/theme/tokens';
 export default function Landing() {
   const { t } = useTranslation();
   const user = useSession((s) => s.user);
-  if (user) return <Redirect href={user.role === 'admin' ? '/admin' : '/discover'} />;
+  if (user) return <Redirect href={isAdminRole(user.role) ? '/admin' : '/discover'} />;
 
   const steps: { icon: IconName; key: 'how1' | 'how2' | 'how3' }[] = [
     { icon: 'user', key: 'how1' },

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
-import { Badge, Banner, EmptyState, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
+import { Badge, Banner, confirm, EmptyState, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { ChipGroup, Field, TextField, ToggleRow } from '@/components/ui/forms';
 import { Card, Divider, Header, Row, Screen, Section } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
@@ -176,6 +176,15 @@ export default function AdminAnnouncements() {
                   />
                 ) : null}
                 {a.status !== 'archived' ? <Button label="Archive" size="sm" kind="ghost" onPress={() => backend.adminArchiveAnnouncement(a.id).then(refresh)} /> : null}
+                <Button
+                  label="Delete"
+                  size="sm"
+                  kind="danger"
+                  onPress={async () => {
+                    if (await confirm({ title: 'Delete this announcement?', body: 'It disappears from every member inbox and its analytics are removed. Archive instead if you want to keep the record.', confirmLabel: 'Delete', danger: true }))
+                      backend.adminDeleteAnnouncement(a.id).then(refresh).catch((e) => toast(errMsg(e), 'danger'));
+                  }}
+                />
               </Row>
               {report?.id === a.id ? (
                 <View>

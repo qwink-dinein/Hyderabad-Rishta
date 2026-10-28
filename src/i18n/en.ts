@@ -89,6 +89,7 @@ const en = {
     demoAccounts: 'Try 9000000001 (member with a profile) or 9000000000 (admin). Any other number creates a new account.',
     terms: 'By continuing you agree to our Terms and Privacy Policy.',
     attemptsLeft: '{{n}} attempts left',
+    masterRecovery: 'Master admin: lost your phone?',
   },
   wizard: {
     title: 'Your biodata',
@@ -265,6 +266,9 @@ const en = {
     incomplete_biodata: 'Please complete the required sections first.',
     invalid_state: 'This action is not available right now.',
     generic: 'Something went wrong. Please try again.',
+    account_removed: 'This account has been removed. Contact support if you think this is a mistake.',
+    account_suspended: 'This account has been suspended by our team. Contact support for help.',
+    invalid_recovery_code: 'That recovery code is not valid or was already used.',
   },
   preview: {
     title: 'Preview your biodata',
@@ -438,6 +442,7 @@ const en = {
       payment_paid: 'Payment confirmed (simulated)',
       payment_failed: 'Payment failed — you were not charged',
       safety: 'A safety review changed your profile visibility. Contact support for details.',
+      security: 'Security alert: admin team or recovery settings changed',
       announcement: 'Announcement',
     },
   },
