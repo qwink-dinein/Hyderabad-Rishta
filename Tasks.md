@@ -72,6 +72,7 @@
 | T-065 | Data retention (demo prune + SQL `run_retention()`), Supabase SDK out of demo bundle | ✅ |
 | T-066 | One number = one account = one biodata: phone normalisation, E.164 uniqueness, one-biodata trigger, removed-biodata mark + notice (only Delete account frees the number) | ✅ |
 | T-067 | Optional: flag likely duplicate people across different numbers (same name + DOB) for admins | ⏳ owner decision |
+| T-068 | OTP registration + 4-digit PIN login: sessions, trusted devices, hashed PIN, server lockout, Forgot PIN, change PIN, migration; SQL + `pin-login` Edge Function; tests at every layer | ✅ (demo live; Supabase client wiring with the Phase 2 adapter) |
 | T-033 | Bug: "Send contact request" greyed out — button now always tappable with clear guidance; edits keep a live profile live; demo starts with approval off | ✅ |
 
 ## Phase 2 (next)

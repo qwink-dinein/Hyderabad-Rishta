@@ -260,3 +260,59 @@ The owner's rule: a mobile number can only ever have one biodata. A fresh biodat
 Tests: `__tests__/oneBiodata.test.ts` (22), `supabase/tests/80_one_biodata.test.sql` (17 checks), `e2e/onebiodata.js`. Without the migration, the DB accepted `+91 09555500001` as a second account for an existing number.
 
 Not covered: one *person* using two *different* SIMs. A number can't prove identity. Admin duplicate-detection (same name + date of birth) is a possible Phase 2 item.
+
+## 16. OTP registration + 4-digit PIN login (Mini PRD, 2026-10-28)
+
+**Goal:** fewer OTPs (cost) and easy return logins, with members staying signed in until they log out.
+
+**When an OTP is sent:** only for
+- first registration;
+- a new phone;
+- Forgot PIN;
+- setting up a PIN on an account from before PINs.
+
+Normal returning login never sends one.
+
+**Security model**
+
+| Piece | Demo backend (runs today) | Supabase (production design) |
+|---|---|---|
+| Session | Random 256-bit token in the phone's secure storage; the server keeps only its SHA-256. Survives restarts. Revoked by logout, PIN reset/change (other phones), suspension, admin deletion, account deletion, master recovery, or 180 idle days. | Supabase Auth session (refresh token in SecureStore). The `pin-login` function issues it. `set_pin` and the suspension trigger delete `auth.sessions` rows. |
+| Device key | Created when an OTP succeeds on this phone (`hr.auth` in Keychain/Keystore, `WHEN_UNLOCKED_THIS_DEVICE_ONLY`, never restored from backups). The server stores its SHA-256. | `trust_device()` (needs an OTP in the JWT `amr` from the last 10 min) → `trusted_devices`. |
+| PIN | Salted, iterated SHA-256 (`slowHash`). Weak PINs refused (`pinProblem`). | bcrypt (`crypt(..., gen_salt('bf', 10))`). The same weak-PIN rule is in SQL `pin_problem`. |
+| PIN login | `pinLogin()` needs the number, a trusted device key and the PIN. An unknown number or untrusted phone returns `device_not_trusted` (no account probing). | `pin-login` Edge Function → `pin_login_check()` (service role only). Approved logins get a session via a one-time password that is set and then destroyed immediately. |
+| Lockout (server-side) | 5 wrong in a row → 15 min lock; 10 in 24 h → only Forgot PIN (OTP) unlocks. Counters are saved even when the call fails, so restarts don't reset them. | Same rules in `pin_attempt()`. It never raises on a wrong PIN, so counters are committed. |
+| Set / reset / change | Allowed right after an OTP (one PIN change per OTP, within 10 min) or with the current PIN. A wrong current PIN counts toward the lock. A reset or change signs out every other phone. | `set_pin()` with `otp_used_at`, the same rules, and deletes other `auth.sessions`. |
+| Members can't read | — | `login_pins`, `pin_failures`, `trusted_devices`: RLS on, no policies, grants revoked. |
+
+**Flows (app)**
+
+**Registration:** number → OTP → `/pin` (create, then confirm) → biodata.
+- The create step shows: "Create a 4-digit PIN for quick and easy login next time. You won't need an OTP every time."
+
+**Returning user on this phone:** `/login` opens in PIN mode. It shows the registered number, 4 cells, Log in, Forgot PIN? and Use a different number.
+
+**New phone:** the PIN is refused with "verify this phone once" → OTP → straight in. There is no PIN setup and no biodata redo.
+
+**Forgot PIN:** OTP to the registered number → `/pin?mode=reset` → logged in, and other phones are signed out.
+
+**Settings → Login PIN:**
+- **Set up PIN** (older accounts): OTP first, then create.
+- **Change PIN:** current PIN, then new, then confirm.
+
+**Migration:** accounts and logins from before PINs are kept. The old store is upgraded in place, never reseeded. A member signed in before the update stays signed in, and sets a PIN after their next OTP or from Settings.
+
+**Web:** browsers have no secure enclave, so the web build keeps the token and device key in local storage. That's fine for the demo/preview. The phone apps use Keychain/Keystore (`src/services/secureStorage.ts`).
+
+**Tests:**
+- `__tests__/pinLogin.test.ts` (20)
+- `__tests__/pinLoginEdge.test.ts` (15)
+- `supabase/tests/90_pin_login.test.sql` (37 checks)
+- `e2e/pin.js` (12 steps)
+- The shared e2e login (`e2e/auth.js`) handles the PIN screens for all other suites.
+
+**Still to do with the Supabase adapter (Phase 2, T-068):**
+- The app's Supabase client calls `trust_device` after `verifyOtp`.
+- It calls the `pin-login` function for PIN login.
+- It stores the session with SecureStore.
+- Enable phone + password sign-in in Supabase Auth (needed for issuing sessions).

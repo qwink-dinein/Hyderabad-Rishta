@@ -78,6 +78,7 @@ Reset everything: Settings → “Reset demo data”.
 - Any new input field: add a cap in `src/domain/security.ts` + an attack test. Notification links → `safeDeepLink()`.
 - Report reasons are the closed set in `src/domain/options.ts` (`fake`, not `fake_profile`).
 - Owner rule: ONE number = ONE account = ONE biodata. Always pass phones through `normalizePhone()`; never create a profile if any profile row exists for the user or `profileRemovedAt` is set. Only Delete account frees a number (Architecture §15).
+- PIN login (Architecture §16): OTP only for registration / new phone / Forgot PIN / first PIN. Never bump the demo SCHEMA_VERSION (it reseeds = wipes accounts) — backfill in `load()` instead. e2e suites log in through `e2e/auth.js` (handles PIN screens; test PIN 4827). Demo login state lives in secure KV `hr.auth`, not the db.
 
 ## Environment limits observed (cloud session)
 - Network policy blocks `api.expo.dev`, `exp.host`, ngrok, `docs.expo.dev` → no Expo tunnel from the cloud; run locally to scan with Expo Go.

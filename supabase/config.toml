@@ -1,0 +1,8 @@
+# Only the settings this repo depends on. `supabase link` / `supabase init` add the rest.
+[functions.pin-login]
+# Logged-out members call it (no JWT yet); it is protected by device key + PIN + server lockout.
+verify_jwt = false
+
+[functions.push-dispatch]
+# Called by pg_cron with PUSH_CRON_SECRET, checked inside the function.
+verify_jwt = false

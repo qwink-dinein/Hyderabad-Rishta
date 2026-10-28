@@ -4,7 +4,10 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.join(__dirname, '..');
-const FILES = [['src/domain/push.ts', 'supabase/functions/_shared/push.ts']];
+const FILES = [
+  ['src/domain/push.ts', 'supabase/functions/_shared/push.ts'],
+  ['src/domain/phone.ts', 'supabase/functions/_shared/phone.ts'],
+];
 const TYPES = `// Types inlined for Deno (the app imports them from src/domain/types.ts).
 type Lang = 'en' | 'ur' | 'te';
 type NotificationType = string;

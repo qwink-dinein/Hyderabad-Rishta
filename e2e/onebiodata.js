@@ -22,7 +22,9 @@ const step = async (name, fn) => {
   await step('a leading 0 opens the same account and its existing draft (Kashif, HR-10032)', async () => {
     await login('09000000131');
     const db = await page.evaluate(() => JSON.parse(localStorage.getItem('hr.demo.db')));
-    if (db.sessionUserId !== 'u_31') throw new Error(`signed in as ${db.sessionUserId}, expected u_31`);
+    const live = db.sessions.filter((x) => !x.revokedAt);
+    const who = live[live.length - 1]?.userId;
+    if (who !== 'u_31') throw new Error(`signed in as ${who}, expected u_31`);
     if (db.users.filter((u) => u.phone.endsWith('9000000131')).length !== 1) throw new Error('a second account was created');
     await page.goto(BASE + '/biodata?step=0');
     await page.waitForFunction(() => [...document.querySelectorAll('input')].some((i) => i.value === 'Kashif Hashmi'), null, { timeout: 10000 });

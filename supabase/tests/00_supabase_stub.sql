@@ -16,3 +16,8 @@ grant execute on function auth.jwt() to anon, authenticated;
 alter default privileges in schema public grant all on tables to anon, authenticated;
 alter default privileges in schema public grant all on sequences to anon, authenticated;
 alter default privileges in schema public grant all on functions to anon, authenticated;
+-- Supabase Auth's session table (deleting a row revokes that session's refresh token) and the
+-- service role used by Edge Functions.
+create table auth.sessions (id uuid primary key default gen_random_uuid(), user_id uuid not null, created_at timestamptz not null default now());
+do $$ begin if not exists (select 1 from pg_roles where rolname='service_role') then create role service_role nologin; end if; end $$;
+grant usage on schema public, auth to service_role;
