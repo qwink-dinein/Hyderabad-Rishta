@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     paddingHorizontal: space.md + 2,
     paddingVertical: space.sm,
-    fontSize: 15,
+    fontSize: 16, // ≥16 so iOS Safari never zooms the page on focus
     color: colors.charcoal,
   },
   inputFocused: { borderColor: colors.emerald, borderWidth: 1.6 },

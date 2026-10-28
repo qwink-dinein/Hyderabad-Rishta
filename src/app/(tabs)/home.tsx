@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   column: { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center', paddingHorizontal: space.lg },
   searchRow: { marginTop: space.lg },
   search: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 50, paddingHorizontal: space.md, borderRadius: radius.md, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
-  searchInput: { flex: 1, fontSize: 15, color: colors.charcoal, paddingVertical: space.sm },
+  searchInput: { flex: 1, fontSize: 16, color: colors.charcoal, paddingVertical: space.sm },
   filterBtn: { width: 50, height: 50, borderRadius: radius.md, backgroundColor: colors.emerald, alignItems: 'center', justifyContent: 'center' },
   status: { marginTop: space.lg, borderRadius: radius.lg, padding: space.xl, gap: space.xs, overflow: 'hidden' },
   statusMark: { position: 'absolute', right: -24, top: -24, opacity: 0.25 },

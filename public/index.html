@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <!-- Mobile web: edge-to-edge with safe areas (notch / home bar), no shrink-to-fit. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#123D32" />
+    <meta name="color-scheme" content="light" />
+    <!-- "Add to Home Screen" launches full-screen with the brand status bar. -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Hyderabad Rishta" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="description" content="A private, family-friendly Muslim matrimony app for Hyderabad and beyond." />
+    <title>Hyderabad Rishta</title>
+    <style id="expo-reset">
+      html,
+      body {
+        height: 100%;
+        background: #f8f4eb;
+      }
+      body {
+        overflow: hidden;
+        /* No pull-to-refresh / rubber-band on the page itself; lists scroll inside the app. */
+        overscroll-behavior: none;
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run Hyderabad Rishta.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

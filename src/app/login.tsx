@@ -247,5 +247,5 @@ const styles = StyleSheet.create({
   boxActive: { borderColor: colors.emerald, borderWidth: 2 },
   boxError: { borderColor: colors.danger },
   // Transparent but focusable/clickable: keeps native paste, autofill and screen-reader input.
-  otpInput: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.02, color: 'transparent', fontSize: 1 },
+  otpInput: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.02, color: 'transparent', fontSize: 16 }, // 16 avoids iOS focus zoom
 });
