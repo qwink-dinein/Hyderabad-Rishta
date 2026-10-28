@@ -3,9 +3,10 @@
 > Known-good snapshots of the app. Each one is a git tag on GitHub, so it survives this machine and any future session.
 > If something breaks later, compare against or roll back to a checkpoint (commands below).
 
-## V1 — tag `v1` (2026-10-28) ✅ owner-approved baseline
+## V1 — commit `4636968` / tag `v1` (2026-10-28) ✅ owner-approved baseline
 
-**Where:** git tag `v1` on branch `claude/sharp-bell-xxyxmj`, repo `qwink-dinein/Hyderabad-Rishta`.
+**Where:** commit **`4636968089a30394f9c9ca594b1a06783c1c4775`** (short `4636968`) on branch `claude/sharp-bell-xxyxmj`, repo `qwink-dinein/Hyderabad-Rishta`. This commit ID is the permanent reference.
+A local git tag `v1` points at it too. Pushing tags was blocked (403) in the session that made V1, so a later session may need to recreate it: `git tag -a v1 4636968 -m V1`.
 **Preview at V1:** https://claude.ai/artifact/YK9mg5vQzR19CEfoaX4bSJ (demo backend, single HTML file).
 **Stack:** Expo SDK 58 · React Native · TypeScript · Expo Router (`src/app/`) · TanStack Query · zustand · i18next (EN / UR-RTL / TE) · zod · offline `DemoBackend` (schema v7) · Supabase SQL ready (6 migrations), not yet connected.
 
@@ -66,14 +67,15 @@
 ### Key commits up to V1
 | Commit | What |
 |---|---|
-| (tag `v1`) | Adds this checkpoint file — app code identical to `45ad535` |
+| `4636968` | **V1** — adds this checkpoint file; app code identical to `45ad535` |
 | `45ad535` | Memory: current preview link |
 | `4b248e2` | Admin console: profile IDs, member search, alerts bell; relation badges |
 | `117417b` | Express Interest, consent-based phone offers and Poke; three-slot photo picker |
 
 ### How to get back to V1
 ```bash
-git fetch origin --tags
+git fetch origin claude/sharp-bell-xxyxmj
+git tag -a v1 4636968 -m V1 2>/dev/null || true   # recreate the tag locally if missing
 git diff v1 -- <path>                 # see what changed since V1 (whole repo: git diff v1)
 git checkout v1 -- <path>             # restore one file/folder to V1, then commit
 git revert --no-edit v1..HEAD         # undo everything after V1 as new commits (safe, keeps history)

@@ -4,7 +4,7 @@
 > Last updated: 2026-10-28
 
 ## Snapshot
-- **CHECKPOINT V1 = git tag `v1`** (2026-10-28, owner asked to save it). Full feature list, verification results and revert commands are in `CHECKPOINTS.md`. If anything breaks, compare with `git diff v1` and restore from there. Never move or delete the tag.
+- **CHECKPOINT V1 = commit `4636968089a30394f9c9ca594b1a06783c1c4775`** (tag `v1` locally; pushing tags is blocked here) (2026-10-28, owner asked to save it). Full feature list, verification results and revert commands are in `CHECKPOINTS.md`. If anything breaks, compare with `git diff v1` and restore from there. Never move or delete the tag.
 - **What:** Hyderabad Rishta — Muslim matrimony app (PRD v1.1 in `PRD.md`). Owner: mukarramjahmm.
 - **Repo:** `qwink-dinein/Hyderabad-Rishta`, working branch `claude/sharp-bell-xxyxmj`.
 - **State (latest):** admin console added: `HR-` profile IDs, member search and member page, alerts bell, relation badges on cards. Demo DB schema v7.
