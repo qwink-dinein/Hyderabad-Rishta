@@ -109,6 +109,25 @@ Column-level grants stop users changing `role`, profile `status`, `boost_until`,
 - **Alerts:** `alertAdmins(kind, params, deepLink)` / `alert_admins()` insert a `notifications` row of type `admin_alert` for every active admin. In SQL they are fired by triggers: `reports` insert, `orders` status → paid/failed, `profiles` status → pending, `app_users` hard delete (member self-deletion only, not a purge from Trash), and security actions in `audit_events`. The English copy for the console is in `src/domain/adminAlerts.ts`.
 - **Migration:** `20261031000000_admin_console.sql`; tests: `supabase/tests/40_admin_console.test.sql`.
 
+## 13. Boost guarantee & push pipeline
+```
+any action ─► notify() / INSERT notifications ─► trigger enqueue_push ─► push_outbox (queued | skipped:reason)
+                                                     │ prefs · inactive · ≤12/h (account exempt) · per device
+pg_cron 1/min ─► edge fn push-dispatch ─► claim_push_batch (FOR UPDATE SKIP LOCKED, device-owner re-check)
+                     │ render text (supabase/functions/_shared/push.ts ⇐ synced copy of src/domain/push.ts)
+                     ├─► Expo /push/send (100/req) ─► push_result: sent | retry 30·2ⁿ s (≤5) | DeviceNotRegistered → token deleted
+                     └─► Expo /push/getReceipts (≥15 min) ─► push_receipt: delivered | failed
+app ─► PushBridge: on sign-in re-bind token · taps → deep link + mark read · badge = unread · in-app arrival banner
+```
+- **Featured:** `getFeatured()` / `get_featured()` decide eligibility with `isFeaturable()`, apply the type rule and blocks, and use a daily rotation (FNV-1a hash in the app, md5 in SQL). They write one `boost_impressions` row per viewer, profile and day. Dashboard reach = unique viewers since `boost_started_at`.
+- **Boost lifecycle:** `apply_boost(order)` (service only, idempotent per order, extensions keep the start date) and `run_boost_jobs()` (pg_cron) with `boost_notices` markers, so each notice is sent exactly once.
+- **Client:** `src/services/push.ts` (expo-notifications, Android channel "default" with PRIVATE lock-screen visibility, projectId from EAS). `src/components/PushBridge.tsx` and `src/components/PushSettings.tsx`.
+- **Limits:**
+  - Expo Go on Android cannot receive remote push (SDK 53+), so it needs a development build. Web is in-app only.
+  - Real delivery needs an EAS projectId, FCM (Android) and APNs (iOS) credentials, and the `push-dispatch` function deployed with `PUSH_CRON_SECRET`.
+  - The demo records what would be sent (`not_configured`).
+- **Migration:** `20261101000000_boost_and_push.sql`. Tests: `supabase/tests/50_boost_push.test.sql`, `__tests__/boostPush.test.ts`, `e2e/boostpush.js`.
+
 ## 12. UI layer (Design PRD v1.0)
 - **Theme:** `src/theme/tokens.ts` (colours, spacing, radius, shadow, `motion` timings) and `src/theme/fonts.ts` (Lora + Inter base; Urdu and Telugu loaded on demand).
 - **Art:** `src/components/art/Illustrations.tsx` (BrandMark, HeroScene, DomeArt, CornerFlourish), pure react-native-svg with no image downloads.

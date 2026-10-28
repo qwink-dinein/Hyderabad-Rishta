@@ -20,6 +20,8 @@ export const qk = {
   orders: ['orders'] as const,
   blocked: ['blocked'] as const,
   admin: (k: string, ...rest: unknown[]) => ['admin', k, ...rest] as const,
+  featured: ['featured'] as const,
+  pushSettings: ['pushSettings'] as const,
 };
 
 const useAuthed = () => !!useSession((s) => s.user);
@@ -43,6 +45,14 @@ export function useSearch(filters: SearchFilters) {
     enabled: useAuthed(),
     staleTime: 30_000,
   });
+}
+
+/** Boosted profiles every eligible viewer sees, independent of their filters (see domain/featured). */
+export function useFeatured() {
+  return useQuery({ queryKey: qk.featured, queryFn: () => backend.getFeatured(12), enabled: useAuthed(), staleTime: 60_000 });
+}
+export function usePushSettings() {
+  return useQuery({ queryKey: qk.pushSettings, queryFn: () => backend.getPushSettings(), enabled: useAuthed() });
 }
 
 export function useProfile(id: string) {
@@ -152,6 +162,7 @@ export function useInvalidateProfileState() {
     qc.invalidateQueries({ queryKey: qk.orders });
     qc.invalidateQueries({ queryKey: qk.notifications });
     qc.invalidateQueries({ queryKey: ['search'] });
+    qc.invalidateQueries({ queryKey: qk.featured });
   };
 }
 

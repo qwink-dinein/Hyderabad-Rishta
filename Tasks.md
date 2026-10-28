@@ -63,6 +63,8 @@
 | T-056 | PhotoPicker v2 (large main + 2 stacked), OptionList for "created for", segmented wizard progress, animated "Other" reveal | ✅ |
 | T-057 | Profile details gallery + fact chips; connect screen avatar header; request inbox segmented control, avatars, poke bell swing | ✅ |
 | T-058 | Sound effects (off by default, original chimes) + haptics with Settings toggles; animated success toast | ✅ |
+| T-059 | Boost guarantee: Featured for all eligible viewers regardless of filters, fair rotation, impressions/reach proof, ending/ended notices, paused-boost warning, insert hardening (no self-granted boosts) | ✅ |
+| T-060 | Switch accessibility on web (`aria-checked`) — found by the push e2e | ✅ |
 | T-033 | Bug: "Send contact request" greyed out — button now always tappable with clear guidance; edits keep a live profile live; demo starts with approval off | ✅ |
 
 ## Phase 2 (next)
@@ -74,7 +76,7 @@
 | T-104 | Private photo storage, client resize/WebP, signed-URL edge function | ⏳ |
 | T-105 | GitHub Actions CI (typecheck, jest, db tests, e2e) | ⏳ |
 | T-106 | Razorpay order + webhook edge function; remove simulation in prod | ⏳ needs Razorpay keys |
-| T-107 | Expo push tokens + fan-out + receipts → delivery analytics | ⏳ needs dev build |
+| T-107 | Expo push: tokens, fan-out outbox, dispatcher with retries + receipts, prefs, device ownership, delivery analytics | ✅ code + tests · ⏳ live delivery needs EAS projectId, FCM/APNs keys, dev build |
 | T-108 | `pg_cron`: scheduled announcements, boost expiry notifications | ⏳ |
 | T-109 | Sentry + structured logging | ⏳ |
 | T-110 | Native-speaker review: Urdu & Telugu strings | ⏳ |
@@ -85,11 +87,12 @@
 | T-115 | Replace carousel line-art with licensed photography (optional) | ⏳ |
 | T-117 | Edge Functions for Supabase: OTP to backup phone → `set_master_backup_phone`; `auth.admin.signOut` on delete/suspend; schedule `run_governance_jobs` with pg_cron | ⏳ |
 | T-118 | SMS + email alert to the master's primary AND backup phone when a recovery starts | ⏳ |
-| T-119 | Push delivery for interest/offer/poke notifications (generic lock-screen text only) | ⏳ |
+| T-119 | Push for every profile action (interest/offer/poke/views/shortlists/approvals/boost/payment/safety), generic lock-screen text | ✅ |
 | T-120 | Admin alerts by SMS/email/push for urgent items (failed payments, reports, recovery started) | ⏳ needs providers |
 | T-121 | Wire `SupabaseBackend.adminSearch/adminGetMember` to the `admin_search` RPC + member queries | ⏳ (with T-102) |
 | T-122 | Licensed, consented photography for the hero (optional; vector art ships today) | ⏳ owner decision |
 | T-123 | Filters: jump-to-section tabs (Basic / Education / Location / Religion) like the reference | ⏳ nice-to-have |
+| T-124 | `eas init` (projectId), FCM service-account + APNs key upload, `eas build --profile development`, deploy `push-dispatch`, enable pg_cron jobs | ⏳ needs owner accounts |
 | T-116 | Post-edit moderation queue (re-review edited live profiles without hiding them) | ⏳ |
 
 ## Known issues / tech debt

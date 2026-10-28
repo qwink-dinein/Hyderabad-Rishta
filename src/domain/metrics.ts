@@ -3,6 +3,7 @@ import type {
   Announcement,
   AnnouncementDelivery,
   AnnouncementSegment,
+  BoostImpression,
   ContactRequest,
   DashboardMetrics,
   Profile,
@@ -14,7 +15,7 @@ import type {
 /** Profile-reach metrics are computed from recorded events only (PRD §13). */
 export function dashboardMetrics(
   profile: Profile | undefined,
-  data: { views: ViewEvent[]; shortlists: Shortlist[]; requests: ContactRequest[] },
+  data: { views: ViewEvent[]; shortlists: Shortlist[]; requests: ContactRequest[]; impressions?: BoostImpression[] },
   now = new Date(),
 ): DashboardMetrics {
   if (!profile) {
@@ -32,6 +33,11 @@ export function dashboardMetrics(
     requestsAccepted: received.filter((r) => r.status === 'accepted').length,
     boostActive: isBoostActive(profile, now),
     boostUntil: profile.boostUntil,
+    boostVisible: isBoostActive(profile, now) && profile.status === 'published',
+    boostStartedAt: profile.boostStartedAt,
+    featuredReach: profile.boostStartedAt
+      ? new Set((data.impressions ?? []).filter((i) => i.profileId === profile.id && i.day >= profile.boostStartedAt!.slice(0, 10)).map((i) => i.viewerUserId)).size
+      : 0,
   };
 }
 

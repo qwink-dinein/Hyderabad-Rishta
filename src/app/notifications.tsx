@@ -6,43 +6,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { Badge, EmptyState, ErrorView, Loading } from '@/components/ui/feedback';
-import { Icon, type IconName } from '@/components/ui/Icon';
+import { Icon } from '@/components/ui/Icon';
 import { Header, Row } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { formatDate } from '@/domain/format';
-import type { Lang } from '@/domain/types';
 import { qk, useNotifications } from '@/hooks/queries';
+import { NOTIFICATION_ICONS as ICONS, useNotificationText } from '@/hooks/useNotificationText';
 import { backend, type NotificationView } from '@/services';
 import { useSession } from '@/state/session';
 import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
 
-const ICONS: Record<string, IconName> = {
-  request_received: 'mail',
-  phone_offer_received: 'phone',
-  phone_offer_accepted: 'phone',
-  phone_offer_declined: 'phone',
-  phone_offer_withdrawn: 'phone',
-  poke: 'bell',
-  request_expired: 'mail',
-  security: 'shield',
-  admin_alert: 'flag',
-  request_accepted: 'check',
-  request_declined: 'close',
-  contact_shared: 'phone',
-  profile_approved: 'shield',
-  profile_rejected: 'flag',
-  profile_published: 'sparkle',
-  boost_started: 'star',
-  payment: 'chart',
-  safety: 'shield',
-  announcement: 'bell',
-};
 
 /** In-app notification centre (PRD §14): unread count, mark read / all, deep links, announcements. */
 export default function Notifications() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const lang = useSession((s) => s.lang);
   const user = useSession((s) => s.user);
   const qc = useQueryClient();
   const { data, isLoading, error, refetch, isRefetching } = useNotifications();
@@ -61,12 +39,7 @@ export default function Notifications() {
     [qc],
   );
 
-  const text = (n: NotificationView) => {
-    if (n.announcement) return { title: localized(n.announcement.title, lang), body: localized(n.announcement.body, lang) };
-    const key =
-      n.type === 'payment' ? `notifications.t.payment_${n.params.status}` : n.type === 'request_received' && n.params.offered ? 'notifications.t.request_received_offer' : `notifications.t.${n.type}`;
-    return { title: t(key, { ...n.params, note: n.params.note || '—' }), body: n.type === 'boost_started' && n.params.until ? formatDate(n.params.until) : undefined };
-  };
+  const text = useNotificationText();
 
   if (!user) return <Redirect href="/login" />;
 
@@ -130,9 +103,6 @@ export default function Notifications() {
   );
 }
 
-function localized(v: Partial<Record<Lang, string>> & { en: string }, lang: Lang) {
-  return v[lang]?.trim() ? v[lang]! : v.en;
-}
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.ivory },

@@ -6,6 +6,8 @@ import { announcementStats, audienceFor, dashboardMetrics, isAnnouncementLive } 
 import { resolvePricing, validatePricing } from '@/domain/pricing';
 import { mergeScopes, NO_CONSENT, profileTypeOf, projectProfile } from '@/domain/privacy';
 import { matchesFilters, sortProfiles, type SearchFilters } from '@/domain/search';
+import { boostNoticeDue, BOOST_ENDING_NOTICE_MS, dayKey, isFeaturable, rotateFeatured } from '@/domain/featured';
+import { isRateLimitExempt, prefsOf, PUSH_HOURLY_CAP, pushAllowed, pushContent, CATEGORY, VIEW_NOTICE_WINDOW_MS } from '@/domain/push';
 import type {
   Announcement,
   AnnouncementDelivery,
@@ -18,7 +20,11 @@ import type {
   ContactRequest,
   AdminMember,
   AnalyticsEvent,
+  BoostImpression,
   Lang,
+  PushDevice,
+  PushOutboxItem,
+  PushPrefs,
   MasterSecurity,
   NotificationType,
   Order,
@@ -76,9 +82,17 @@ export interface DemoDb {
   idem: { key: string; userId: string; resultId: string; at: string }[];
   /** Next sequential profile number (HR-xxxxx); never reused, even after deletion. */
   nextCode: number;
+  /** Phones registered for push (one row per token; a token belongs to exactly one account). */
+  pushDevices: PushDevice[];
+  /** Every push the system decided to send or skip, with the reason (no provider in demo mode). */
+  pushOutbox: PushOutboxItem[];
+  /** Featured impressions, one per viewer per profile per day. */
+  boostImpressions: BoostImpression[];
+  /** `${shortlisterId}:${profileId}` pairs already notified (re-toggling never re-notifies). */
+  shortlistNotified: string[];
 }
 
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 8;
 const STORAGE_KEY = 'hr.demo.db';
 export const OTP_TTL_MS = 10 * 60 * 1000;
 export const RESEND_COOLDOWN_MS = 30 * 1000;
@@ -119,6 +133,10 @@ export function freshDb(now = new Date()): DemoDb {
     analytics: [],
     idem: [],
     nextCode: 10001 + seed.profiles.length,
+    pushDevices: [],
+    pushOutbox: [],
+    boostImpressions: [],
+    shortlistNotified: [],
   };
 }
 
@@ -269,7 +287,40 @@ export class DemoBackend implements Backend {
   }
 
   private notify(db: DemoDb, userId: string, type: NotificationType, params: Record<string, string> = {}, deepLink?: string, announcementId?: string) {
-    db.notifications.unshift({ id: uid('n_'), userId, type, params, deepLink, announcementId, createdAt: this.iso() });
+    const n: AppNotification = { id: uid('n_'), userId, type, params, deepLink, announcementId, createdAt: this.iso() };
+    db.notifications.unshift(n);
+    this.enqueuePush(db, n);
+  }
+
+  /**
+   * Single funnel from in-app notifications to phones. The in-app inbox is always written first;
+   * push is best-effort on top and every decision (sent or skipped, and why) is recorded.
+   */
+  private enqueuePush(db: DemoDb, n: AppNotification) {
+    const user = db.users.find((u) => u.id === n.userId);
+    const devices = db.pushDevices.filter((d) => d.userId === n.userId);
+    if (!user || devices.length === 0) return; // nothing to deliver to — the inbox still has it
+    const base = { notificationId: n.id, userId: n.userId, category: CATEGORY[n.type], attempts: 0, createdAt: this.iso(), data: { notificationId: n.id, deepLink: n.deepLink } };
+    const skip = (reason: string) => db.pushOutbox.unshift({ ...base, id: uid('px_'), title: '', body: '', status: 'skipped', reason });
+    if (user.deletedAt || user.deactivatedAt) return skip('account_inactive');
+    const prefs = prefsOf(user.pushPrefs);
+    const allowed = pushAllowed(n.type, prefs);
+    if (!allowed.ok) return skip(allowed.reason);
+    if (!isRateLimitExempt(n.type)) {
+      const hourAgo = this.now().getTime() - 3600_000;
+      const recent = new Set(
+        db.pushOutbox
+          .filter((x) => x.userId === n.userId && x.category !== 'account' && (x.status !== 'skipped' || x.reason === 'not_configured') && new Date(x.createdAt).getTime() > hourAgo)
+          .map((x) => x.notificationId),
+      );
+      if (recent.size >= PUSH_HOURLY_CAP) return skip('rate_limited');
+    }
+    const { title, body } = pushContent(n, user.language, prefs.showNames);
+    for (const d of devices) {
+      // No push provider in demo mode: record exactly what WOULD be sent, honestly marked.
+      db.pushOutbox.unshift({ ...base, id: uid('px_'), token: d.token, title, body, status: 'skipped', reason: 'not_configured' });
+    }
+    if (db.pushOutbox.length > 2000) db.pushOutbox.length = 2000;
   }
 
   private myProfile(db: DemoDb, userId: string) {
@@ -350,6 +401,14 @@ export class DemoBackend implements Backend {
         this.track(db, 'request_expired', r.fromUserId, {}, `expired:${r.id}`);
       }
     }
+    // Boost lifecycle notices (each exactly once per boost end-time).
+    for (const p of db.profiles) {
+      if (p.deletedAt) continue;
+      const due = boostNoticeDue(p, this.now());
+      if (!due) continue;
+      p.boostNotices = { ...(p.boostNotices ?? {}), [due]: p.boostUntil };
+      this.notify(db, p.userId, due === 'ending' ? 'boost_ending' : 'boost_ended', { until: p.boostUntil ?? '' }, '/dashboard');
+    }
     // Time-locked master recovery completes only if the current master did not cancel it.
     const pr = db.security.pendingRecovery;
     if (pr && new Date(pr.completesAt).getTime() <= now) this.completeRecovery(db, pr.countryCode, pr.phone, 'new_phone_after_delay');
@@ -381,6 +440,7 @@ export class DemoBackend implements Backend {
     db.profiles = db.profiles.filter((x) => x.id !== profileId);
     db.shortlists = db.shortlists.filter((x) => x.profileId !== profileId);
     db.views = db.views.filter((v) => v.profileId !== profileId);
+    db.boostImpressions = db.boostImpressions.filter((i) => i.profileId !== profileId);
     db.blocks = db.blocks.filter((b) => b.blockedProfileId !== profileId);
     const reqIds = new Set(db.requests.filter((r) => r.fromProfileId === profileId || r.toProfileId === profileId).map((r) => r.id));
     db.requests = db.requests.filter((r) => !reqIds.has(r.id));
@@ -401,6 +461,9 @@ export class DemoBackend implements Backend {
     db.blocks = db.blocks.filter((b) => b.userId !== userId);
     db.views = db.views.filter((v) => v.viewerUserId !== userId);
     db.reports = db.reports.filter((r) => r.reporterUserId !== userId);
+    db.pushDevices = db.pushDevices.filter((d) => d.userId !== userId);
+    db.pushOutbox = db.pushOutbox.filter((x) => x.userId !== userId);
+    db.boostImpressions = db.boostImpressions.filter((i) => i.viewerUserId !== userId);
   }
 
   private fanOut(db: DemoDb, a: Announcement) {
@@ -639,8 +702,12 @@ export class DemoBackend implements Backend {
 
   private applyBoost(db: DemoDb, p: Profile, order: Order) {
     // Extends an active boost rather than overwriting it; duration comes from the ORDER's terms.
+    const active = !!p.boostUntil && new Date(p.boostUntil).getTime() > this.now().getTime();
     const base = Math.max(this.now().getTime(), p.boostUntil ? new Date(p.boostUntil).getTime() : 0);
+    if (!active) p.boostStartedAt = this.iso(); // an extension keeps the original start (reach keeps counting)
     p.boostUntil = new Date(base + (order.terms.boostDays ?? db.pricing.boostDays) * 86400000).toISOString();
+    // A boost of 24 h or less has no separate "ending soon" notice.
+    p.boostNotices = new Date(p.boostUntil).getTime() - this.now().getTime() <= BOOST_ENDING_NOTICE_MS ? { ending: p.boostUntil } : {};
     this.notify(db, p.userId, 'boost_started', { until: p.boostUntil }, '/dashboard');
   }
 
@@ -673,7 +740,7 @@ export class DemoBackend implements Backend {
   getDashboard() {
     return this.run((db) => {
       const u = this.me(db);
-      return dashboardMetrics(this.myProfile(db, u.id), { views: db.views, shortlists: db.shortlists, requests: db.requests }, this.now());
+      return dashboardMetrics(this.myProfile(db, u.id), { views: db.views, shortlists: db.shortlists, requests: db.requests, impressions: db.boostImpressions }, this.now());
     });
   }
 
@@ -709,9 +776,82 @@ export class DemoBackend implements Backend {
         const nowMs = this.now().getTime();
         // De-duplicate rapid re-opens so refreshes don't inflate view counts.
         const recent = db.views.some((v) => v.profileId === p.id && v.viewerUserId === u.id && nowMs - new Date(v.at).getTime() < VIEW_DEDUPE_MS);
-        if (!recent) db.views.push({ profileId: p.id, viewerUserId: u.id, at: this.iso() });
+        if (!recent) {
+          db.views.push({ profileId: p.id, viewerUserId: u.id, at: this.iso() });
+          this.noticeViews(db, p);
+        }
       }
       return { ...this.project(db, u, p), relation: this.relationWith(db, u.id, p) };
+    }, true);
+  }
+
+  /** Batched, anonymous "people viewed your profile" — at most one notice per owner per window. */
+  private noticeViews(db: DemoDb, p: Profile) {
+    const nowMs = this.now().getTime();
+    const last = db.notifications.find((n) => n.userId === p.userId && n.type === 'profile_viewed');
+    if (last && nowMs - new Date(last.createdAt).getTime() < VIEW_NOTICE_WINDOW_MS) return;
+    const since = last ? new Date(last.createdAt).getTime() : nowMs - VIEW_NOTICE_WINDOW_MS;
+    const viewers = new Set(db.views.filter((v) => v.profileId === p.id && v.viewerUserId !== p.userId && new Date(v.at).getTime() >= since).map((v) => v.viewerUserId));
+    this.notify(db, p.userId, 'profile_viewed', { count: String(Math.max(1, viewers.size)) }, '/dashboard');
+  }
+
+  getFeatured(limit = 12) {
+    return this.run((db) => {
+      const u = this.me(db);
+      const mine = this.myProfile(db, u.id);
+      const lookingFor = mine?.biodata.basic.lookingFor;
+      const now = this.now();
+      const eligible = db.profiles.filter((p) => {
+        if (p.userId === u.id) return false;
+        if (!isFeaturable(p, db.users.find((x) => x.id === p.userId), now)) return false;
+        if (this.isBlockedBetween(db, u.id, p)) return false;
+        return !lookingFor || profileTypeOf(p) === lookingFor; // matrimony rule: people looking for this type
+      });
+      const shown = rotateFeatured(eligible, u.id, now).slice(0, Math.max(1, Math.min(limit, 50)));
+      const day = dayKey(now);
+      for (const p of shown) {
+        if (!db.boostImpressions.some((i) => i.profileId === p.id && i.viewerUserId === u.id && i.day === day)) db.boostImpressions.push({ profileId: p.id, viewerUserId: u.id, day });
+      }
+      return shown.map((p) => ({ ...this.project(db, u, p), contact: undefined, relation: this.relationWith(db, u.id, p) }));
+    }, true);
+  }
+
+  // ---------- push (phones) ----------
+  registerPushDevice(token: string, platform: 'ios' | 'android') {
+    return this.run((db) => {
+      const u = this.me(db);
+      if (!/^Expo(nent)?PushToken\[[^\]]{6,}\]$/.test(token) || (platform !== 'ios' && platform !== 'android')) throw new AppError('validation');
+      // One phone ↔ one account: a shared phone stops receiving the previous account's alerts.
+      db.pushDevices = db.pushDevices.filter((d) => d.token !== token);
+      db.pushDevices.push({ token, userId: u.id, platform, createdAt: this.iso(), lastSeenAt: this.iso() });
+      // Cap phones per account (oldest dropped) so a leaked account can't fan out endlessly.
+      const mineDevices = db.pushDevices.filter((d) => d.userId === u.id).sort((a, b) => b.lastSeenAt.localeCompare(a.lastSeenAt));
+      for (const old of mineDevices.slice(5)) db.pushDevices = db.pushDevices.filter((d) => d !== old);
+    }, true);
+  }
+
+  unregisterPushDevice(token: string) {
+    return this.run((db) => {
+      const u = this.me(db);
+      db.pushDevices = db.pushDevices.filter((d) => !(d.token === token && d.userId === u.id));
+    }, true);
+  }
+
+  getPushSettings() {
+    return this.run((db) => {
+      const u = this.me(db);
+      return { prefs: prefsOf(u.pushPrefs), devices: db.pushDevices.filter((d) => d.userId === u.id).length };
+    });
+  }
+
+  setPushPrefs(patch: Partial<PushPrefs>) {
+    return this.run((db) => {
+      const u = this.me(db);
+      const allowed: (keyof PushPrefs)[] = ['enabled', 'interests', 'activity', 'announcements', 'showNames'];
+      const next = prefsOf(u.pushPrefs);
+      for (const k of allowed) if (typeof patch[k] === 'boolean') next[k] = patch[k] as boolean;
+      u.pushPrefs = next;
+      return { ...next };
     }, true);
   }
 
@@ -740,6 +880,13 @@ export class DemoBackend implements Backend {
         return false;
       }
       db.shortlists.push({ userId: u.id, profileId, createdAt: this.iso() });
+      // Anonymous "someone shortlisted you" — once per person, ever (un-/re-shortlisting never re-notifies).
+      const key = `${u.id}:${profileId}`;
+      const target = db.profiles.find((x) => x.id === profileId);
+      if (target && !db.shortlistNotified.includes(key)) {
+        db.shortlistNotified.push(key);
+        this.notify(db, target.userId, 'profile_shortlisted', {}, '/dashboard');
+      }
       return true;
     }, true);
   }
@@ -1103,6 +1250,20 @@ export class DemoBackend implements Backend {
         grooms: live.filter((p) => profileTypeOf(p) === 'groom').length,
         trash: db.profiles.filter((p) => p.deletedAt).length + db.users.filter((u) => u.deletedAt).length,
         connections: this.connectionMetrics(db),
+        push: {
+          devices: db.pushDevices.length,
+          usersWithDevices: new Set(db.pushDevices.map((d) => d.userId)).size,
+          queued: db.pushOutbox.filter((x) => x.status === 'queued').length,
+          sent: db.pushOutbox.filter((x) => x.status === 'sent').length,
+          delivered: db.pushOutbox.filter((x) => x.status === 'delivered').length,
+          failed: db.pushOutbox.filter((x) => x.status === 'failed').length,
+          skipped: db.pushOutbox.filter((x) => x.status === 'skipped' && x.reason !== 'not_configured').length,
+          notConfigured: db.pushOutbox.filter((x) => x.reason === 'not_configured').length,
+        },
+        boosts: {
+          active: live.filter((p) => !!p.boostUntil && new Date(p.boostUntil).getTime() > this.now().getTime()).length,
+          visible: live.filter((p) => isFeaturable(p, db.users.find((x) => x.id === p.userId), this.now())).length,
+        },
         requireApproval: db.pricing.requireApproval,
         openReports: db.reports.filter((r) => r.status === 'open').length,
         revenue: paid.filter((o) => !o.simulated).reduce((s, o) => s + o.amount, 0),

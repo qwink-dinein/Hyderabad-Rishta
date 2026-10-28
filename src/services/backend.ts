@@ -20,6 +20,7 @@ import type {
   Profile,
   ProfileStatus,
   PublicProfile,
+  PushPrefs,
   Report,
   SecurityStatus,
   User,
@@ -137,6 +138,27 @@ export interface AdminStats {
   trash: number;
   requireApproval: boolean;
   connections: ConnectionMetrics;
+  push: PushHealth;
+  boosts: { active: number; visible: number };
+}
+
+/** Push pipeline health for admins (counts only — never tokens or message text). */
+export interface PushHealth {
+  devices: number;
+  usersWithDevices: number;
+  queued: number;
+  sent: number;
+  delivered: number;
+  failed: number;
+  skipped: number;
+  /** Demo mode has no push provider: messages that WOULD have been sent. */
+  notConfigured: number;
+}
+
+export interface PushSettings {
+  prefs: PushPrefs;
+  /** How many phones are registered for this account. */
+  devices: number;
 }
 
 export interface AdminRequestRow extends ContactRequest {
@@ -222,6 +244,11 @@ export interface Backend {
   getProfile(profileId: string): Promise<PublicProfile>;
   getShortlistIds(): Promise<string[]>;
   getShortlist(): Promise<PublicProfile[]>;
+  /**
+   * Boosted profiles for the Featured section: every active, published boost the viewer is eligible
+   * to see, regardless of the viewer's filters, in a fair per-viewer daily rotation. Records impressions.
+   */
+  getFeatured(limit?: number): Promise<PublicProfile[]>;
   toggleShortlist(profileId: string): Promise<boolean>;
 
   // requests & consent
@@ -247,6 +274,13 @@ export interface Backend {
 
   // notifications
   getNotifications(): Promise<NotificationView[]>;
+  // push (phones)
+  /** Binds this phone's Expo push token to the signed-in account (moving it from any other account). */
+  registerPushDevice(token: string, platform: 'ios' | 'android'): Promise<void>;
+  /** Removes this phone (call before logout so a shared phone stops receiving this account's alerts). */
+  unregisterPushDevice(token: string): Promise<void>;
+  getPushSettings(): Promise<PushSettings>;
+  setPushPrefs(patch: Partial<PushPrefs>): Promise<PushPrefs>;
   markNotificationRead(id: string): Promise<void>;
   markAllNotificationsRead(): Promise<void>;
   recordNotificationClick(id: string): Promise<void>;

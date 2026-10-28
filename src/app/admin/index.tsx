@@ -11,6 +11,7 @@ import { Text } from '@/components/ui/Text';
 import { formatDate, formatMoney } from '@/domain/format';
 import { qk, useNotifications } from '@/hooks/queries';
 import { backend } from '@/services';
+import { unbindThisPhone } from '@/services/push';
 import { useSession } from '@/state/session';
 import { colors, radius, space } from '@/theme/tokens';
 
@@ -109,6 +110,7 @@ export default function AdminHome() {
             kind="secondary"
             size="sm"
             onPress={async () => {
+              await unbindThisPhone();
               await backend.logout();
               qc.clear();
               setUser(null);
@@ -165,6 +167,7 @@ export default function AdminHome() {
           <Pressable
             accessibilityRole="switch"
             accessibilityState={{ checked: !!s?.requireApproval }}
+            aria-checked={!!s?.requireApproval}
             accessibilityLabel="Require manual approval before profiles are published"
             onPress={() => s && toggleApproval(!s.requireApproval)}
             style={styles.toggle}
@@ -217,6 +220,11 @@ export default function AdminHome() {
             {metric('In trash', s.trash)}
             {metric('Revenue', formatMoney(s.revenue))}
             {metric('Simulated revenue', formatMoney(s.simulatedRevenue))}
+            {metric('Boosts featured / active', `${s.boosts.visible} / ${s.boosts.active}`)}
+            {metric('Phones for push', `${s.push.devices} (${s.push.usersWithDevices} members)`)}
+            {metric('Push sent / delivered', `${s.push.sent} / ${s.push.delivered}`)}
+            {metric('Push failed / skipped', `${s.push.failed} / ${s.push.skipped}`)}
+            {s.push.notConfigured ? metric('Push waiting for provider (demo)', s.push.notConfigured) : null}
           </View>
         ) : null}
       </Section>

@@ -44,6 +44,13 @@
         {
           "photosPermission": "Allow Hyderabad Rishta to access your photos so you can add them to your biodata."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#123D32",
+          "defaultChannel": "default"
+        }
       ]
     ],
     "scheme": "hyderabadrishta",

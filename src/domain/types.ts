@@ -31,6 +31,49 @@ export interface User {
   deletedAt?: string;
   deletedBy?: string;
   deleteReason?: string;
+  /** Phone-notification preferences (server-side so every device honours them). */
+  pushPrefs?: PushPrefs;
+}
+
+/** Push categories. `account` (approvals, payments, safety, security) cannot be switched off in-app. */
+export type PushCategory = 'interests' | 'activity' | 'account' | 'announcements';
+
+export interface PushPrefs {
+  /** Master switch for this account's phones. */
+  enabled: boolean;
+  interests: boolean;
+  activity: boolean;
+  announcements: boolean;
+  /** Show the other person's name on the lock screen (off by default — family phones). */
+  showNames: boolean;
+}
+
+export interface PushDevice {
+  token: string; // Expo push token, e.g. ExponentPushToken[xxxx]
+  userId: string;
+  platform: 'ios' | 'android';
+  createdAt: string;
+  lastSeenAt: string;
+}
+
+export type PushOutboxStatus = 'queued' | 'sent' | 'delivered' | 'failed' | 'skipped';
+
+export interface PushOutboxItem {
+  id: string;
+  notificationId: string;
+  userId: string;
+  token?: string;
+  category: PushCategory;
+  title: string;
+  body: string;
+  data: { notificationId: string; deepLink?: string };
+  status: PushOutboxStatus;
+  /** Why it was skipped/failed: no_device, disabled, category_off, rate_limited, not_configured, DeviceNotRegistered… */
+  reason?: string;
+  attempts: number;
+  createdAt: string;
+  sentAt?: string;
+  ticketId?: string;
 }
 
 export interface Photo {
@@ -150,6 +193,10 @@ export interface Profile {
   adminNote?: string;
   publishedAt?: string;
   boostUntil?: string;
+  /** Which boost end-time each lifecycle notice was already sent for (idempotent scheduler). */
+  boostNotices?: { ending?: string; ended?: string };
+  /** When the current (possibly extended) boost period began. */
+  boostStartedAt?: string;
   createdAt: string;
   updatedAt: string;
   /** Last completed wizard step — powers "save and continue". */
@@ -324,6 +371,10 @@ export type NotificationType =
   | 'phone_offer_withdrawn'
   | 'poke'
   | 'request_expired'
+  | 'profile_viewed'
+  | 'profile_shortlisted'
+  | 'boost_ending'
+  | 'boost_ended'
   | 'announcement';
 
 export interface AppNotification {
@@ -426,6 +477,18 @@ export interface DashboardMetrics {
   requestsAccepted: number;
   boostActive: boolean;
   boostUntil?: string;
+  /** Active boost AND published — a paused profile is not featured even while its boost runs. */
+  boostVisible?: boolean;
+  boostStartedAt?: string;
+  /** Unique members who were shown this profile in Featured since the boost started. */
+  featuredReach?: number;
+}
+
+/** One featured impression per viewer per day (proof of delivery for paid boosts). */
+export interface BoostImpression {
+  profileId: string;
+  viewerUserId: string;
+  day: string;
 }
 
 /** Master-admin account protection (one row). Codes are stored only as salted hashes. */

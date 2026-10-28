@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ProfileCard, ProfileCardSkeleton } from '@/components/ProfileCard';
@@ -13,7 +13,7 @@ import { Text } from '@/components/ui/Text';
 import { formatHeight } from '@/domain/format';
 import { activeFilterCount, EMPTY_FILTERS, filtersFromPreferences, type SearchFilters } from '@/domain/search';
 import type { PublicProfile } from '@/domain/types';
-import { useMyProfile, useSearch, useShortlistIds, useToggleShortlist } from '@/hooks/queries';
+import { useFeatured, useMyProfile, useSearch, useShortlistIds, useToggleShortlist } from '@/hooks/queries';
 import { useOptions } from '@/hooks/useOptions';
 import { backendInfo } from '@/services';
 import { useFilters } from '@/state/filters';
@@ -33,6 +33,7 @@ export default function Discover() {
   const { filters, setFilters, patch } = useFilters();
   const { data: me } = useMyProfile();
   const search = useSearch(filters);
+  const featured = useFeatured();
   const { data: shortIds } = useShortlistIds();
   const toggle = useToggleShortlist();
   const { label } = useOptions();
@@ -130,6 +131,20 @@ export default function Discover() {
         </View>
       </Row>
       {backendInfo.kind === 'demo' ? <Banner tone="warning" icon="sparkle">{t('discover.demoData')}</Banner> : null}
+      {featured.data?.length ? (
+        // Shown to every eligible member whatever their filters or sort (paid placement, clearly labelled).
+        <View style={{ gap: space.sm }} testID="featured-strip">
+          <Row style={{ justifyContent: 'space-between' }}>
+            <Text variant="h3">★ {t('discover.featuredTitle')}</Text>
+            <Text variant="caption">{t('discover.featuredLabel')}</Text>
+          </Row>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.md, paddingBottom: space.xs }}>
+            {featured.data.map((p) => (
+              <ProfileCard key={p.id} profile={p} variant="featured" shortlisted={shortSet.has(p.id)} onToggleShortlist={onToggle} onOpen={onOpen} />
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
       {me?.status !== 'published' ? (
         <Banner icon="user">
           <Text variant="caption" color={colors.emerald}>

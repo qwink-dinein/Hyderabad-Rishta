@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { BrandMark } from '@/components/art/Illustrations';
 import { ProfileCard, ProfileCardSkeleton } from '@/components/ProfileCard';
+import { PushPrompt } from '@/components/PushSettings';
 import { TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
 import { Banner, EmptyState } from '@/components/ui/feedback';
@@ -14,14 +15,13 @@ import { Row } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { EMPTY_FILTERS } from '@/domain/search';
 import { isRTL } from '@/i18n';
-import { useMyProfile, useRequests, useSearch, useShortlistIds, useToggleShortlist } from '@/hooks/queries';
+import { useFeatured, useMyProfile, useRequests, useSearch, useShortlistIds, useToggleShortlist } from '@/hooks/queries';
 import { backendInfo } from '@/services';
 import { useFilters } from '@/state/filters';
 import { useSession } from '@/state/session';
 import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
 import { fontFamily } from '@/theme/fonts';
 
-const FEATURED = { ...EMPTY_FILTERS, boostedOnly: true };
 const RECENT = { ...EMPTY_FILTERS, sort: 'recent' as const };
 
 /**
@@ -34,7 +34,7 @@ export default function Home() {
   const lang = useSession((s) => s.lang);
   const { data: me } = useMyProfile();
   const { data: requests } = useRequests();
-  const featured = useSearch(FEATURED);
+  const featured = useFeatured();
   const recent = useSearch(RECENT);
   const { data: shortIds } = useShortlistIds();
   const toggle = useToggleShortlist();
@@ -44,7 +44,7 @@ export default function Home() {
   const onOpen = useCallback((id: string) => router.push(`/profile/${id}`), []);
   const onToggle = useCallback((id: string) => toggle.mutate(id), [toggle]);
 
-  const featuredItems = featured.data?.pages[0]?.items ?? [];
+  const featuredItems = featured.data ?? [];
   const recentItems = (recent.data?.pages[0]?.items ?? []).slice(0, 4);
   const newInterests = requests?.filter((r) => r.direction === 'received' && r.request.status === 'pending').length ?? 0;
   const firstName = me?.biodata.basic.fullName.split(' ')[0];
@@ -119,6 +119,8 @@ export default function Home() {
               <Button label={statusCard.cta} kind="gold" size="sm" arrow onPress={statusCard.go} style={{ alignSelf: 'flex-start', marginTop: space.sm }} testID="home-status-cta" />
             </LinearGradient>
           ) : null}
+
+          <PushPrompt />
 
           {newInterests ? (
             <Pressable onPress={() => router.push('/requests')} accessibilityRole="button" style={styles.attention} testID="home-interests">

@@ -136,10 +136,24 @@ export default function Dashboard() {
       <Section title={t('dashboard.boost')}>
         <Card style={{ gap: space.sm }}>
           {m?.boostActive ? (
-            <Row>
-              <Icon name="star" color={colors.gold} />
-              <Text variant="bodyStrong">{t('dashboard.boostActiveUntil', { date: formatDate(m.boostUntil) })}</Text>
-            </Row>
+            <View style={{ gap: space.xs }} testID="boost-status">
+              <Row>
+                <Icon name="star" color={colors.goldMuted} />
+                <Text variant="bodyStrong">{t('dashboard.boostActiveUntil', { date: formatDate(m.boostUntil) })}</Text>
+              </Row>
+              {m.boostVisible ? (
+                <Text variant="caption" color={colors.success}>
+                  {t('dashboard.boostVisible')}
+                </Text>
+              ) : (
+                <Banner tone="warning" icon="pause">
+                  {t('dashboard.boostHidden')}
+                </Banner>
+              )}
+              <Text variant="label" testID="boost-reach">
+                {t('dashboard.boostReach', { count: m.featuredReach ?? 0 })}
+              </Text>
+            </View>
           ) : (
             <Text variant="body">{t('dashboard.boostNone')}</Text>
           )}

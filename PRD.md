@@ -212,6 +212,34 @@ Profile review & moderation; user management; publication status; pricing & boos
 ### 15.2 Relationship status on profile cards
 Cards show your history with each person, so nobody re-sends blindly: **Connected**, **Interest sent**, **Sent you interest**, **Declined your interest**, **You declined**, **Interest expired** and **You withdrew**. During the 30-day cool-down after someone declines, the profile page replaces Express Interest with a short, respectful explanation, and the server enforces the same rule.
 
+### 15.4 Boost guarantee & phone notifications (owner request, 2026-10-28)
+**Boost.**
+- An active, published boost is shown in **Featured** (Home and the top of Discover) to every member looking for that profile type. This holds whatever the viewer's filters or sort.
+- It is never shown:
+  - to the same type
+  - to the owner
+  - across a block
+  - while the profile is paused, unpublished or deleted
+  - while the owner's account is suspended or deactivated
+- Several boosts rotate fairly: each viewer gets a different order every day, so no boosted profile is permanently buried.
+- Main search results stay honest: filters still apply there.
+- The owner sees proof: whether the boost is currently visible, how many members have seen it in Featured, and an "ending soon" (24 h) and "ended" notice, each sent once.
+- Members can never grant themselves a boost. Boosts come only from paid or free boost orders, and the database wipes any boost fields a client tries to set.
+
+**Push.**
+- Every action on a member's profile notifies them in the app and on their phones:
+  - new interest, accepted or declined
+  - number offered, accepted, declined or withdrawn
+  - details shared, a reminder (poke), an interest expired
+  - someone viewed the profile (anonymous, at most once per 6 h)
+  - someone shortlisted it (anonymous, once per person)
+  - approval or changes needed, published, boost started, ending or ended, payment, safety
+  - announcements
+- Lock-screen text is generic by default ("You have received a new interest"). Names appear only if the member turns that on. Phone numbers and message text never appear.
+- Members control four groups (all phones, interests and connections, profile activity, announcements). Approvals, payments, boost and safety alerts are always sent.
+- At most 12 optional pushes per hour; the in-app inbox still receives everything.
+- A phone belongs to one account at a time: signing in elsewhere moves it, and logging out unbinds it. Dead phones are removed automatically.
+
 ### 15.3 Visual design
 The visual, motion and sound specification is **Design PRD v1.0** (owner, 2026-10-28), summarised and tracked in `design.md`, with the approved reference in `docs/design/reference-ui.jpg`. Design changes never alter the behaviour defined in this PRD.
 

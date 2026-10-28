@@ -15,6 +15,8 @@ import { ToggleRow } from '@/components/ui/forms';
 import { backend, backendInfo } from '@/services';
 import { DemoBackend } from '@/services/demo/demoBackend';
 import { useFeedbackPrefs } from '@/services/feedback';
+import { unbindThisPhone } from '@/services/push';
+import { PushSettings } from '@/components/PushSettings';
 import { useFilters } from '@/state/filters';
 import { useSession } from '@/state/session';
 import { colors, space } from '@/theme/tokens';
@@ -32,6 +34,7 @@ export default function Settings() {
   const { sound, haptics, setSound, setHaptics } = useFeedbackPrefs();
 
   const signOut = async () => {
+    await unbindThisPhone(); // a shared phone must stop receiving this account's alerts
     await backend.logout();
     qc.clear();
     useFilters.getState().reset();
@@ -43,6 +46,7 @@ export default function Settings() {
     const ok = await confirm({ title, body, confirmLabel: label, danger: true });
     if (!ok) return;
     try {
+      await unbindThisPhone();
       await fn();
       qc.clear();
       setUser(null);
@@ -57,6 +61,12 @@ export default function Settings() {
       <Section title={t('settings.language')}>
         <LanguageSwitcher />
       </Section>
+
+      {user ? (
+        <Section title={t('push.title')}>
+          <PushSettings />
+        </Section>
+      ) : null}
 
       <Section title={t('settings.feedback')}>
         <Card>

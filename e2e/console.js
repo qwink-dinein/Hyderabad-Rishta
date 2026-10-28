@@ -26,6 +26,13 @@ const step = async (name, fn) => {
   await step('cards show history badges (interest sent / sent you interest / connected)', async () => {
     await login('9000000001');
     await page.goto(BASE + '/discover');
+    await page.getByTestId('featured-strip').waitFor({ timeout: 10000 }).catch(() => undefined);
+    // Cards render lazily as you scroll (virtualised list) — scroll like a user until it appears.
+    for (let i = 0; i < 12 && !(await page.getByTestId('relation-p_6').count()); i++) {
+      await page.mouse.move(200, 600);
+      await page.mouse.wheel(0, 700);
+      await page.waitForTimeout(300);
+    }
     await page.getByTestId('relation-p_6').waitFor();
     await page.getByTestId('relation-p_6').getByText('Interest sent').waitFor();
     await page.getByTestId('relation-p_0').getByText('Sent you interest').waitFor();

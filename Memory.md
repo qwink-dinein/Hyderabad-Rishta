@@ -51,6 +51,10 @@ Reset everything: Settings → “Reset demo data”.
 | 2026-10-28 | Vector art instead of photos for the hero | No licensed imagery available; PRD forbids unlicensed or fake imagery. |
 | 2026-10-28 | Gold small text uses `goldDeep #8A6A30`, not PRD `#A98543` | `#A98543` is 3.1:1 on ivory and fails AA for small text; it's still used for icons and large text. |
 | 2026-10-28 | Sound OFF by default, haptics ON (both toggleable) | PRD §13. |
+| 2026-10-28 | Boost = guaranteed Featured slot for every eligible viewer (people looking for that type), ignoring their filters; main results stay filter-honest | Owner: "boosted … visible to all other users". Same-type viewers excluded (matrimony rule). |
+| 2026-10-28 | Push for every profile action; views anonymous + batched 6 h; shortlist once per person; names hidden on lock screen by default | Owner: "push notification whenever someone does any action on their profiles" + family-phone privacy. |
+| 2026-10-28 | Account/safety/payment/boost pushes can't be muted in-app; others have category switches; 12/h cap | Anti-spam without hiding critical notices. |
+| 2026-10-28 | Demo backend schema v8 (push devices/outbox, impressions) | Old demo data resets once. |
 | 2026-10-28 | Named the design doc `design.md` (owner wrote “design.ms”) | Renders on GitHub; mention if owner prefers otherwise. |
 
 ## Gotchas
@@ -64,6 +68,8 @@ Reset everything: Settings → “Reset demo data”.
 - Test logins in Playwright must `waitForURL` after verify — navigating early aborts the login.
 - After a container restart Postgres is down: `pg_ctlcluster 16 main start`, then `su postgres -c ./scripts/test-db.sh`.
 - `expo lint` installs eslint + eslint-config-expo on first run (adds `eslint.config.js`).
+- Expo Go **Android** has no remote push since SDK 53 (expo-notifications warns) → development build required; local notifications (Settings → Send a test notification) work in Expo Go.
+- `supabase/functions/_shared/push.ts` is GENERATED: run `node scripts/sync-shared.js` after editing `src/domain/push.ts` (a Jest test fails on drift).
 - `href: null` on a js-tabs screen breaks direct URL access, so hidden screens live outside `(tabs)` (e.g. `src/app/notifications.tsx`).
 - react-native-web `Switch` needs `activeThumbColor` (web-only prop) or it shows a teal thumb.
 - Sandbox perms: Postgres test cluster runs as `nobody`; parent dirs need `o+x`.

@@ -93,6 +93,12 @@ Scale (pt): display 34 (hero) · h1 27 (screen titles) · h2 20 (card titles 18�
 - Reduce Motion (`useReducedMotion`) disables every animation above and stops autoplay. Information never depends on motion.
 - There is no confetti, no bouncy form motion, and no full-screen loaders for minor actions.
 
+## 8b. Notifications & Featured
+- **Featured strip** (Discover, under search) and **Featured rail** (Home): `featured` card variant, "★ Featured" heading and the label "Promoted · shown to everyone". Shown whatever the viewer's filters.
+- **Boost proof** (Profile tab): active-until line, a green "featured to every member…" line, or a warning banner if paused, plus a reach count.
+- **Arrival banner:** a white card that slides 24 pt down from the top (gold border, icon circle, one line and a chevron), visible for 4.5 s. Tapping it opens the item. It is shown for new notifications while the app is open, on every platform.
+- **Push opt-in:** a Home card (bell, "Never miss an interest", Not now / Turn on), never on web, and no more than once per 14 days. Settings → Phone notifications shows a status banner with one next step, category switches, the always-on note, the lock-screen names switch, and a test notification.
+
 ## 9. Sound & haptics (Design PRD §13)
 - `src/services/feedback.ts`. **Sound effects are OFF by default** (Settings → Sound & haptics). Haptics are on by default and can be turned off.
 - Sounds are original sine chimes synthesised for this app (`assets/sounds/*.wav`), each 180–290 ms and quiet:

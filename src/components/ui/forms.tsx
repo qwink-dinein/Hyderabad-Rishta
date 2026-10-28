@@ -311,6 +311,7 @@ export function ToggleRow({ label, value, onChange, hint }: { label: string; val
     <Pressable
       accessibilityRole="switch"
       accessibilityState={{ checked: value }}
+      aria-checked={value} /* web: react-native-web doesn't map accessibilityState.checked for switches */
       accessibilityLabel={label}
       onPress={() => onChange(!value)}
       style={styles.toggleRow}
