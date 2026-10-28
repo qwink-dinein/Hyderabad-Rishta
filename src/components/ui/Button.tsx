@@ -44,6 +44,8 @@ export const Button = memo(function Button({ label, onPress, kind = 'primary', s
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: !!inactive, busy: !!loading }}
+      aria-disabled={!!inactive}
+      aria-busy={!!loading}
       disabled={inactive}
       onPress={onPress}
       hitSlop={size === 'sm' ? 6 : 0}

@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/Button';
 import { confirm, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { Card, Header, InfoRow, Row, Screen, Section } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
-import { maskPhone, profileCode } from '@/domain/format';
+import { maskPhone } from '@/domain/format';
 import { isAdminRole } from '@/domain/types';
-import { qk, useBlocked, useMyProfile } from '@/hooks/queries';
+import { qk, useBlockedProfiles, useMyProfile } from '@/hooks/queries';
 import { ToggleRow } from '@/components/ui/forms';
 import { backend, backendInfo } from '@/services';
 import { DemoBackend } from '@/services/demo/demoBackend';
@@ -28,7 +28,7 @@ export default function Settings() {
   const toast = useToast((s) => s.show);
   const errMsg = useErrorMessage();
   const { user, setUser } = useSession();
-  const { data: blocked } = useBlocked();
+  const { data: blocked } = useBlockedProfiles();
   const { data: myProfile } = useMyProfile();
   const demo = backend instanceof DemoBackend ? backend : null;
   const { sound, haptics, setSound, setHaptics } = useFeedbackPrefs();
@@ -131,17 +131,27 @@ export default function Settings() {
         <Section title={t('settings.blocked')}>
           <Card style={{ gap: space.sm }}>
             {blocked?.length ? (
-              blocked.map((id) => (
-                <Row key={id} style={{ justifyContent: 'space-between' }}>
-                  <Text variant="label">{profileCode(id)}</Text>
+              blocked.map((b) => (
+                <Row key={b.profileId} style={{ justifyContent: 'space-between' }}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text variant="label">{b.name}</Text>
+                    <Text variant="caption">{b.code}</Text>
+                  </View>
                   <Button
                     label={t('profile.unblock')}
                     size="sm"
                     kind="secondary"
+                    accessibilityHint={`${b.name} ${b.code}`}
+                    testID={`unblock-${b.profileId}`}
                     onPress={async () => {
-                      await backend.unblockProfile(id);
-                      qc.invalidateQueries({ queryKey: qk.blocked });
-                      qc.invalidateQueries({ queryKey: ['search'] });
+                      try {
+                        await backend.unblockProfile(b.profileId);
+                        qc.invalidateQueries({ queryKey: qk.blocked });
+                        qc.invalidateQueries({ queryKey: ['search'] });
+                        qc.invalidateQueries({ queryKey: qk.featured });
+                      } catch (e) {
+                        toast(errMsg(e), 'danger');
+                      }
                     }}
                   />
                 </Row>

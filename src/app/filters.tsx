@@ -51,7 +51,8 @@ export default function Filters() {
           label={count == null ? t('common.apply') : t('filters.apply', { count })}
           onPress={() => {
             setFilters(f);
-            router.back();
+            // Always land on the results — also when Filters was opened from Home (was: back to Home).
+            router.dismissTo('/discover');
           }}
           full
           arrow

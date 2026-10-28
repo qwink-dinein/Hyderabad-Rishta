@@ -33,6 +33,7 @@ export function LanguageSwitcher({ tone = 'light', compact = false }: { tone?: '
             onPress={() => changeLanguage(l)}
             accessibilityRole="radio"
             accessibilityState={{ selected: on }}
+            aria-checked={on}
             accessibilityLabel={t(`lang.${l}`)}
             style={[styles.item, compact && styles.itemCompact, on && (dark ? styles.itemOnDark : styles.itemOn)]}
           >

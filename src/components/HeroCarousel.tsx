@@ -121,6 +121,7 @@ export const HeroCarousel = memo(function HeroCarousel() {
               accessibilityRole="button"
               accessibilityLabel={t('landing.goToSlide', { n: i + 1 })}
               accessibilityState={{ selected: i === index }}
+              aria-selected={i === index}
               onPress={() => userGo(i)}
               style={styles.dotHit}
             >

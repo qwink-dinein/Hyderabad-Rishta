@@ -1,5 +1,5 @@
 import { buildSeed } from '@/data/seed';
-import { ageFromDob, displayNameFor, formatHeight, maskPhone, profileCode } from '@/domain/format';
+import { ageFromDob, displayNameFor, formatHeight, maskPhone } from '@/domain/format';
 import { announcementStats, audienceFor, dashboardMetrics } from '@/domain/metrics';
 import { DEFAULT_PRICING, pricingCopy, resolvePricing, validatePricing } from '@/domain/pricing';
 import { FULL_ACCESS, NO_CONSENT, projectProfile } from '@/domain/privacy';
@@ -31,10 +31,8 @@ describe('format helpers', () => {
     expect(displayNameFor('Ayesha Siddiqui', 'initials')).toBe('A. S.');
     expect(displayNameFor('  ', 'full')).toBe('—');
   });
-  it('masks phones and builds stable codes', () => {
+  it('masks phones', () => {
     expect(maskPhone('9876543210')).toBe('••••••3210');
-    expect(profileCode('p_1')).toBe(profileCode('p_1'));
-    expect(profileCode('p_1')).toMatch(/^HR-[0-9A-F]{4}$/);
   });
 });
 

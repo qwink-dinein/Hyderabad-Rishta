@@ -55,12 +55,6 @@ export function displayNameFor(fullName: string, pref: 'full' | 'first' | 'initi
   return parts.map((p) => `${p[0].toUpperCase()}.`).join(' ');
 }
 
-/** Privacy-safe identifier shown instead of a name, e.g. "HR-4F2A". */
-export function profileCode(id: string): string {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return `HR-${h.toString(16).toUpperCase().slice(0, 4).padStart(4, '0')}`;
-}
 
 export function maskPhone(phone: string): string {
   if (phone.length <= 4) return '••••';

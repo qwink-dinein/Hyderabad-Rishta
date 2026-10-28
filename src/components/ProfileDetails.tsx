@@ -49,6 +49,7 @@ export function ProfileDetails({ profile, contactSlot }: { profile: PublicProfil
                 onPress={() => setSel(i)}
                 accessibilityRole="button"
                 accessibilityState={{ selected: i === sel }}
+                aria-selected={i === sel}
                 accessibilityLabel={t('f.photoN', { n: i + 1 })}
                 style={[styles.thumb, i === sel && styles.thumbOn]}
               >

@@ -46,6 +46,7 @@ export default function ChooseLanguage() {
               onPress={() => changeLanguage(l)}
               accessibilityRole="radio"
               accessibilityState={{ checked: on }}
+              aria-checked={on}
               accessibilityLabel={t(`lang.${l}`)}
               style={({ pressed }) => [styles.option, on && styles.optionOn, pressed && { transform: [{ scale: 0.99 }] }]}
               testID={`lang-${l}`}

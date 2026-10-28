@@ -2,7 +2,7 @@ import { buildSeed, DEMO_OTP, SEED_PRICING } from '@/data/seed';
 import { normaliseCode, randomToken, recoveryCode, sha256Hex, slowHash } from '@/domain/crypto';
 import { afterWrongPin, attemptsLeft, PIN_OTP_WINDOW_MS, pinProblem, SESSION_IDLE_MS, type PinAttemptState } from '@/domain/auth';
 import { DECLINE_COOLDOWN_DAYS, isActiveRequest, PHONE_CONSENT_TEXT, pokeEligibility, sanitizeMessage } from '@/domain/connections';
-import { maskPhone, uid } from '@/domain/format';
+import { displayNameFor, maskPhone, uid } from '@/domain/format';
 import { announcementStats, audienceFor, dashboardMetrics, isAnnouncementLive } from '@/domain/metrics';
 import { resolvePricing, validatePricing } from '@/domain/pricing';
 import { isBoostActive, mergeScopes, NO_CONSENT, profileTypeOf, projectProfile } from '@/domain/privacy';
@@ -1486,6 +1486,18 @@ export class DemoBackend implements Backend {
 
   getBlockedIds() {
     return this.run((db) => db.blocks.filter((b) => b.userId === this.me(db).id).map((b) => b.blockedProfileId));
+  }
+
+  /** The member's block list with the real profile ID and the name they saw (their display preference). */
+  getBlockedProfiles() {
+    return this.run((db) =>
+      db.blocks
+        .filter((b) => b.userId === this.me(db).id)
+        .map((b) => {
+          const p = db.profiles.find((x) => x.id === b.blockedProfileId);
+          return { profileId: b.blockedProfileId, code: p?.code ?? '—', name: p ? displayNameFor(p.biodata.basic.fullName, p.biodata.privacy.displayName) : '—' };
+        }),
+    );
   }
 
   // ---------- notifications ----------

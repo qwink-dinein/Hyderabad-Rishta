@@ -66,6 +66,7 @@ export default function Connect() {
         }}
         accessibilityRole="radio"
         accessibilityState={{ selected: on }}
+        aria-checked={on}
         accessibilityLabel={`${title}. ${desc}`}
         style={[styles.option, on && styles.optionOn]}
         testID={`connect-${m}`}
@@ -148,6 +149,7 @@ export default function Connect() {
                       onPress={() => setConsent((c) => !c)}
                       accessibilityRole="checkbox"
                       accessibilityState={{ checked: consent }}
+                      aria-checked={consent}
                       accessibilityLabel={t('connect.consent')}
                       style={styles.checkRow}
                       testID="consent-checkbox"

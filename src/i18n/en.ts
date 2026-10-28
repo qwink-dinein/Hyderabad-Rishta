@@ -150,6 +150,7 @@ const en = {
     goToSlide: 'Go to slide {{n}}',
   },
   auth: {
+    sessionEnded: "Your session has ended. Please log in again.",
     pinTitle: "Welcome back",
     pinSub: "Enter your 4-digit PIN to continue.",
     registeredNumber: "Registered mobile number",
@@ -415,6 +416,8 @@ const en = {
     summaryNone: "Not boosted. Boosted profiles appear first for members looking for you.",
   },
   err: {
+    crashTitle: "Something went wrong",
+    crashBody: "Sorry, this screen hit an unexpected problem. Your data is safe. Please try again.",
     boost_active: "Your profile is already boosted. You can boost again when it ends.",
     invalid_pin: "Incorrect PIN.",
     pin_locked: "Too many wrong PINs. Please reset your PIN.",

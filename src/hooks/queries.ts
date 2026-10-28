@@ -172,6 +172,9 @@ export function useOrders() {
 export function useBlocked() {
   return useQuery({ queryKey: qk.blocked, queryFn: () => backend.getBlockedIds(), enabled: useAuthed() });
 }
+export function useBlockedProfiles() {
+  return useQuery({ queryKey: [...qk.blocked, 'profiles'], queryFn: () => backend.getBlockedProfiles(), enabled: useAuthed() });
+}
 
 export function useAdminProfiles(status?: ProfileStatus) {
   return useQuery({ queryKey: qk.admin('profiles', status), queryFn: () => backend.adminListProfiles(status) });

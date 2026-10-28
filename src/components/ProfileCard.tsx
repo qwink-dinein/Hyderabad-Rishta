@@ -91,6 +91,7 @@ export const HeartButton = memo(function HeartButton({ on, onToggle, style, tone
       }}
       accessibilityRole="button"
       accessibilityState={{ selected: on }}
+      aria-selected={on}
       accessibilityLabel={on ? t('card.shortlisted') : t('card.shortlist')}
       hitSlop={8}
       style={[overlay ? styles.heart : styles.heartPlain, on && overlay && styles.heartOn, style]}

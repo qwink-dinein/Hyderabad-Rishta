@@ -80,6 +80,7 @@ export function Segmented({ options, value, onChange, accessibilityLabel }: { op
             key={o.value}
             accessibilityRole="radio"
             accessibilityState={{ selected: on }}
+            aria-checked={on}
             accessibilityLabel={o.label}
             onPress={() => {
               if (!on) haptic('select');
@@ -114,6 +115,7 @@ export function OptionList({ options, value, onChange, icons, accessibilityLabel
             key={o.value}
             accessibilityRole="radio"
             accessibilityState={{ selected: on }}
+            aria-checked={on}
             accessibilityLabel={o.label}
             onPress={() => {
               haptic('select');
@@ -166,6 +168,7 @@ export function ChipGroup({ options, value, onChange, multiple, accessibilityLab
             key={o.value}
             accessibilityRole={multiple ? 'checkbox' : 'radio'}
             accessibilityState={multiple ? { checked: on } : { selected: on }}
+            aria-checked={on}
             accessibilityLabel={o.label}
             onPress={() => {
               if (multiple) {
@@ -284,6 +287,7 @@ export function Select({ options, value, onChange, placeholder, multiple, allowC
                   onPress={() => pick(item.value)}
                   accessibilityRole={multiple ? 'checkbox' : 'radio'}
                   accessibilityState={multiple ? { checked: on } : { selected: on }}
+            aria-checked={on}
                 >
                   <Text variant="body" style={{ flex: 1 }}>
                     {item.label}

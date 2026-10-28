@@ -198,7 +198,7 @@ function SectionHead({ title, action, onAction }: { title: string; action: strin
       <Text variant="h2" accessibilityRole="header">
         {title}
       </Text>
-      <Text variant="label" color={colors.emerald} onPress={onAction} accessibilityRole="link" style={{ paddingVertical: space.sm }}>
+      <Text variant="label" color={colors.emerald} onPress={onAction} accessibilityRole="link" accessibilityLabel={`${action}: ${title}`} style={{ paddingVertical: space.sm }}>
         {action}
       </Text>
     </Row>

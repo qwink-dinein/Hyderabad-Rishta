@@ -474,6 +474,8 @@ export default function BiodataWizard() {
                 onPress={() => go(i, i > step)}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: i === step, disabled: !reachable }}
+                aria-selected={i === step}
+                aria-disabled={!reachable}
                 style={[styles.stepPill, i === step && styles.stepPillOn, !reachable && { opacity: 0.45 }]}
               >
                 <Text variant="caption" color={i === step ? colors.white : colors.emerald}>

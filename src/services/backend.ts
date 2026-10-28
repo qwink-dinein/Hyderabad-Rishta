@@ -286,6 +286,7 @@ export interface Backend {
   blockProfile(profileId: string): Promise<void>;
   unblockProfile(profileId: string): Promise<void>;
   getBlockedIds(): Promise<string[]>;
+  getBlockedProfiles(): Promise<{ profileId: string; code: string; name: string }[]>;
 
   // notifications
   getNotifications(): Promise<NotificationView[]>;
