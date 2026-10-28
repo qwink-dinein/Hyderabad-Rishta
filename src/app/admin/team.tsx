@@ -110,7 +110,7 @@ export default function Team() {
               Recovery requested for {sec.pendingRecovery.phoneMasked}
             </Text>
             <Text variant="caption" color={colors.danger}>
-              Started {formatDate(sec.pendingRecovery.startedAt)}. The master role moves to that phone on {formatDate(sec.pendingRecovery.completesAt)}. If this wasn't you, cancel it now and generate new recovery codes.
+              Started {formatDate(sec.pendingRecovery.startedAt)}. The master role moves to that phone on {formatDate(sec.pendingRecovery.completesAt)}. If this wasn’t you, cancel it now and generate new recovery codes.
             </Text>
             {isMaster ? (
               <Button label="Cancel this recovery" kind="danger" size="sm" style={{ alignSelf: 'flex-start', marginTop: space.sm }} onPress={() => run(() => backend.masterCancelRecovery(), 'Recovery cancelled.')} testID="cancel-recovery" />
@@ -185,7 +185,7 @@ export default function Team() {
               <Text variant="body">
                 If you lose this phone, open the app on any phone, tap “Master admin: lost your phone?” on the login screen, and enter one recovery code:
               </Text>
-              <Text variant="caption">• On your verified backup phone → you are master again immediately.{'\n'}• On any other phone → a 72-hour safety delay starts, and you can cancel it from here if it wasn't you.</Text>
+              <Text variant="caption">• On your verified backup phone → you are master again immediately.{'\n'}• On any other phone → a 72-hour safety delay starts, and you can cancel it from here if it wasn’t you.</Text>
               <Divider />
               <Row style={{ justifyContent: 'space-between' }} wrap>
                 <View>
@@ -228,7 +228,7 @@ export default function Team() {
                 </View>
                 <Badge label={sec?.backupPhoneMasked ? 'verified' : 'missing'} tone={sec?.backupPhoneMasked ? 'success' : 'danger'} />
               </Row>
-              <Text variant="caption">Use a number you control that is NOT your login phone — e.g. a family member's or a second SIM.</Text>
+              <Text variant="caption">Use a number you control that is NOT your login phone — e.g. a family member’s or a second SIM.</Text>
               <Row gap={space.sm} style={{ alignItems: 'flex-start' }}>
                 <View style={{ width: 130 }}>
                   <Select label="Country code" options={ccOptions} value={bcc} onChange={setBcc} />

@@ -27,6 +27,7 @@ import type {
   PricingConfig,
   Profile,
   ProfileStatus,
+  Relation,
   Report,
   SecurityStatus,
   Shortlist,
@@ -35,7 +36,7 @@ import type {
 } from '@/domain/types';
 import { isAdminRole } from '@/domain/types';
 import { firstInvalidStep, otpSchema, phoneSchema, requestMessageSchema } from '@/domain/validation';
-import { AppError, type AdminRequestRow, type AdminStats, type Backend, type ConnectionMetrics, type SendInterestInput, type NotificationView, type Page, type RecipientRow, type RequestView, type TrashItem } from '../backend';
+import { AppError, type AdminRequestRow, type AdminStats, type Backend, type MemberDetail, type MemberRow, type ConnectionMetrics, type SendInterestInput, type NotificationView, type Page, type RecipientRow, type RequestView, type TrashItem } from '../backend';
 import type { KV } from '../storage';
 
 /** JSON deep clone — responses never share references with the "server" state. */
@@ -73,9 +74,11 @@ export interface DemoDb {
   analytics: AnalyticsEvent[];
   /** Idempotency keys for create operations (24 h). */
   idem: { key: string; userId: string; resultId: string; at: string }[];
+  /** Next sequential profile number (HR-xxxxx); never reused, even after deletion. */
+  nextCode: number;
 }
 
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 const STORAGE_KEY = 'hr.demo.db';
 export const OTP_TTL_MS = 10 * 60 * 1000;
 export const RESEND_COOLDOWN_MS = 30 * 1000;
@@ -115,6 +118,7 @@ export function freshDb(now = new Date()): DemoDb {
     phoneOffers: seed.phoneOffers,
     analytics: [],
     idem: [],
+    nextCode: 10001 + seed.profiles.length,
   };
 }
 
@@ -219,7 +223,27 @@ export class DemoBackend implements Backend {
   }
 
   private notifyAdmins(db: DemoDb, params: Record<string, string>) {
-    for (const u of db.users) if (isAdminRole(u.role) && !u.deletedAt) this.notify(db, u.id, 'security', params, '/admin');
+    this.alertAdmins(db, 'security', params, '/admin/team');
+  }
+
+  /** Admin bell: reports, payments, approvals, deletions, security. Never contains phone numbers. */
+  private alertAdmins(db: DemoDb, kind: 'report' | 'payment' | 'pending_profile' | 'account_deleted' | 'security', params: Record<string, string>, deepLink: string) {
+    for (const u of db.users) if (isAdminRole(u.role) && !u.deletedAt && !u.deactivatedAt) this.notify(db, u.id, 'admin_alert', { kind, ...params }, deepLink);
+  }
+
+  private codeOf(db: DemoDb, profileId?: string) {
+    return db.profiles.find((p) => p.id === profileId)?.code ?? '—';
+  }
+
+  /** Latest interest between the viewer and a profile, either direction (for card badges). */
+  private relationWith(db: DemoDb, viewerId: string, target: Profile): Relation | undefined {
+    const mine = this.myProfile(db, viewerId);
+    if (!mine) return undefined;
+    const r = db.requests
+      .filter((x) => (x.fromProfileId === mine.id && x.toProfileId === target.id) || (x.toProfileId === mine.id && x.fromProfileId === target.id))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+    if (!r) return undefined;
+    return { status: r.status, direction: r.fromUserId === viewerId ? 'sent' : 'received', at: r.respondedAt ?? r.createdAt };
   }
 
   /** Step-up verification: a fresh OTP for the actor's own phone (re-proves possession). */
@@ -484,7 +508,9 @@ export class DemoBackend implements Backend {
     return this.run((db) => {
       const u = this.me(db);
       if (u.role === 'master') throw new AppError('forbidden', 'Transfer the master role before deleting this account');
+      const code = this.myProfile(db, u.id)?.code;
       this.purgeUser(db, u.id); // user-initiated deletion is immediate and permanent (privacy right)
+      this.alertAdmins(db, 'account_deleted', { code: code ?? '—' }, '/admin/audit');
       this.audit(db, u.id, 'account.deleted', u.id);
       db.sessionUserId = undefined;
     }, true);
@@ -504,7 +530,7 @@ export class DemoBackend implements Backend {
       if (biodata.photos.length > 3) throw new AppError('validation', 'v.maxPhotos');
       let p = this.myProfile(db, u.id);
       if (!p) {
-        p = { id: uid('p_'), userId: u.id, biodata, status: 'draft', createdAt: this.iso(), updatedAt: this.iso(), lastStep };
+        p = { id: uid('p_'), code: `HR-${db.nextCode++}`, userId: u.id, biodata, status: 'draft', createdAt: this.iso(), updatedAt: this.iso(), lastStep };
         db.profiles.push(p);
       } else {
         p.biodata = clone(biodata);
@@ -563,6 +589,7 @@ export class DemoBackend implements Backend {
   private goLive(db: DemoDb, p: Profile) {
     if (db.pricing.requireApproval) {
       p.status = 'pending';
+      this.alertAdmins(db, 'pending_profile', { code: p.code }, `/admin/member/${p.userId}`);
     } else {
       p.status = 'published';
       p.publishedAt = p.publishedAt ?? this.iso();
@@ -625,6 +652,7 @@ export class DemoBackend implements Backend {
       if (order.status !== 'pending') throw new AppError('invalid_state');
       const p = db.profiles.find((x) => x.id === order.profileId);
       if (!p) throw new AppError('not_found');
+      this.alertAdmins(db, 'payment', { code: p.code, status: outcome === 'success' ? 'paid' : 'failed', amount: String(order.amount), item: order.kind }, '/admin/orders');
       if (outcome === 'failure') {
         order.status = 'failed';
         this.notify(db, u.id, 'payment', { status: 'failed' }, '/dashboard');
@@ -665,7 +693,7 @@ export class DemoBackend implements Backend {
       const f = { ...filters, show: filters.show ?? mine?.biodata.basic.lookingFor };
       const projected = candidates
         // Discovery NEVER carries contact details, even when consented (PRD §9.3) — only the profile view does.
-        .map((p) => ({ ...this.project(db, u, p), contact: undefined }))
+        .map((p) => ({ ...this.project(db, u, p), contact: undefined, relation: this.relationWith(db, u.id, p) }))
         .filter((p) => matchesFilters(p, f, { shortlisted, now: this.now() }));
       const sorted = sortProfiles(projected, f.sort);
       const start = page * pageSize;
@@ -683,7 +711,7 @@ export class DemoBackend implements Backend {
         const recent = db.views.some((v) => v.profileId === p.id && v.viewerUserId === u.id && nowMs - new Date(v.at).getTime() < VIEW_DEDUPE_MS);
         if (!recent) db.views.push({ profileId: p.id, viewerUserId: u.id, at: this.iso() });
       }
-      return this.project(db, u, p);
+      return { ...this.project(db, u, p), relation: this.relationWith(db, u.id, p) };
     }, true);
   }
 
@@ -698,7 +726,7 @@ export class DemoBackend implements Backend {
         .filter((s) => s.userId === u.id)
         .map((s) => db.profiles.find((p) => p.id === s.profileId))
         .filter((p): p is Profile => !!p && !p.deletedAt && p.status === 'published' && !this.isBlockedBetween(db, u.id, p))
-        .map((p) => ({ ...this.project(db, u, p), contact: undefined }));
+        .map((p) => ({ ...this.project(db, u, p), contact: undefined, relation: this.relationWith(db, u.id, p) }));
     });
   }
 
@@ -970,6 +998,7 @@ export class DemoBackend implements Backend {
       if (db.reports.some((r) => r.reporterUserId === u.id && r.profileId === profileId && r.status === 'open')) throw new AppError('duplicate');
       db.reports.unshift({ id: uid('rp_'), reporterUserId: u.id, profileId, reason, details: details?.slice(0, 1000), status: 'open', createdAt: this.iso() });
       this.track(db, 'user_reported', u.id, { reason });
+      this.alertAdmins(db, 'report', { code: this.codeOf(db, profileId), reason }, '/admin/reports');
     }, true);
   }
 
@@ -1116,7 +1145,7 @@ export class DemoBackend implements Backend {
   adminListUsers() {
     return this.run((db) => {
       this.admin(db);
-      return db.users.filter((u) => !u.deletedAt).map((u) => ({ ...u, phone: maskPhone(u.phone), profileStatus: this.myProfile(db, u.id)?.status }));
+      return db.users.filter((u) => !u.deletedAt).map((u) => ({ ...u, phone: maskPhone(u.phone), profileStatus: this.myProfile(db, u.id)?.status, profileCode: this.myProfile(db, u.id)?.code }));
     });
   }
 
@@ -1159,14 +1188,14 @@ export class DemoBackend implements Backend {
   adminListOrders() {
     return this.run((db) => {
       this.admin(db);
-      return db.orders.map((o) => ({ ...o }));
+      return db.orders.map((o) => ({ ...o, profileCode: this.codeOf(db, o.profileId) }));
     });
   }
 
   adminListReports() {
     return this.run((db) => {
       this.admin(db);
-      return db.reports.map((r) => ({ ...r, profileName: db.profiles.find((p) => p.id === r.profileId)?.biodata.basic.fullName ?? '—' }));
+      return db.reports.map((r) => ({ ...r, profileName: db.profiles.find((p) => p.id === r.profileId)?.biodata.basic.fullName ?? '—', profileCode: this.codeOf(db, r.profileId), profileUserId: db.profiles.find((p) => p.id === r.profileId)?.userId }));
     });
   }
 
@@ -1275,14 +1304,19 @@ export class DemoBackend implements Backend {
       this.audit(db, admin.id, 'announcement.recipient_report_viewed', id);
       return db.deliveries
         .filter((d) => d.announcementId === id)
-        .map((d): RecipientRow => ({ userId: d.userId, maskedPhone: maskPhone(db.users.find((u) => u.id === d.userId)?.phone ?? ''), delivery: { ...d } }));
+        .map((d): RecipientRow => ({ userId: d.userId, profileCode: db.profiles.find((p) => p.userId === d.userId)?.code, maskedPhone: maskPhone(db.users.find((u) => u.id === d.userId)?.phone ?? ''), delivery: { ...d } }));
     }, true);
   }
 
   adminAuditLog() {
     return this.run((db) => {
       this.admin(db);
-      return db.audit.slice(0, 200).map((a) => ({ ...a }));
+      const label = (t?: string) => {
+        if (!t) return undefined;
+        const p = db.profiles.find((x) => x.id === t) ?? db.profiles.find((x) => x.userId === t);
+        return p?.code;
+      };
+      return db.audit.slice(0, 200).map((a) => ({ ...a, targetLabel: label(a.target) }));
     });
   }
 
@@ -1397,7 +1431,7 @@ export class DemoBackend implements Backend {
     return this.run((db): AdminRequestRow[] => {
       this.admin(db);
       const name = (id: string) => db.profiles.find((p) => p.id === id)?.biodata.basic.fullName ?? '—';
-      return db.requests.map((r) => ({ ...r, fromName: name(r.fromProfileId), toName: name(r.toProfileId) }));
+      return db.requests.map((r) => ({ ...r, fromName: name(r.fromProfileId), toName: name(r.toProfileId), fromCode: this.codeOf(db, r.fromProfileId), toCode: this.codeOf(db, r.toProfileId) }));
     });
   }
 
@@ -1450,11 +1484,11 @@ export class DemoBackend implements Backend {
       this.admin(db);
       const users: TrashItem[] = db.users
         .filter((u) => u.deletedAt)
-        .map((u) => ({ kind: 'user', id: u.id, label: `${u.countryCode} ${maskPhone(u.phone)}`, deletedAt: u.deletedAt!, deletedBy: u.deletedBy, reason: u.deleteReason, purgeAt: new Date(new Date(u.deletedAt!).getTime() + TRASH_RETENTION_MS).toISOString() }));
+        .map((u) => ({ kind: 'user', id: u.id, label: `${db.profiles.find((p) => p.userId === u.id)?.code ?? 'No profile'} · ${u.countryCode} ${maskPhone(u.phone)}`, deletedAt: u.deletedAt!, deletedBy: u.deletedBy, reason: u.deleteReason, purgeAt: new Date(new Date(u.deletedAt!).getTime() + TRASH_RETENTION_MS).toISOString() }));
       const owners = new Set(db.users.filter((u) => u.deletedAt).map((u) => u.id));
       const profiles: TrashItem[] = db.profiles
         .filter((p) => p.deletedAt && !owners.has(p.userId)) // profiles of deleted users restore with the user
-        .map((p) => ({ kind: 'profile', id: p.id, label: p.biodata.basic.fullName, deletedAt: p.deletedAt!, deletedBy: p.deletedBy, reason: p.deleteReason, purgeAt: new Date(new Date(p.deletedAt!).getTime() + TRASH_RETENTION_MS).toISOString() }));
+        .map((p) => ({ kind: 'profile', id: p.id, label: `${p.code} · ${p.biodata.basic.fullName}`, deletedAt: p.deletedAt!, deletedBy: p.deletedBy, reason: p.deleteReason, purgeAt: new Date(new Date(p.deletedAt!).getTime() + TRASH_RETENTION_MS).toISOString() }));
       return [...users, ...profiles].sort((x, y) => y.deletedAt.localeCompare(x.deletedAt));
     });
   }
@@ -1635,5 +1669,58 @@ export class DemoBackend implements Backend {
       this.notifyAdmins(db, { event: 'recovery_started' });
       return { status: 'pending', completesAt };
     }, true);
+  }
+
+  // ---------- admin: search & member console ----------
+  private memberRow(db: DemoDb, u: User): MemberRow {
+    const p = db.profiles.find((x) => x.userId === u.id && !x.deletedAt) ?? db.profiles.find((x) => x.userId === u.id);
+    return {
+      userId: u.id, profileId: p?.id, code: p?.code, name: p?.biodata.basic.fullName, phoneMasked: `${u.countryCode} ${maskPhone(u.phone)}`,
+      role: u.role, profileStatus: p?.status, city: p?.biodata.location.city, deactivatedAt: u.deactivatedAt, deactivatedBy: u.deactivatedBy, deletedAt: u.deletedAt,
+    };
+  }
+
+  adminSearch(query: string) {
+    return this.run((db): MemberRow[] => {
+      const a = this.admin(db);
+      const q = query.trim().toLowerCase();
+      if (q.length < 2) return [];
+      const digits = q.replace(/\D/g, '');
+      const codeQuery = /^hr-?\d+$/.test(q) ? `hr-${digits}` : null;
+      const byPhone = !codeQuery && /^[+\d\s-]+$/.test(q) && digits.length >= 4;
+      // Searching by phone is a sensitive lookup: record it (masked) in the audit log.
+      if (byPhone) this.audit(db, a.id, 'admin.search_phone', undefined, { lastDigits: digits.slice(-4) });
+      const hits = db.users.filter((u) => {
+        const p = db.profiles.find((x) => x.userId === u.id);
+        if (codeQuery) return !!p && p.code.toLowerCase().startsWith(codeQuery);
+        if (byPhone) return `${u.countryCode}${u.phone}`.replace(/\D/g, '').includes(digits);
+        const hay = [p?.biodata.basic.fullName, p?.biodata.location.city, p?.biodata.location.locality, p?.code].filter(Boolean).join(' ').toLowerCase();
+        return hay.includes(q);
+      });
+      return hits.slice(0, 50).map((u) => this.memberRow(db, u));
+    }, true);
+  }
+
+  adminGetMember(userId: string) {
+    return this.run((db): MemberDetail => {
+      this.admin(db);
+      const u = db.users.find((x) => x.id === userId);
+      if (!u) throw new AppError('not_found');
+      const member = this.memberRow(db, u);
+      const p = db.profiles.find((x) => x.id === member.profileId);
+      const name = (id: string) => db.profiles.find((x) => x.id === id)?.biodata.basic.fullName ?? '—';
+      const { phone: _phone, ...rest } = u;
+      return {
+        member,
+        user: { ...rest, phoneMasked: member.phoneMasked },
+        profile: p ? clone(p) : undefined,
+        requests: db.requests
+          .filter((r) => r.fromUserId === u.id || r.toUserId === u.id)
+          .map((r) => ({ ...r, fromName: name(r.fromProfileId), toName: name(r.toProfileId), fromCode: this.codeOf(db, r.fromProfileId), toCode: this.codeOf(db, r.toProfileId) })),
+        reportsAbout: p ? db.reports.filter((r) => r.profileId === p.id).map((r) => ({ ...r })) : [],
+        reportsBy: db.reports.filter((r) => r.reporterUserId === u.id).map((r) => ({ ...r })),
+        orders: db.orders.filter((o) => o.userId === u.id).map((o) => ({ ...o })),
+      };
+    });
   }
 }

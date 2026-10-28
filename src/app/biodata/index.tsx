@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -35,12 +35,12 @@ export default function BiodataWizard() {
   const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
 
   // Initialise once from the saved draft (or a blank biodata) and resume at the last step.
-  useEffect(() => {
-    if (isLoading || bd) return;
+  // Done during render (React's "adjust state on prop change" pattern) rather than in an effect.
+  if (!isLoading && !bd) {
     setBd(profile ? profile.biodata : emptyBiodata());
     const requested = params.step != null ? Number(params.step) : NaN;
     setStep(Number.isFinite(requested) ? Math.min(Math.max(requested, 0), 6) : profile ? Math.min(profile.lastStep, 6) : 0);
-  }, [isLoading, profile, bd, params.step]);
+  }
 
   const sectionFor = (s: number): Section => STEP_KEYS[s] as Section;
   const errors = useMemo(() => (bd && showErrors ? stepErrors(step, bd[sectionFor(step)]) : {}), [bd, step, showErrors]);

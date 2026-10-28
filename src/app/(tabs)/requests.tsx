@@ -179,10 +179,11 @@ function OfferLine({ label, offer }: { label: string; offer?: PhoneOffer }) {
 
 function PokeLine({ view, onPoke, busy }: { view: RequestView; onPoke: () => void; busy: boolean }) {
   const { t } = useTranslation();
+  const [mountedAt] = useState(() => Date.now());
   const hours = useMemo(() => {
     if (!view.poke.availableAt) return 0;
-    return Math.max(1, Math.ceil((new Date(view.poke.availableAt).getTime() - Date.now()) / 3600000));
-  }, [view.poke.availableAt]);
+    return Math.max(1, Math.ceil((new Date(view.poke.availableAt).getTime() - mountedAt) / 3600000));
+  }, [view.poke.availableAt, mountedAt]);
   if (view.poke.canPoke) return <Button label={t('requests.poke')} size="sm" kind="gold" onPress={onPoke} loading={busy} disabled={busy} style={{ alignSelf: 'flex-start' }} testID={`poke-${view.request.id}`} />;
   const reason = view.poke.reason;
   const text =

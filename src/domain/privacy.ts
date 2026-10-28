@@ -41,6 +41,7 @@ export function projectProfile(
   const { income, employer, ...careerPublic } = career;
   return {
     id: profile.id,
+    code: profile.code,
     profileType: profileTypeOf(profile),
     displayName: scopes.fullBiodata ? basic.fullName : displayNameFor(basic.fullName, privacy.displayName),
     age: ageFromDob(basic.dob, now),

@@ -1,10 +1,11 @@
+import { CodeLink } from '@/components/admin/CodeLink';
 import { View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Badge, confirm, EmptyState, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { Card, Header, Row, Screen } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
-import { formatDate, profileCode } from '@/domain/format';
+import { formatDate } from '@/domain/format';
 import { qk } from '@/hooks/queries';
 import { backend } from '@/services';
 import { space } from '@/theme/tokens';
@@ -33,9 +34,10 @@ export default function AdminReports() {
           data.map((r) => (
             <Card key={r.id} style={{ gap: space.sm }}>
               <Row style={{ justifyContent: 'space-between' }}>
-                <Text variant="h3">
-                  {r.profileName} · {profileCode(r.profileId)}
-                </Text>
+                <Row gap={space.sm} wrap>
+                  <CodeLink code={r.profileCode} userId={r.profileUserId} />
+                  <Text variant="h3">{r.profileName}</Text>
+                </Row>
                 <Badge label={r.status} tone={r.status === 'open' ? 'danger' : 'muted'} />
               </Row>
               <Text variant="label">Reason: {r.reason}</Text>

@@ -22,7 +22,7 @@ export default function AdminAudit() {
               <Text variant="label">{e.action}</Text>
               <Text variant="caption">
                 {new Date(e.at).toLocaleString('en-GB')} · actor {e.actorId}
-                {e.target ? ` · target ${e.target}` : ''}
+                {e.target ? ` · target ${e.targetLabel ?? e.target}` : ''}
               </Text>
               {e.meta ? <Text variant="caption">{JSON.stringify(e.meta)}</Text> : null}
             </Card>

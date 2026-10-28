@@ -13,6 +13,8 @@ shortlist · contact requests + separate consent · report/block · dashboard me
 admin console (moderation, pricing + audit, announcements + honest analytics, reports, users, orders, audit log) ·
 Supabase schema with RLS (tested on Postgres 16) · 52 Jest tests · Playwright E2E · 32 fictional seed profiles.
 
+**Since Phase 1:** governance (master/sub-admins/Trash/recovery), interest + consent-based phone offers + poke, and the admin console (profile IDs, member search, alerts bell, relation badges on cards). 106 Jest tests, 4 SQL suites, 5 Playwright suites, lint clean.
+
 **Exit criteria met:** typecheck clean, all tests green, web export builds, E2E journeys pass with zero console errors.
 
 ## Phase 2 — Production backend (est. 2–3 weeks)

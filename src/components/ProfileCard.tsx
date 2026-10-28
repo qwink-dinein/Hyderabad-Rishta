@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
-import { formatHeight, profileCode } from '@/domain/format';
+import { relationBadge } from '@/domain/connections';
+import { formatHeight } from '@/domain/format';
 import type { PublicProfile } from '@/domain/types';
 import { useOptions } from '@/hooks/useOptions';
 import { colors, radius, shadow, space } from '@/theme/tokens';
@@ -56,7 +57,9 @@ export const ProfileCard = memo(function ProfileCard({ profile, shortlisted, onT
   const edu = label('education', profile.career.education, profile.career.educationOther);
   const prof = label('profession', profile.career.profession, profile.career.professionOther);
   const place = [profile.location.city, profile.location.state].filter(Boolean).join(', ');
-  const summary = `${profile.displayName}, ${t('common.years', { n: profile.age })}, ${place}`;
+  const rel = relationBadge(profile.relation);
+  const relLabel = rel ? t(`card.rel.${rel.key}`) : null;
+  const summary = [`${profile.displayName}, ${t('common.years', { n: profile.age })}, ${place}`, relLabel].filter(Boolean).join('. ');
   return (
     <View style={styles.card}>
       <Pressable onPress={() => onOpen(profile.id)} accessibilityRole="button" accessibilityLabel={`${t('card.view')}: ${summary}`}>
@@ -71,8 +74,13 @@ export const ProfileCard = memo(function ProfileCard({ profile, shortlisted, onT
             <Text variant="h2" numberOfLines={1} style={{ flexShrink: 1 }}>
               {profile.displayName}
             </Text>
-            <Text variant="caption">{profileCode(profile.id)}</Text>
+            <Text variant="caption">{profile.code}</Text>
           </View>
+          {rel && relLabel ? (
+            <View style={styles.relation} testID={`relation-${profile.id}`}>
+              <Badge label={`${rel.key === 'connected' ? '✓ ' : ''}${relLabel}`} tone={rel.tone} />
+            </View>
+          ) : null}
           <Text variant="label" color={colors.muted}>
             {t('common.years', { n: profile.age })} · {formatHeight(profile.heightCm, false)} · {label('marital', profile.maritalStatus)}
           </Text>
@@ -106,6 +114,7 @@ export const ProfileCard = memo(function ProfileCard({ profile, shortlisted, onT
 const styles = StyleSheet.create({
   card: { backgroundColor: colors.white, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden', ...shadow.card },
   body: { padding: space.lg, gap: 4 },
+  relation: { flexDirection: 'row', marginVertical: 2 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs, marginTop: space.sm },
   heart: {
     position: 'absolute',

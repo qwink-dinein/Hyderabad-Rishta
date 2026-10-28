@@ -25,6 +25,7 @@ const ICONS: Record<string, IconName> = {
   poke: 'bell',
   request_expired: 'mail',
   security: 'shield',
+  admin_alert: 'flag',
   request_accepted: 'check',
   request_declined: 'close',
   contact_shared: 'phone',

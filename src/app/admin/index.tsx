@@ -1,19 +1,23 @@
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
 import { router, type Href } from 'expo-router';
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Badge, Banner, confirm, ErrorView, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
+import { TextField } from '@/components/ui/forms';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { Card, Row, Screen, Section } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { formatDate, formatMoney } from '@/domain/format';
-import { qk } from '@/hooks/queries';
+import { qk, useNotifications } from '@/hooks/queries';
 import { backend } from '@/services';
 import { useSession } from '@/state/session';
 import { colors, radius, space } from '@/theme/tokens';
 
 type NavItem = { href: Href; icon: IconName; label: string; desc: string; masterOnly?: boolean };
 const NAV: NavItem[] = [
+  { href: '/admin/search', icon: 'search', label: 'Find a member', desc: 'Search by profile ID (HR-10023), name, city or phone' },
+  { href: '/admin/alerts', icon: 'bell', label: 'Alerts', desc: 'Reports, payments, approvals, deletions, security' },
   { href: '/admin/profiles', icon: 'user', label: 'Profiles', desc: 'Approve, reject, pause, resume, remove photos, delete' },
   { href: '/admin/users', icon: 'users', label: 'Users', desc: 'Suspend, reactivate, delete accounts' },
   { href: '/admin/requests', icon: 'mail', label: 'Contact requests', desc: 'Review and delete any request' },
@@ -34,6 +38,11 @@ export default function AdminHome() {
   const isMaster = user?.role === 'master';
   const { data: s, isLoading, error, refetch } = useQuery({ queryKey: qk.admin('stats'), queryFn: () => backend.adminStats() });
   const { data: sec } = useQuery({ queryKey: qk.admin('security'), queryFn: () => backend.masterSecurityStatus() });
+
+  const { data: notifs } = useNotifications();
+  const alertsUnread = notifs?.filter((n) => n.type === 'admin_alert' && !n.readAt).length ?? 0;
+  const [q, setQ] = useState('');
+  const search = () => q.trim().length >= 2 && router.push({ pathname: '/admin/search', params: { q: q.trim() } });
 
   const refresh = () => qc.invalidateQueries({ queryKey: ['admin'] });
 
@@ -78,17 +87,52 @@ export default function AdminHome() {
           <Text variant="h1">Admin dashboard</Text>
           <Badge label={isMaster ? 'Master admin' : 'Sub-admin'} tone={isMaster ? 'gold' : 'emerald'} />
         </View>
-        <Button
-          label="Log out"
-          kind="secondary"
-          size="sm"
-          onPress={async () => {
-            await backend.logout();
-            qc.clear();
-            setUser(null);
-            router.replace('/');
-          }}
-        />
+        <Row gap={space.sm}>
+          <Pressable
+            onPress={() => router.push('/admin/alerts')}
+            accessibilityRole="button"
+            accessibilityLabel={alertsUnread ? `Alerts, ${alertsUnread} unread` : 'Alerts'}
+            style={styles.bell}
+            testID="admin-bell"
+          >
+            <Icon name="bell" />
+            {alertsUnread ? (
+              <View style={styles.bellCount}>
+                <Text variant="caption" color={colors.white} style={{ fontSize: 11, lineHeight: 14 }}>
+                  {alertsUnread > 99 ? '99+' : alertsUnread}
+                </Text>
+              </View>
+            ) : null}
+          </Pressable>
+          <Button
+            label="Log out"
+            kind="secondary"
+            size="sm"
+            onPress={async () => {
+              await backend.logout();
+              qc.clear();
+              setUser(null);
+              router.replace('/');
+            }}
+          />
+        </Row>
+      </Row>
+
+      <Row gap={space.sm} style={{ marginTop: space.md }}>
+        <View style={{ flex: 1 }}>
+          <TextField
+            value={q}
+            onChangeText={setQ}
+            onSubmitEditing={search}
+            returnKeyType="search"
+            autoCapitalize="characters"
+            autoCorrect={false}
+            placeholder="Find a member: HR-10023, name, city or phone"
+            accessibilityLabel="Find a member"
+            testID="admin-home-search"
+          />
+        </View>
+        <Button label="Search" onPress={search} icon={<Icon name="search" size={16} color={colors.white} />} />
       </Row>
 
       {sec?.pendingRecovery ? (
@@ -220,5 +264,7 @@ const styles = StyleSheet.create({
   metric: { flexGrow: 1, flexBasis: '30%', minWidth: 140, backgroundColor: colors.white, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: space.md },
   nav: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   navIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.sage, alignItems: 'center', justifyContent: 'center' },
+  bell: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  bellCount: { position: 'absolute', top: -4, right: -4, minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 5, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center' },
   toggle: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 56 },
 });

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { ContactActions } from '@/components/ContactActions';
 import { ProfileDetails } from '@/components/ProfileDetails';
+import { declinedRecently } from '@/domain/connections';
 import { Button } from '@/components/ui/Button';
 import { Banner, confirm, ErrorView, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { ChipGroup, Field, TextField } from '@/components/ui/forms';
@@ -72,7 +73,9 @@ export default function ProfileScreen() {
 
   const contact = profile.contact ? <ContactActions countryCode={profile.contact.countryCode} phone={profile.contact.phone} /> : <Banner icon="lock">{t('profile.contactLocked')}</Banner>;
 
-  const canExpress = !isOwn && !active;
+  // They said no recently: don't offer a re-send, explain instead (server enforces the same cool-down).
+  const theyDeclined = !isOwn && !active && declinedRecently(profile.relation);
+  const canExpress = !isOwn && !active && !theyDeclined;
   // Why the viewer can't send yet (null = they can). Shown as guidance; the button stays tappable.
   const blocker: { msg: string; cta?: { label: string; go: () => void } } | null = !me
     ? { msg: t('profile.sendNeedsBiodata'), cta: { label: t('dashboard.createCta'), go: () => router.push('/biodata') } }
@@ -138,6 +141,11 @@ export default function ProfileScreen() {
     >
       <View style={{ gap: space.md, paddingTop: space.lg }}>
         {statusCard}
+        {theyDeclined ? (
+          <View testID="declined-no-resend">
+            <Banner icon="mail">{t('profile.declinedNoResend')}</Banner>
+          </View>
+        ) : null}
         {canExpress && blocker && profile.acceptsRequests ? (
           <Banner tone="warning" icon="mail">
             <Text variant="caption" color={colors.goldDeep}>

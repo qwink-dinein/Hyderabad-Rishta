@@ -102,6 +102,13 @@ Column-level grants stop users changing `role`, profile `status`, `boost_until`,
 - Images via `expo-image` with memory+disk cache.
 - DB: generated columns + B-tree/GIN indexes for discovery; `limit ≤ 50`.
 
+## 11. Admin console: profile IDs, search, alerts, relation badges
+- **Profile IDs:** demo `db.nextCode` counter / SQL `profile_code_seq` sequence → `HR-<n>`, unique and immutable (a trigger blocks changes). Sequences never reuse numbers, so an ID always means one member.
+- **Relation:** `relationWith()` (demo) / `relation_with()` (SQL) returns the latest request between the viewer and the profile, in either direction, as `{status, direction, at}`. It is attached in `searchProfiles`, `getShortlist` and `getProfile`. The UI maps it with `relationBadge()` and `declinedRecently()` (`src/domain/connections.ts`). It never carries contact data.
+- **Search:** `adminSearch(q)` / `admin_search(text)` (SECURITY DEFINER, `is_admin()`). Matching depends on the query: `HR-123…` matches the code prefix; digits-only matches the phone and writes `admin.search_phone` to the audit log (last 4 digits only); anything else matches name, city, locality or code. At most 50 rows, always masked. `adminGetMember(userId)` adds the profile, interests, reports filed by and about the member, and orders.
+- **Alerts:** `alertAdmins(kind, params, deepLink)` / `alert_admins()` insert a `notifications` row of type `admin_alert` for every active admin. In SQL they are fired by triggers: `reports` insert, `orders` status → paid/failed, `profiles` status → pending, `app_users` hard delete (member self-deletion only, not a purge from Trash), and security actions in `audit_events`. The English copy for the console is in `src/domain/adminAlerts.ts`.
+- **Migration:** `20261031000000_admin_console.sql`; tests: `supabase/tests/40_admin_console.test.sql`.
+
 ## 7. Testing strategy
 | Layer | Tooling | What |
 |---|---|---|
@@ -109,7 +116,7 @@ Column-level grants stop users changing `role`, profile `status`, `boost_until`,
 | Backend contract | Jest + DemoBackend + fake clock | OTP limits/expiry, publish workflow, paid/failed/free orders, price-change immutability, boosts, requests/consent, blocking, admin authZ, announcements analytics & scheduling, deletion |
 | i18n | Jest | UR/TE key coverage + placeholder parity |
 | Database | psql + Postgres 16 | RLS isolation, column grants, projection privacy, consent flow, admin audit |
-| E2E | Playwright (web export) | landing/lang/RTL, login, discover/filters/profile, requests/consent, dashboard, wizard → publish → approve → custom-value search, admin guard |
+| E2E | Playwright (web export) | `console.js`: relation badges, report → admin bell → alerts deep link → search by ID → member page → pause, masked phone search; plus landing/lang/RTL, login, discover/filters/profile, requests/consent, dashboard, wizard → publish → approve → custom-value search, admin guard |
 
 ## 8. Environments
 | Env | Backend | How |

@@ -32,7 +32,7 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
   const [resendAt, setResendAt] = useState(0);
   const [resendsLeft, setResendsLeft] = useState<number | null>(null);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const otpRef = useRef<React.ComponentRef<typeof TextInput>>(null);
 
   useEffect(() => {

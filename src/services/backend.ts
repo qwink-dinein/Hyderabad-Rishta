@@ -142,6 +142,34 @@ export interface AdminStats {
 export interface AdminRequestRow extends ContactRequest {
   fromName: string;
   toName: string;
+  fromCode: string;
+  toCode: string;
+}
+
+/** One search hit in the admin console. Phone always masked. */
+export interface MemberRow {
+  userId: string;
+  profileId?: string;
+  code?: string;
+  name?: string;
+  phoneMasked: string;
+  role: User['role'];
+  profileStatus?: ProfileStatus;
+  city?: string;
+  deactivatedAt?: string;
+  deactivatedBy?: string;
+  deletedAt?: string;
+}
+
+/** Everything an admin needs to act on one member, on one screen. */
+export interface MemberDetail {
+  member: MemberRow;
+  user: Omit<User, 'phone'> & { phoneMasked: string };
+  profile?: Profile;
+  requests: AdminRequestRow[];
+  reportsAbout: Report[];
+  reportsBy: Report[];
+  orders: Order[];
 }
 
 export interface TrashItem {
@@ -156,6 +184,7 @@ export interface TrashItem {
 
 export interface RecipientRow {
   userId: string;
+  profileCode?: string;
   maskedPhone: string;
   delivery: AnnouncementDelivery;
 }
@@ -229,12 +258,12 @@ export interface Backend {
   adminStats(): Promise<AdminStats>;
   adminListProfiles(status?: ProfileStatus): Promise<(Profile & { phoneMasked: string })[]>;
   adminSetProfileStatus(profileId: string, status: ProfileStatus, note?: string): Promise<Profile>;
-  adminListUsers(): Promise<(User & { profileStatus?: ProfileStatus })[]>;
+  adminListUsers(): Promise<(User & { profileStatus?: ProfileStatus; profileCode?: string })[]>;
   adminSetUserDeactivated(userId: string, deactivated: boolean): Promise<void>;
   adminUpdatePricing(cfg: PricingConfig): Promise<PricingConfig>;
   adminPricingHistory(): Promise<PricingChange[]>;
-  adminListOrders(): Promise<Order[]>;
-  adminListReports(): Promise<(Report & { profileName: string })[]>;
+  adminListOrders(): Promise<(Order & { profileCode: string })[]>;
+  adminListReports(): Promise<(Report & { profileName: string; profileCode: string; profileUserId?: string })[]>;
   adminResolveReport(reportId: string, status: 'resolved' | 'dismissed', pauseProfile?: boolean): Promise<void>;
   adminListAnnouncements(): Promise<(Announcement & { stats: AnnouncementStats })[]>;
   adminSaveAnnouncement(a: Partial<Announcement> & Pick<Announcement, 'title' | 'body' | 'segment'>): Promise<Announcement>;
@@ -242,7 +271,10 @@ export interface Backend {
   adminArchiveAnnouncement(id: string): Promise<Announcement>;
   adminAudiencePreview(segment: AnnouncementSegment): Promise<number>;
   adminRecipientReport(id: string): Promise<RecipientRow[]>;
-  adminAuditLog(): Promise<AuditEvent[]>;
+  adminAuditLog(): Promise<(AuditEvent & { targetLabel?: string })[]>;
+  /** Search by profile ID (HR-10023), name, city or phone digits. Phone searches are audited. */
+  adminSearch(query: string): Promise<MemberRow[]>;
+  adminGetMember(userId: string): Promise<MemberDetail>;
 
   // admin — full moderation rights (master + sub-admins)
   adminSetRequireApproval(requireApproval: boolean): Promise<{ requireApproval: boolean; pending: number }>;

@@ -142,6 +142,8 @@ export interface Biodata {
 
 export interface Profile {
   id: string;
+  /** Human-friendly, sequential, never reused (e.g. HR-10023). Shown to members and admins. */
+  code: string;
   userId: string;
   biodata: Biodata;
   status: ProfileStatus;
@@ -194,6 +196,15 @@ export interface PublicProfile {
   contact?: { countryCode: string; phone: string };
   /** Scopes the viewer has been granted (for UI hints). */
   granted: ConsentScopes;
+  code: string;
+  /** The viewer's history with this profile (latest interest either way), for badges. */
+  relation?: Relation;
+}
+
+export interface Relation {
+  status: RequestStatus;
+  direction: 'sent' | 'received';
+  at: string;
 }
 
 export type FeeMode = 'free' | 'paid' | 'disabled';
@@ -306,6 +317,7 @@ export type NotificationType =
   | 'payment'
   | 'safety'
   | 'security'
+  | 'admin_alert'
   | 'phone_offer_received'
   | 'phone_offer_accepted'
   | 'phone_offer_declined'

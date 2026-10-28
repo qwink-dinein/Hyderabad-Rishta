@@ -89,7 +89,8 @@ export function ChipGroup({ options, value, onChange, multiple, accessibilityLab
             onPress={() => {
               if (multiple) {
                 const next = new Set(selected);
-                on ? next.delete(o.value) : next.add(o.value);
+                if (on) next.delete(o.value);
+                else next.add(o.value);
                 onChange([...next]);
               } else onChange(on ? undefined : o.value);
             }}

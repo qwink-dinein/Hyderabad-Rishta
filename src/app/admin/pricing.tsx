@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -31,9 +31,7 @@ export default function AdminPricing() {
   const [cfg, setCfg] = useState<PricingConfig | null>(null);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    if (current && !cfg) setCfg(current);
-  }, [current, cfg]);
+  if (current && !cfg) setCfg(current); // initialise once from the loaded config (during render, not in an effect)
   if (!cfg) return <Loading />;
 
   const errors = validatePricing(cfg);

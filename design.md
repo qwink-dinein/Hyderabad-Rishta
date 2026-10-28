@@ -50,6 +50,9 @@ Spacing 2·4·8·12·16·24·32·48. Radius sm 8 · md 12 · lg 18 (cards) · xl
 - **ProfileCard** — photo or emerald placeholder with gold initial ring and 8-point-star motifs; name + code; age · height · marital; city; education · profession; tags; heart.
 - **Banner** — info (sage), warning (wheat), success, danger; always with an icon.
 - **EmptyState** — motif + icon, title, one-line hint, optional action.
+- **Relation badge** (on ProfileCard, under the name): success “✓ Connected”, gold “Interest sent”, emerald “Sent you interest”, danger “Declined your interest”, muted “You declined / Interest expired / You withdrew”. Text always present (colour is never the only signal); it is part of the card's accessibility label.
+- **CodeLink** (admin): sage chip with the `HR-` ID in emerald semibold; tapping it opens the member page. Used on every admin list.
+- **Admin bell**: 44 pt round white button with a hairline border; red count badge (99+ cap); accessibility label "Alerts, N unread". Alert rows show a gold border when unread, red with an "Action needed" badge when urgent.
 - **PhotoPicker** — always three labelled 4:5 slots (Main photo / Photo 2 / Photo 3), gold dashed empty state with “Tap to add”, 0/3 counter. Never a lone “+”.
 - **Connect options** — two large radio cards (icon, title, one-line promise) followed by the consent checkbox card when sharing a number.
 - **ContactActions** — revealed number in plain sans (not the display face — digits must be unambiguous), Call · Copy · SMS, disclaimer.

@@ -204,6 +204,14 @@ Analytics: targeted users; in-app availability; push requests submitted; confirm
 ## 15. Admin Dashboard
 Profile review & moderation; user management; publication status; pricing & boost config; boost duration; payments & orders; announcements & analytics; reports & safety; basic user/profile/revenue metrics; audit logs. All admin operations authorised on the backend.
 
+### 15.1 Admin console additions (2026-10-28, owner request)
+- **Profile ID everywhere:** every profile has a permanent, sequential ID (`HR-10001`, `HR-10002`, …). It is shown to members on cards and profile pages and to admins on every list, and tapping it in the admin console opens that member.
+- **Find a member:** admins can search by profile ID, name, city or phone digits, from the dashboard or a dedicated screen. Phone searches are recorded in the audit log and results always show masked numbers. The member page holds every action in one place: approve, pause, request changes, delete the profile, suspend, reactivate or delete the account, delete requests, resolve reports and cancel pending orders.
+- **Admin bell:** a bell with an unread count leads to Alerts. Admins are alerted to new reports, payments (received or failed), profiles waiting for approval, members deleting their account, and changes to the admin team or master role. Alerts never contain phone numbers, and urgent ones are marked "Action needed".
+
+### 15.2 Relationship status on profile cards
+Cards show your history with each person, so nobody re-sends blindly: **Connected**, **Interest sent**, **Sent you interest**, **Declined your interest**, **You declined**, **Interest expired** and **You withdrew**. During the 30-day cool-down after someone declines, the profile page replaces Express Interest with a short, respectful explanation, and the server enforces the same rule.
+
 ## 16. Privacy and Safety
 Mobile numbers private by default; explicit consent before sharing; visibility settings; reporting and blocking; deactivation and deletion; secure image storage and access-controlled URLs; input validation and rate limiting; backend-enforced permissions; minimal sensitive data; privacy disclosures, terms, consent records.
 

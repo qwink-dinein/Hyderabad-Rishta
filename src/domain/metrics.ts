@@ -1,4 +1,4 @@
-import { isBoostActive } from './privacy';
+import { isBoostActive, profileTypeOf } from './privacy';
 import type {
   Announcement,
   AnnouncementDelivery,
@@ -10,7 +10,6 @@ import type {
   User,
   ViewEvent,
 } from './types';
-import { profileTypeOf } from './privacy';
 
 /** Profile-reach metrics are computed from recorded events only (PRD §13). */
 export function dashboardMetrics(

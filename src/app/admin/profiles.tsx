@@ -1,3 +1,4 @@
+import { CodeLink } from '@/components/admin/CodeLink';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -77,7 +78,10 @@ export default function AdminProfiles() {
               <Card key={p.id} style={{ gap: space.sm }}>
                 <Row style={{ justifyContent: 'space-between' }} wrap>
                   <View style={{ flex: 1, minWidth: 180 }}>
-                    <Text variant="h3">{p.biodata.basic.fullName}</Text>
+                    <Row gap={space.sm} wrap>
+                      <CodeLink code={p.code} userId={p.userId} />
+                      <Text variant="h3">{p.biodata.basic.fullName}</Text>
+                    </Row>
                     <Text variant="caption">
                       {profileTypeOf(p)} · {p.biodata.location.city} · phone {p.phoneMasked} · updated {formatDate(p.updatedAt)}
                     </Text>

@@ -118,7 +118,7 @@ export default function AdminAnnouncements() {
       </Section>
 
       <Section title="All announcements">
-        <Banner icon="eye">A view is counted only when a member opens the announcement. Bulk "mark all read" and background refreshes are not views.</Banner>
+        <Banner icon="eye">A view is counted only when a member opens the announcement. Bulk “mark all read” and background refreshes are not views.</Banner>
         {isLoading ? (
           <Loading />
         ) : !data?.length ? (
@@ -192,7 +192,7 @@ export default function AdminAnnouncements() {
                   <Text variant="caption">Access to this report is recorded in the audit log.</Text>
                   {report.rows.map((r) => (
                     <Text key={r.userId} variant="caption">
-                      {r.maskedPhone} · in-app {formatDate(r.delivery.inAppAt)} · push {r.delivery.pushStatus} · viewed {r.delivery.viewedAt ? formatDate(r.delivery.viewedAt) : '—'} · clicked {r.delivery.clickedAt ? formatDate(r.delivery.clickedAt) : '—'}
+                      {r.profileCode ?? 'No profile'} · {r.maskedPhone} · in-app {formatDate(r.delivery.inAppAt)} · push {r.delivery.pushStatus} · viewed {r.delivery.viewedAt ? formatDate(r.delivery.viewedAt) : '—'} · clicked {r.delivery.clickedAt ? formatDate(r.delivery.clickedAt) : '—'}
                     </Text>
                   ))}
                 </View>

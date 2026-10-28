@@ -364,8 +364,9 @@ const en = {
     strict: "Strict mode: hide profiles that haven't filled these optional fields",
     apply: 'Show {{count}} profiles',
   },
-  card: { shortlist: 'Shortlist', shortlisted: 'Shortlisted', view: 'View profile', photoHidden: 'Photo on request' },
+  card: { shortlist: 'Shortlist', shortlisted: 'Shortlisted', view: 'View profile', photoHidden: 'Photo on request' , rel: { connected: 'Connected', sent: 'Interest sent', received: 'Sent you interest', theyDeclined: 'Declined your interest', youDeclined: 'You declined', expired: 'Interest expired', withdrawn: 'You withdrew' } },
   profile: {
+    declinedNoResend: 'This member declined your interest recently, so you can\'t send another one for now. Please respect their decision.',
     expressInterest: 'Express Interest',
     expressInterestHelp: 'Let them know you\'re interested and explore the possibility of connecting.',
     addToShortlist: 'Add to Shortlist',
@@ -524,6 +525,7 @@ const en = {
       payment_failed: 'Payment failed — you were not charged',
       safety: 'A safety review changed your profile visibility. Contact support for details.',
       security: 'Security alert: admin team or recovery settings changed',
+      admin_alert: 'Admin alert — open the admin dashboard to review',
       announcement: 'Announcement',
     },
   },

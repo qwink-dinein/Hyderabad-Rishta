@@ -1,3 +1,4 @@
+import { CodeLink } from '@/components/admin/CodeLink';
 import { View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
@@ -42,10 +43,13 @@ export default function AdminUsers() {
             return (
               <Card key={u.id} style={{ gap: 4 }}>
                 <Row style={{ justifyContent: 'space-between' }} wrap>
-                  <Text variant="label">
-                    {u.countryCode} {u.phone}
-                    {u.id === me?.id ? ' (you)' : ''}
-                  </Text>
+                  <Row gap={space.sm}>
+                    <CodeLink code={u.profileCode} userId={u.id} />
+                    <Text variant="label">
+                      {u.countryCode} {u.phone}
+                      {u.id === me?.id ? ' (you)' : ''}
+                    </Text>
+                  </Row>
                   <Row gap={space.xs} wrap>
                     {u.role === 'master' ? <Badge label="master" tone="gold" /> : u.role === 'admin' ? <Badge label="sub-admin" tone="emerald" /> : null}
                     {u.profileStatus ? <Badge label={u.profileStatus} tone="muted" /> : <Badge label="no profile" tone="muted" />}

@@ -6,6 +6,7 @@
 ## Snapshot
 - **What:** Hyderabad Rishta — Muslim matrimony app (PRD v1.1 in `PRD.md`). Owner: mukarramjahmm.
 - **Repo:** `qwink-dinein/Hyderabad-Rishta`, working branch `claude/sharp-bell-xxyxmj`.
+- **State (latest):** admin console added: `HR-` profile IDs, member search and member page, alerts bell, relation badges on cards. Demo DB schema v7.
 - **State:** Phase 1 complete — full MVP on an offline **demo backend**; Supabase schema ready but not connected. See `Phases.md`.
 - **Run:** `npm install` → `npm run web` (browser) or `npm start` (scan QR with Expo Go). Details in `README.md`.
 
@@ -38,6 +39,10 @@ Reset everything: Settings → “Reset demo data”.
 | 2026-10-28 | Phone numbers revealed ONLY via accepted PhoneOffers (not the consent toggle) | Feature PRD v1.0; consent toggle now covers photos/full biodata only. Demo DB schema v6. |
 | 2026-10-28 | 30-day cooldown before re-sending interest after a decline | Anti-harassment; not in the PRD — flagged for owner review. |
 | 2026-10-28 | Demo seed: r_1 (incoming + number offer), r_2 (accepted, number shared), r_3 (sent 3 days ago → Poke available) | So the owner can review every state with 9000000001 immediately. |
+| 2026-10-28 | Profile IDs are sequential `HR-10001…`, immutable and never reused; seed p_N → HR-(10001+N) | Owner asked to show the ID everywhere to admins; a hash code wasn't searchable. Demo DB schema v7. |
+| 2026-10-28 | Admin search runs on submit, not per keystroke; phone searches audited | Every keystroke of a phone search would flood the audit log. |
+| 2026-10-28 | Admin alerts reuse `notifications` (type `admin_alert`, params.kind) | One inbox, RLS already in place; the bell counts only admin_alert. |
+| 2026-10-28 | Card badge shows the latest request between the pair, either direction | Owner: "show accepted / connected / rejected so they won't re-send". |
 | 2026-10-28 | Named the design doc `design.md` (owner wrote “design.ms”) | Renders on GitHub; mention if owner prefers otherwise. |
 
 ## Gotchas
@@ -49,6 +54,8 @@ Reset everything: Settings → “Reset demo data”.
 - In Supabase, functions get default EXECUTE grants; migration grants explicitly anyway (portable).
 - Jest needs the AsyncStorage mock (`jest.setup.js`) and `moduleNameMapper` for `@/`.
 - Test logins in Playwright must `waitForURL` after verify — navigating early aborts the login.
+- After a container restart Postgres is down: `pg_ctlcluster 16 main start`, then `su postgres -c ./scripts/test-db.sh`.
+- `expo lint` installs eslint + eslint-config-expo on first run (adds `eslint.config.js`).
 - Sandbox perms: Postgres test cluster runs as `nobody`; parent dirs need `o+x`.
 
 ## Environment limits observed (cloud session)

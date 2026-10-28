@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { AccessibilityInfo, Animated, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, G, Path, Rect } from 'react-native-svg';
@@ -82,7 +82,7 @@ export const HeroCarousel = memo(function HeroCarousel() {
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [reduceMotion, setReduceMotion] = useState(false);
-  const fade = useRef(new Animated.Value(1)).current;
+  const [fade] = useState(() => new Animated.Value(1));
 
   useEffect(() => {
     AccessibilityInfo.isReduceMotionEnabled().then((v) => {

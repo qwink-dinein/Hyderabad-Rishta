@@ -1,3 +1,4 @@
+import { CodeLink } from '@/components/admin/CodeLink';
 import { View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
@@ -25,6 +26,7 @@ export default function AdminOrders() {
         ) : (
           data.map((o) => (
             <Card key={o.id} style={{ gap: 4 }}>
+              <CodeLink code={o.profileCode} userId={o.userId} />
               <Row style={{ justifyContent: 'space-between' }}>
                 <Text variant="label">
                   {o.kind} · {o.amount ? formatMoney(o.amount, o.currency) : 'Free'}

@@ -50,6 +50,11 @@
 | T-043 | Poke with 48 h wait, 1/request, 2/person/7 days, opt-out | ✅ |
 | T-044 | Expiry (admin-configurable), Blocked status, 30-day re-send cooldown after decline | ✅ |
 | T-045 | Idempotent creates, race-safe accept/withdraw (row locks), analytics without numbers, admin connection metrics | ✅ |
+| T-046 | Relation badges on profile cards (Connected · Interest sent · Sent you interest · Declined your interest · You declined · Expired · Withdrawn); profile screen hides Express Interest during the decline cool-down and explains why | ✅ |
+| T-047 | Sequential, immutable profile IDs `HR-10001…` (never reused); shown on cards, profile, and every admin list (profiles, users, requests, reports, orders, announcement recipients, audit targets, trash) as a tap-to-open chip | ✅ |
+| T-048 | Admin search (`/admin/search`, also on the dashboard) by profile ID, name, city or phone digits — phone look-ups audited, results masked; member page (`/admin/member/[id]`) with every action in one place | ✅ |
+| T-049 | Admin bell with unread count → `/admin/alerts`: reports, payments (paid/failed), profiles waiting for approval, self-deleted accounts, admin-team/master security changes; deep links; mark read / all | ✅ |
+| T-050 | Lint set up (`expo lint`, eslint-config-expo) and all errors fixed (React Compiler purity/refs/set-state-in-effect, unescaped entities) | ✅ |
 | T-033 | Bug: "Send contact request" greyed out — button now always tappable with clear guidance; edits keep a live profile live; demo starts with approval off | ✅ |
 
 ## Phase 2 (next)
@@ -73,6 +78,8 @@
 | T-117 | Edge Functions for Supabase: OTP to backup phone → `set_master_backup_phone`; `auth.admin.signOut` on delete/suspend; schedule `run_governance_jobs` with pg_cron | ⏳ |
 | T-118 | SMS + email alert to the master's primary AND backup phone when a recovery starts | ⏳ |
 | T-119 | Push delivery for interest/offer/poke notifications (generic lock-screen text only) | ⏳ |
+| T-120 | Admin alerts by SMS/email/push for urgent items (failed payments, reports, recovery started) | ⏳ needs providers |
+| T-121 | Wire `SupabaseBackend.adminSearch/adminGetMember` to the `admin_search` RPC + member queries | ⏳ (with T-102) |
 | T-116 | Post-edit moderation queue (re-review edited live profiles without hiding them) | ⏳ |
 
 ## Known issues / tech debt

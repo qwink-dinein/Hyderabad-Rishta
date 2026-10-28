@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { formatHeight, profileCode } from '@/domain/format';
+import { formatHeight } from '@/domain/format';
 import type { PublicProfile } from '@/domain/types';
 import { useOptions } from '@/hooks/useOptions';
 import { colors, space } from '@/theme/tokens';
@@ -33,7 +33,7 @@ export function ProfileDetails({ profile, contactSlot }: { profile: PublicProfil
         <View style={{ padding: space.lg, gap: 4 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: space.sm, flexWrap: 'wrap' }}>
             <Text variant="h1">{p.displayName}</Text>
-            <Text variant="caption">{profileCode(p.id)}</Text>
+            <Text variant="caption">{p.code}</Text>
             {p.boosted ? <Badge label={`★ ${t('discover.boosted')}`} /> : null}
           </View>
           <Text variant="label" color={colors.muted}>

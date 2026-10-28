@@ -64,7 +64,7 @@ export default function Recover() {
           ) : (
             <>
               <Banner tone="warning" icon="lock">
-                Recovery started. For your safety the master role moves to this phone on {formatDate(result.completesAt)} (72 hours). The current master is alerted and can cancel it if this wasn't them. After that time, just log in with this phone.
+                Recovery started. For your safety the master role moves to this phone on {formatDate(result.completesAt)} (72 hours). The current master is alerted and can cancel it if this wasn’t them. After that time, just log in with this phone.
               </Banner>
               <Button label="Back to login" kind="secondary" onPress={() => router.replace('/login')} full />
             </>
@@ -96,7 +96,7 @@ export default function Recover() {
                 {error}
               </Text>
             ) : null}
-            <Text variant="caption">Lost both your phone and your recovery codes? Contact the app owner's technical team: a verified manual recovery is done directly on the server and is fully audited.</Text>
+            <Text variant="caption">Lost both your phone and your recovery codes? Contact the app owner’s technical team: a verified manual recovery is done directly on the server and is fully audited.</Text>
           </>
         )}
       </View>

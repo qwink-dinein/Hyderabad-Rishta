@@ -1,3 +1,4 @@
+import { CodeLink } from '@/components/admin/CodeLink';
 import { View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
@@ -26,9 +27,12 @@ export default function AdminRequests() {
           data.map((r) => (
             <Card key={r.id} style={{ gap: 4 }}>
               <Row style={{ justifyContent: 'space-between' }} wrap>
-                <Text variant="label">
-                  {r.fromName} → {r.toName}
-                </Text>
+                <Row gap={space.xs} wrap>
+                  <CodeLink code={r.fromCode} userId={r.fromUserId} />
+                  <Text variant="label">{r.fromName} →</Text>
+                  <CodeLink code={r.toCode} userId={r.toUserId} />
+                  <Text variant="label">{r.toName}</Text>
+                </Row>
                 <Badge label={r.status} tone={r.status === 'accepted' ? 'success' : r.status === 'pending' ? 'gold' : 'muted'} />
               </Row>
               {r.message ? <Text variant="body">“{r.message}”</Text> : null}

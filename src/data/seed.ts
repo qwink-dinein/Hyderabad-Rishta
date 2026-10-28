@@ -161,6 +161,7 @@ export function buildSeed(now = new Date('2026-10-01T09:00:00Z')): SeedData {
     const status = i === 30 ? 'pending' : i === 31 ? 'draft' : 'published';
     profiles.push({
       id: `p_${i}`,
+      code: `HR-${10001 + i}`,
       userId,
       biodata,
       status,
