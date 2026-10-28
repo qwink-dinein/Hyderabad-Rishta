@@ -66,6 +66,10 @@
 | T-059 | Boost guarantee: Featured for all eligible viewers regardless of filters, fair rotation, impressions/reach proof, ending/ended notices, paused-boost warning, insert hardening (no self-granted boosts) | ✅ |
 | T-060 | Switch accessibility on web (`aria-checked`) — found by the push e2e | ✅ |
 | T-061 | Home button on every non-tab screen (member Home / admin dashboard / landing), stack cleared, wizard saves draft, connect screen confirms discard | ✅ |
+| T-062 | Attack suite (DB): deny-by-default function grants, report/photo/biodata/length/deep-link constraints — 73 attacks blocked | ✅ |
+| T-063 | Attack suite (app rules): input caps, report abuse, self-block, announcement link/image/forgery checks | ✅ |
+| T-064 | Photos up to 5 MB, compressed on the phone (≤1600 px JPEG, EXIF stripped); svg/gif/pdf refused; e2e `photos.js` | ✅ |
+| T-065 | Data retention (demo prune + SQL `run_retention()`), Supabase SDK out of demo bundle | ✅ |
 | T-033 | Bug: "Send contact request" greyed out — button now always tappable with clear guidance; edits keep a live profile live; demo starts with approval off | ✅ |
 
 ## Phase 2 (next)
@@ -93,7 +97,7 @@
 | T-121 | Wire `SupabaseBackend.adminSearch/adminGetMember` to the `admin_search` RPC + member queries | ⏳ (with T-102) |
 | T-122 | Licensed, consented photography for the hero (optional; vector art ships today) | ⏳ owner decision |
 | T-123 | Filters: jump-to-section tabs (Basic / Education / Location / Religion) like the reference | ⏳ nice-to-have |
-| T-124 | `eas init` (projectId), FCM service-account + APNs key upload, `eas build --profile development`, deploy `push-dispatch`, enable pg_cron jobs | ⏳ needs owner accounts |
+| T-124 | `eas init` (projectId), FCM service-account + APNs key upload, `eas build --profile development`, deploy `push-dispatch`, enable pg_cron jobs (incl. `run_retention` daily) | ⏳ needs owner accounts |
 | T-116 | Post-edit moderation queue (re-review edited live profiles without hiding them) | ⏳ |
 
 ## Known issues / tech debt

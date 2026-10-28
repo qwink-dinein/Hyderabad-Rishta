@@ -74,6 +74,9 @@ Reset everything: Settings → “Reset demo data”.
 - `href: null` on a js-tabs screen breaks direct URL access, so hidden screens live outside `(tabs)` (e.g. `src/app/notifications.tsx`).
 - react-native-web `Switch` needs `activeThumbColor` (web-only prop) or it shows a teal thumb.
 - Sandbox perms: Postgres test cluster runs as `nobody`; parent dirs need `o+x`.
+- SQL tests must NOT grant table privileges broadly (masks column-level revokes). New RPCs need adding to the allow-list in `20261102000000_security_hardening.sql` style (execute is deny-by-default).
+- Any new input field: add a cap in `src/domain/security.ts` + an attack test. Notification links → `safeDeepLink()`.
+- Report reasons are the closed set in `src/domain/options.ts` (`fake`, not `fake_profile`).
 
 ## Environment limits observed (cloud session)
 - Network policy blocks `api.expo.dev`, `exp.host`, ngrok, `docs.expo.dev` → no Expo tunnel from the cloud; run locally to scan with Expo Go.

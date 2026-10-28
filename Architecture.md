@@ -220,3 +220,27 @@ Job ──► pending past expiresAt → 'expired' (offers expire, sender notifi
 - **Poke rules:** `pokeEligibility()` — sender only · pending & unexpired · ≥ `pokeWaitHours` · one per request · ≤ `pokeMaxPer7Days` per recipient (rolling, across requests) · `allowReminders` opt-out. Pokes are anonymous and never change status.
 - **Privacy:** notifications carry names and an `offered` flag, never numbers; analytics carry ids/booleans only; admins see masked numbers; revealed numbers render only in `ContactActions`.
 - **Re-sending:** allowed after expiry or withdrawal; blocked for 30 days after a decline.
+
+## 14. Security hardening & data retention (2026-10-28, "break it and fix it")
+
+Every rule below has a regression test that tries the attack and must fail to get through.
+
+**Database (`20261102000000_security_hardening.sql`, test `60_attacks.test.sql`: 73 attacks blocked).**
+- Deny-by-default `EXECUTE`: all functions revoked from `public/anon/authenticated`; only an explicit allow-list (search, profile, interests, offers, push settings, admin/master RPCs) is granted. Closed: anonymous calls to `display_name_of`, exposed crypto helpers.
+- Shortlists only for profiles the member can see (`can_view_profile`); no updates.
+- Biodata ≤ 32 KB; photos must be the owner's own storage paths (`<uid>/<id>.jpg|png|webp`), never free URLs.
+- Reports: column-level insert (status can't be forged), known reasons, one open report per pair, 10/day.
+- Length caps: push token ≤ 200, idempotency key ≤ 100, message ≤ 4000, push prefs ≤ 1 KB.
+- Deep links on notifications/announcements must be in-app paths; announcement images https only.
+- Test harness no longer over-grants table privileges, so tests see real Supabase defaults.
+
+**App backend rules (`src/domain/security.ts`, test `__tests__/attacks.test.ts`).** 12 of 20 attack tests got through before the fix; all are now blocked: oversized/garbage biodata, svg/script/remote-tracker photos, unknown report reasons, self-reports, report-bombing, self-blocking, ghost-profile blocks, giant idempotency keys and push tokens, unknown languages, non-boolean consent, unbounded search page size, announcement edits that forged status/author, off-app links and http images in announcements. Ownership checks on requests, offers, notifications, orders and admin actions already held.
+
+**Client.** Every notification/push tap goes through `safeDeepLink()` (a push payload is untrusted input). Photos: originals up to **5 MB** (JPG/PNG/WEBP/HEIC; svg/gif/pdf refused) are resized to ≤ 1600 px JPEG on the phone (`src/services/photos.ts`, expo-image-manipulator), which also strips EXIF/GPS; at most 1.5 MB is stored per photo.
+
+**Data size.**
+- Demo store prunes data nobody reads back: inbox keeps the newest 200 per member, idempotency keys expire after 24 h, expired OTPs are dropped, analytics keep 2000 events, and boost impressions are kept for 180 days. A flooded store went from 8.5 MB to about 0.4 MB (`__tests__/dataSize.test.ts`).
+- Server: `run_retention()` (daily via pg_cron) applies the same limits, with 30 days for finished push-log rows and 400 days for analytics (`70_retention.test.sql`).
+- Lifetime records are never pruned: views, audit log, orders and reports.
+
+**Bundle.** The Supabase SDK is no longer bundled in demo builds. The flag now lives in `services/supabase/config.ts`. That cut web JS from 4.08 MB to 3.80 MB (−276 KB raw, −67 KB gzip). The Urdu and Telugu fonts already load only when that language is chosen.
