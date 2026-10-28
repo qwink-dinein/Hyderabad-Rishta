@@ -45,6 +45,11 @@ Reset everything: Settings → “Reset demo data”.
 - Network policy blocks `api.expo.dev`, `exp.host`, ngrok, `docs.expo.dev` → no Expo tunnel from the cloud; run locally to scan with Expo Go.
 - ~~GitHub push required re-linking the remote (scaffold overwrote `.git`)~~ — fixed 2026-10-28 with owner approval; branch pushed.
 
+## Hosted web preview
+- Private Artifact: https://claude.ai/artifact/Vx3XTLdLJVSgcVY9hkmxuH (single self-contained HTML, demo backend).
+- Rebuild: `SINGLE_BUNDLE=1 EXPO_OFFLINE=1 npx expo export --platform web --output-dir dist-single && node scripts/pack-web.js dist-single <out>.html`, then republish to the same URL.
+- `app.config.js` turns off web route code-splitting only when `SINGLE_BUNDLE=1`; `+not-found` redirects unknown paths to `/`.
+
 ## Next session — start here
 1. Check `Tasks.md` Phase 2; ask owner about Supabase project + SMS + Razorpay accounts.
 2. Keep all six docs updated as you work.

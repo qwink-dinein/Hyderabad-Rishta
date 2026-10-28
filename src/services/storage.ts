@@ -7,10 +7,35 @@ export interface KV {
   removeItem(key: string): Promise<void>;
 }
 
+/**
+ * AsyncStorage with an in-memory fallback: private windows and sandboxed frames can block
+ * localStorage, and the app must still work (data then lasts for the session only).
+ */
+const fallback = new Map<string, string>();
 export const asyncStorageKV: KV = {
-  getItem: (k) => AsyncStorage.getItem(k),
-  setItem: (k, v) => AsyncStorage.setItem(k, v),
-  removeItem: (k) => AsyncStorage.removeItem(k),
+  getItem: async (k) => {
+    try {
+      return (await AsyncStorage.getItem(k)) ?? fallback.get(k) ?? null;
+    } catch {
+      return fallback.get(k) ?? null;
+    }
+  },
+  setItem: async (k, v) => {
+    fallback.set(k, v);
+    try {
+      await AsyncStorage.setItem(k, v);
+    } catch {
+      // storage blocked or full — keep the in-memory copy
+    }
+  },
+  removeItem: async (k) => {
+    fallback.delete(k);
+    try {
+      await AsyncStorage.removeItem(k);
+    } catch {
+      // ignore
+    }
+  },
 };
 
 export function memoryKV(initial: Record<string, string> = {}): KV {

@@ -20,6 +20,7 @@ npm install
 | Preview on your phone (same Wi-Fi) | `npm start` → scan the QR with Expo Go (Android) or the Camera app (iPhone) |
 | Phone on a different network | `npm run tunnel` |
 | Production web build (static) | `npm run export:web` → deploy the `dist/` folder to any static host (Vercel, Netlify, Cloudflare Pages) with SPA fallback to `index.html` |
+| Single-file web preview (hosted) | `SINGLE_BUNDLE=1 npx expo export --platform web --output-dir dist-single && node scripts/pack-web.js dist-single preview.html` |
 | Typecheck | `npm run typecheck` |
 | Unit + integration tests | `npm test` |
 | Database RLS tests | `PGHOST=… PGUSER=postgres ./scripts/test-db.sh` |
