@@ -2,7 +2,7 @@ import { type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useUnreadCount } from '@/hooks/queries';
+import { useShortlistIds, useUnreadCount } from '@/hooks/queries';
 import { colors, maxContentWidth, space } from '@/theme/tokens';
 import { BrandMark } from './art/Illustrations';
 import { Icon } from './ui/Icon';
@@ -26,6 +26,32 @@ export function BellButton() {
         <View style={styles.badge}>
           <Text variant="caption" color={colors.emerald} style={styles.badgeText}>
             {unread > 9 ? '9+' : unread}
+          </Text>
+        </View>
+      ) : null}
+    </Pressable>
+  );
+}
+
+/** Saved profiles (heart + count) — the shortlist's home on Discover now that Boost has the centre tab. */
+export function ShortlistButton() {
+  const { t } = useTranslation();
+  const { data } = useShortlistIds();
+  const count = data?.length ?? 0;
+  return (
+    <Pressable
+      onPress={() => router.push('/shortlist')}
+      accessibilityRole="button"
+      accessibilityLabel={t('discover.openShortlist', { count })}
+      hitSlop={6}
+      style={styles.iconBtn}
+      testID="open-shortlist"
+    >
+      <Icon name={count ? 'heartFilled' : 'heart'} color={count ? colors.emerald : undefined} />
+      {count ? (
+        <View style={styles.badge}>
+          <Text variant="caption" color={colors.emerald} style={styles.badgeText}>
+            {count > 9 ? '9+' : count}
           </Text>
         </View>
       ) : null}

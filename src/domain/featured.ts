@@ -47,3 +47,32 @@ export function boostNoticeDue(p: Pick<Profile, 'boostUntil' | 'boostNotices'>, 
   if (end - t <= BOOST_ENDING_NOTICE_MS && p.boostNotices?.ending !== p.boostUntil) return 'ending';
   return null;
 }
+
+/**
+ * Boost tab state for the owner (drives the centre button's dot/pulse, the Home reminder card and
+ * the Boost screen). `ready` = could boost right now and hasn't: that's when we remind.
+ */
+export type BoostNudge = 'no_profile' | 'not_published' | 'active' | 'disabled' | 'ready';
+export function boostNudge(p: Pick<Profile, 'status' | 'deletedAt' | 'boostUntil'> | null | undefined, boostDisabled: boolean, now = new Date()): BoostNudge {
+  if (!p || p.deletedAt) return 'no_profile';
+  if (isBoostActive(p, now)) return 'active';
+  if (p.status !== 'published') return 'not_published';
+  return boostDisabled ? 'disabled' : 'ready';
+}
+
+/** Weekly "boost your profile" reminder: gentle, never right after publishing or right after a boost. */
+export const BOOST_REMINDER_EVERY_MS = 7 * 86400000;
+export const BOOST_REMINDER_GRACE_MS = 2 * 86400000;
+export function boostReminderDue(
+  p: Pick<Profile, 'status' | 'deletedAt' | 'boostUntil' | 'publishedAt'>,
+  owner: Pick<User, 'deactivatedAt' | 'deletedAt'> | undefined,
+  lastReminderAt: string | undefined,
+  boostDisabled: boolean,
+  now = new Date(),
+): boolean {
+  if (boostNudge(p, boostDisabled, now) !== 'ready' || !owner || owner.deactivatedAt || owner.deletedAt) return false;
+  const t = now.getTime();
+  if (p.publishedAt && t - new Date(p.publishedAt).getTime() < BOOST_REMINDER_GRACE_MS) return false;
+  if (p.boostUntil && t - new Date(p.boostUntil).getTime() < BOOST_REMINDER_EVERY_MS) return false;
+  return !lastReminderAt || t - new Date(lastReminderAt).getTime() >= BOOST_REMINDER_EVERY_MS;
+}

@@ -7,7 +7,7 @@ import { announcementStats, audienceFor, dashboardMetrics, isAnnouncementLive } 
 import { resolvePricing, validatePricing } from '@/domain/pricing';
 import { mergeScopes, NO_CONSENT, profileTypeOf, projectProfile } from '@/domain/privacy';
 import { matchesFilters, sortProfiles, type SearchFilters } from '@/domain/search';
-import { boostNoticeDue, BOOST_ENDING_NOTICE_MS, dayKey, isFeaturable, rotateFeatured } from '@/domain/featured';
+import { boostNoticeDue, BOOST_ENDING_NOTICE_MS, boostReminderDue, dayKey, isFeaturable, rotateFeatured } from '@/domain/featured';
 import { isRateLimitExempt, prefsOf, PUSH_HOURLY_CAP, pushAllowed, pushContent, CATEGORY, VIEW_NOTICE_WINDOW_MS } from '@/domain/push';
 import type {
   Announcement,
@@ -601,7 +601,15 @@ export class DemoBackend implements Backend {
       const due = boostNoticeDue(p, this.now());
       if (!due) continue;
       p.boostNotices = { ...(p.boostNotices ?? {}), [due]: p.boostUntil };
-      this.notify(db, p.userId, due === 'ending' ? 'boost_ending' : 'boost_ended', { until: p.boostUntil ?? '' }, '/dashboard');
+      this.notify(db, p.userId, due === 'ending' ? 'boost_ending' : 'boost_ended', { until: p.boostUntil ?? '' }, '/boost');
+    }
+    // Gentle weekly "boost your profile" reminder while a live profile isn't boosted (owner request).
+    for (const p of db.profiles) {
+      if (p.deletedAt || p.status !== 'published') continue;
+      const disabled = resolvePricing(db.pricing, profileTypeOf(p)).boost.mode === 'disabled';
+      if (!boostReminderDue(p, db.users.find((u) => u.id === p.userId), p.boostRemindedAt, disabled, this.now())) continue;
+      p.boostRemindedAt = this.iso();
+      this.notify(db, p.userId, 'boost_reminder', {}, '/boost');
     }
     // Time-locked master recovery completes only if the current master did not cancel it.
     const pr = db.security.pendingRecovery;
@@ -985,7 +993,7 @@ export class DemoBackend implements Backend {
     p.boostUntil = new Date(base + (order.terms.boostDays ?? db.pricing.boostDays) * 86400000).toISOString();
     // A boost of 24 h or less has no separate "ending soon" notice.
     p.boostNotices = new Date(p.boostUntil).getTime() - this.now().getTime() <= BOOST_ENDING_NOTICE_MS ? { ending: p.boostUntil } : {};
-    this.notify(db, p.userId, 'boost_started', { until: p.boostUntil }, '/dashboard');
+    this.notify(db, p.userId, 'boost_started', { until: p.boostUntil }, '/boost');
   }
 
   completePayment(orderId: string, outcome: 'success' | 'failure') {

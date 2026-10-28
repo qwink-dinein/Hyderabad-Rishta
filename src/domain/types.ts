@@ -201,6 +201,8 @@ export interface Profile {
   boostNotices?: { ending?: string; ended?: string };
   /** When the current (possibly extended) boost period began. */
   boostStartedAt?: string;
+  /** Last weekly "boost your profile" reminder sent to the owner. */
+  boostRemindedAt?: string;
   createdAt: string;
   updatedAt: string;
   /** Last completed wizard step — powers "save and continue". */
@@ -379,6 +381,7 @@ export type NotificationType =
   | 'profile_shortlisted'
   | 'boost_ending'
   | 'boost_ended'
+  | 'boost_reminder'
   | 'announcement';
 
 export interface AppNotification {

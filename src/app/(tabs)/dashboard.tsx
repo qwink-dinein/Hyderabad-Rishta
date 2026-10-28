@@ -1,8 +1,7 @@
-import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { CheckoutSheet, PricingNotice } from '@/components/Checkout';
+import { PricingNotice } from '@/components/Checkout';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
@@ -11,9 +10,6 @@ import { Icon, type IconName } from '@/components/ui/Icon';
 import { Card, Row, Screen, Section } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { formatDate, formatMoney } from '@/domain/format';
-import { resolvePricing } from '@/domain/pricing';
-import { profileTypeOf } from '@/domain/privacy';
-import type { Order } from '@/domain/types';
 import { useDashboard, useInvalidateProfileState, useMyProfile, useOrders, usePricing } from '@/hooks/queries';
 import { backend } from '@/services';
 import { colors, radius, space } from '@/theme/tokens';
@@ -28,8 +24,6 @@ export default function Dashboard() {
   const { data: m, error, refetch } = useDashboard();
   const { data: pricing } = usePricing();
   const { data: orders } = useOrders();
-  const [order, setOrder] = useState<Order | null>(null);
-  const [busy, setBusy] = useState(false);
 
   if (isLoading) return <Loading />;
 
@@ -53,25 +47,7 @@ export default function Dashboard() {
     );
   }
 
-  const type = profileTypeOf(profile);
-  const price = pricing ? resolvePricing(pricing, type) : null;
   const st = profile.status;
-
-  const boost = async () => {
-    setBusy(true);
-    try {
-      const res = await backend.startBoost();
-      if (res.order.status === 'pending') setOrder(res.order);
-      else {
-        toast(t('notifications.t.boost_started'));
-        invalidate();
-      }
-    } catch (e) {
-      toast(errMsg(e), 'danger');
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const togglePause = async () => {
     try {
@@ -136,40 +112,20 @@ export default function Dashboard() {
       <Section title={t('dashboard.boost')}>
         <Card style={{ gap: space.sm }}>
           {m?.boostActive ? (
-            <View style={{ gap: space.xs }} testID="boost-status">
+            <View testID="boost-summary">
               <Row>
                 <Icon name="star" color={colors.goldMuted} />
-                <Text variant="bodyStrong">{t('dashboard.boostActiveUntil', { date: formatDate(m.boostUntil) })}</Text>
-              </Row>
-              {m.boostVisible ? (
-                <Text variant="caption" color={colors.success}>
-                  {t('dashboard.boostVisible')}
+                <Text variant="bodyStrong" style={{ flex: 1 }}>
+                  {t('dashboard.boostActiveUntil', { date: formatDate(m.boostUntil) })}
                 </Text>
-              ) : (
-                <Banner tone="warning" icon="pause">
-                  {t('dashboard.boostHidden')}
-                </Banner>
-              )}
-              <Text variant="label" testID="boost-reach">
-                {t('dashboard.boostReach', { count: m.featuredReach ?? 0 })}
-              </Text>
+              </Row>
             </View>
           ) : (
-            <Text variant="body">{t('dashboard.boostNone')}</Text>
+            <Text variant="body" testID="boost-summary">
+              {t('boost.summaryNone')}
+            </Text>
           )}
-          {price?.boost.mode === 'disabled' ? (
-            <Text variant="caption">{t('dashboard.boostDisabled')}</Text>
-          ) : price ? (
-            <Button
-              label={t('dashboard.boostCta', { days: price.boostDays, price: price.boost.mode === 'free' ? t('pricing.free') : price.boostLabel })}
-              kind="gold"
-              onPress={boost}
-              loading={busy}
-              disabled={st !== 'published'}
-            />
-          ) : null}
-          <Text variant="caption">{t('discover.boostedNote')}</Text>
-          {pricing ? <PricingNotice config={pricing} type={type} /> : null}
+          <Button label={t('boost.openBoost')} kind={m?.boostActive ? 'secondary' : 'gold'} size="sm" arrow onPress={() => router.push('/boost')} style={{ alignSelf: 'flex-start' }} testID="open-boost" />
         </Card>
       </Section>
 
@@ -192,14 +148,6 @@ export default function Dashboard() {
         </Card>
       </Section>
 
-      <CheckoutSheet
-        order={order}
-        onClose={() => setOrder(null)}
-        onDone={() => {
-          setOrder(null);
-          invalidate();
-        }}
-      />
     </Screen>
   );
 }

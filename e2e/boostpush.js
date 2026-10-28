@@ -38,7 +38,7 @@ const step = async (name, fn) => {
     await page.screenshot({ path: `${SHOTS}/51-push-settings.png`, fullPage: true });
   });
   await step('boost → payment → in-app arrival banner + dashboard proof', async () => {
-    await page.goto(BASE + '/dashboard');
+    await page.goto(BASE + '/boost');
     await page.getByRole('button', { name: /^Boost for/ }).click();
     await page.getByRole('button', { name: 'Simulate successful payment' }).click();
     await page.getByTestId('arrival-banner').waitFor({ timeout: 8000 });
@@ -57,7 +57,7 @@ const step = async (name, fn) => {
     await page.getByTestId('logout').click();
     await page.getByTestId('cta-find').waitFor();
     await login('9000000001');
-    await page.goto(BASE + '/dashboard');
+    await page.goto(BASE + '/boost');
     await page.getByTestId('boost-reach').getByText(/1 member has seen your profile in Featured/).waitFor({ timeout: 8000 });
   });
   await browser.close();

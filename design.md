@@ -47,10 +47,29 @@ Scale (pt): display 34 (hero) · h1 27 (screen titles) · h2 20 (card titles 18�
 - Content max width 720 (wider grid on desktop Discover).
 
 ## 5. Navigation (Design PRD §10)
-- Bottom tabs: **Home · Discover · Shortlist · Requests · Profile**. Labels always shown; the selected tab gets a sage pill behind its icon.
+- Bottom tabs: **Home · Discover · Boost · Requests · Profile** (Boost is the raised centre button — see §5b; Shortlist moved into Discover and Home). Labels always shown; the selected tab gets a sage pill behind its icon.
 - The **notification bell** sits in every tab's top bar (`TabHeader`) with a gold unread badge, and opens `/notifications` (a stack screen that deep links resolve to).
 - There is no Messages tab, because there is no chat. Requests handles the connection workflow.
 - Admin navigation stays separate (`/admin/*`).
+
+### 5b. Boost centre tab (owner request 2026-10-28)
+- **Tabs:** Home · Discover · **Boost** (raised gold circle in the centre) · Requests · Profile.
+  - The Boost button turns emerald when selected, or while a boost is active.
+- **Reminders** show only while the member *could* boost and hasn't (`boostNudge() === 'ready'`):
+  - a red dot on the Boost button;
+  - a soft gold halo that pulses every ~4 s, off under Reduce Motion and on the Boost screen itself;
+  - a "Get noticed sooner" card on Home ("Not now" hides it for 3 days);
+  - a weekly `boost_reminder` notification.
+- **Weekly reminder rules:**
+  - Not within 2 days of going live, nor within 7 days of a boost ending.
+  - Never while boosting is disabled.
+  - Promotional push category: members can switch it off, and the hourly cap applies.
+- **Shortlist** is no longer a tab. Members reach it from:
+  - a heart button with a count in Discover's header (`ShortlistButton`);
+  - a "N saved profiles" row on Home;
+  - the profile hearts, as before.
+  - `/shortlist` is now a stack screen with Back and Home; old links still work.
+- **Profile tab:** keeps a one-line boost summary plus an "Open Boost" button. The full boost flow lives on the Boost tab.
 
 ## 6. Components (Design PRD §19)
 - **BrandMark** — 8-point star medallion with a rosette (art/Illustrations.tsx).

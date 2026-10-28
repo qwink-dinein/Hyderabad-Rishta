@@ -3,7 +3,7 @@ import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput,
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ProfileCard, ProfileCardSkeleton } from '@/components/ProfileCard';
-import { TabHeader } from '@/components/TabHeader';
+import { ShortlistButton, TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
 import { Banner, EmptyState, ErrorView, Loading } from '@/components/ui/feedback';
 import { ChipGroup } from '@/components/ui/forms';
@@ -205,7 +205,7 @@ export default function Discover() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <TabHeader title={t('discover.title')} settings />
+      <TabHeader title={t('discover.title')} settings right={<ShortlistButton />} />
       {search.isLoading ? (
         <View style={styles.column}>
           {header}
