@@ -1,5 +1,5 @@
 import { DEMO_ADMIN_PHONE, DEMO_OTP, DEMO_USER_PHONE } from '@/data/seed';
-import { afterWrongPin, cleanPin, PIN_OTP_WINDOW_MS, PIN_SOFT_LOCK_MS, pinProblem, SESSION_IDLE_MS } from '@/domain/auth';
+import { afterWrongPin, cleanPin, PIN_OTP_WINDOW_MS, PIN_SOFT_LOCK_MS, pinProblem, SESSION_IDLE_MS, type PinAttemptState } from '@/domain/auth';
 import { AppError } from '@/services/backend';
 import { DemoBackend, RESEND_COOLDOWN_MS, type DemoDb } from '@/services/demo/demoBackend';
 import { memoryKV, type KV } from '@/services/storage';
@@ -50,7 +50,7 @@ describe('PIN rules', () => {
     expect(cleanPin('PIN: 4-8-2-7')).toBe('4827');
   });
   it('locks briefly after 5 wrong PINs and fully after 10 in a day', () => {
-    let s = { streak: 0, recent: [] as number[] };
+    let s: PinAttemptState = { streak: 0, recent: [] };
     for (let i = 0; i < 4; i++) s = afterWrongPin(s, 1000 + i);
     expect(s.lockedUntil).toBeUndefined();
     s = afterWrongPin(s, 2000);

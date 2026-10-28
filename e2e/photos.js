@@ -1,6 +1,7 @@
 // Photo uploads (owner request 2026-10-28): originals up to 5 MB accepted and compressed on the device;
 // larger files and non-photos (svg can carry scripts) refused with a clear message.
 const { chromium } = require('playwright');
+const { loginWithOtp } = require('./auth');
 const SHOTS = process.argv[2] || require('path').join(__dirname, 'screenshots');
 require('fs').mkdirSync(SHOTS, { recursive: true });
 const BASE = 'http://localhost:8081';
@@ -30,11 +31,7 @@ const noisyJpeg = (page, side) =>
   const page = await browser.newPage({ viewport: { width: 420, height: 900 } });
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 300)); });
-  await page.goto(BASE + '/login');
-  await page.getByTestId('phone-input').fill('9876500888');
-  await page.getByTestId('send-otp').click();
-  await page.getByTestId('otp-input').fill('123456');
-  await page.getByTestId('verify-otp').click();
+  await loginWithOtp(page, BASE, '9876500888');
   await page.getByTestId('photo-slot-1').waitFor({ timeout: 15000 });
 
   const upload = async (slot, file) => {

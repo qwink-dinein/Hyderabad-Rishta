@@ -1,5 +1,6 @@
 // "Back to Home from any screen" E2E: signed-out, member (with guards), new member wizard, admin.
 const { chromium } = require('playwright');
+const { loginWithOtp } = require('./auth');
 const SHOTS = process.argv[2] || require('path').join(__dirname, 'screenshots');
 require('fs').mkdirSync(SHOTS, { recursive: true });
 const BASE = 'http://localhost:8081';
@@ -13,14 +14,7 @@ const step = async (name, fn) => {
   const page = await browser.newPage({ viewport: { width: 375, height: 760 } });
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 300)); });
-  const login = async (phone) => {
-    await page.goto(BASE + '/login');
-    await page.getByTestId('phone-input').fill(phone);
-    await page.getByTestId('send-otp').click();
-    await page.getByTestId('otp-input').fill('123456');
-    await page.getByTestId('verify-otp').click();
-    await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 10000 });
-  };
+  const login = (phone) => loginWithOtp(page, BASE, phone);
   const home = () => page.getByTestId('header-home').click();
   const at = (path) => page.waitForURL((u) => u.pathname === path, { timeout: 8000 });
 

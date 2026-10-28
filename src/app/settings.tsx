@@ -81,6 +81,18 @@ export default function Settings() {
             <InfoRow label={t('settings.phone')} value={`${user.countryCode} ${maskPhone(user.phone)}`} />
             <Text variant="caption">{t('settings.phoneHelp')}</Text>
           </Card>
+          <Card style={{ gap: space.sm }}>
+            <Text variant="label">{t('settings.pinTitle')}</Text>
+            <Text variant="caption">{user.hasPin ? t('settings.pinOn') : t('settings.pinOff')}</Text>
+            <Button
+              label={user.hasPin ? t('settings.pinChange') : t('settings.pinSetup')}
+              kind="secondary"
+              size="sm"
+              onPress={() => (user.hasPin ? router.push({ pathname: '/pin', params: { mode: 'change', next: '/settings' } }) : router.push({ pathname: '/login', params: { purpose: 'setup' } }))}
+              style={{ alignSelf: 'flex-start' }}
+              testID="pin-settings-action"
+            />
+          </Card>
           {myProfile ? (
             <Card style={{ gap: space.xs }}>
               <Text variant="label" onPress={() => router.push({ pathname: '/biodata', params: { step: '6' } })} accessibilityRole="link" color={colors.emerald}>

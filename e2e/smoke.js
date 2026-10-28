@@ -1,5 +1,6 @@
 // End-to-end smoke test of the exported web build (Playwright, headless Chromium).
 const { chromium } = require('playwright');
+const { loginWithOtp } = require('./auth');
 const SHOTS = process.argv[2] || require('path').join(__dirname, 'screenshots');
 require('fs').mkdirSync(SHOTS, { recursive: true });
 const BASE = 'http://localhost:8081';
@@ -14,14 +15,7 @@ const step = async (name, fn) => {
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 300)); });
   const shot = (n) => page.screenshot({ path: `${SHOTS}/${n}.png`, fullPage: false });
-  const login = async (phone) => {
-    await page.goto(BASE + '/login');
-    await page.getByTestId('phone-input').fill(phone);
-    await page.getByTestId('send-otp').click();
-    await page.getByTestId('otp-input').fill('123456');
-    await page.getByTestId('verify-otp').click();
-    await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 10000 });
-  };
+  const login = (phone) => loginWithOtp(page, BASE, phone);
 
   await step('landing renders', async () => {
     await page.goto(BASE + '/');

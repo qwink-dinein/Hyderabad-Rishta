@@ -24,7 +24,7 @@ export function useErrorMessage() {
   const { t } = useTranslation();
   return (e: unknown) => {
     if (e instanceof AppError) {
-      if (e.code === 'validation' && e.message.startsWith('v.')) return t(e.message);
+      if (e.code === 'validation' && (e.message.startsWith('v.') || e.message.startsWith('pin.'))) return t(e.message);
       return t(`err.${e.code}`, { defaultValue: t('err.generic') });
     }
     return t('err.generic');
