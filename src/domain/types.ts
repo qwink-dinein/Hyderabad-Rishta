@@ -31,6 +31,8 @@ export interface User {
   deletedAt?: string;
   deletedBy?: string;
   deleteReason?: string;
+  /** Set when the team removed this account's biodata: no new biodata on this number until the account is deleted. */
+  profileRemovedAt?: string;
   /** Phone-notification preferences (server-side so every device honours them). */
   pushPrefs?: PushPrefs;
 }

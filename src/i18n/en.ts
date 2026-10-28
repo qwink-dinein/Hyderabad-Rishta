@@ -177,6 +177,9 @@ const en = {
     masterRecovery: 'Master admin: lost your phone?',
   },
   wizard: {
+    removedTitle: 'Biodata removed',
+    removedBody: 'Our team removed the biodata for this mobile number. Each number can have only one biodata. If you think this is a mistake, contact support. To start again from scratch, delete this account in Settings and sign up again.',
+    removedAction: 'Go to Settings',
     title: 'Your biodata',
     editTitle: 'Edit biodata',
     steps: {
@@ -369,6 +372,7 @@ const en = {
     invalid_state: 'This action is not available right now.',
     generic: 'Something went wrong. Please try again.',
     account_removed: 'This account has been removed. Contact support if you think this is a mistake.',
+    profile_removed: 'Your biodata was removed by our team. Each mobile number can have only one biodata — to start again, delete this account in Settings.',
     account_suspended: 'This account has been suspended by our team. Contact support for help.',
     invalid_recovery_code: 'That recovery code is not valid or was already used.',
   },

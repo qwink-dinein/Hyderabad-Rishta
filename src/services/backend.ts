@@ -39,6 +39,7 @@ export type ErrorCode =
   | 'fee_disabled'
   | 'not_accepting'
   | 'incomplete_biodata'
+  | 'profile_removed'
   | 'invalid_state'
   | 'account_removed'
   | 'account_suspended'

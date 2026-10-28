@@ -244,3 +244,19 @@ Every rule below has a regression test that tries the attack and must fail to ge
 - Lifetime records are never pruned: views, audit log, orders and reports.
 
 **Bundle.** The Supabase SDK is no longer bundled in demo builds. The flag now lives in `services/supabase/config.ts`. That cut web JS from 4.08 MB to 3.80 MB (−276 KB raw, −67 KB gzip). The Urdu and Telugu fonts already load only when that language is chosen.
+
+## 15. One mobile number = one account = one biodata (2026-10-28)
+
+The owner's rule: a mobile number can only ever have one biodata. A fresh biodata is possible only after the member **deletes their account** and signs up again.
+
+| Layer | How it is enforced |
+|---|---|
+| **Number** | `normalizePhone()` (`src/domain/security.ts`) turns every spelling into one form. Spaces and dashes are removed, `+091` becomes `+91`, the leading `0` is dropped, and a repeated `91` is removed. Indian numbers must be 10 digits starting with 6–9. Logins, sub-admin invites, backup phone and recovery all use it. Accounts are matched on the full `+<cc><number>`. |
+| **Account** | DB: check constraint `phone_canonical` plus a unique index on `country_code ‖ phone`. This means "+1 2025550123" and "+12 025550123" (the same E.164 number) can't both exist. Members can't change their number: there is no update grant. |
+| **Biodata** | DB: `profiles.user_id` is unique, and a soft-deleted biodata still holds the slot. The `profiles_one_per_number` trigger refuses a second biodata. Members can't move a biodata to another account (`user_id` is not updatable). App: `saveDraft` only ever edits the one biodata, including under double taps. |
+| **Removed by the team** | When an admin deletes a biodata, the account gets `profile_removed_at`. No new biodata is allowed while it is in Trash, nor after it is purged. The member sees a "Biodata removed" notice that links to Settings. A master **restore** clears the mark and brings back the original. |
+| **Fresh start** | Only **Delete account** (Settings) removes the account row. The number is then free for one new account and one new biodata, with a new HR- number (codes are never reused). An account an admin deleted can't sign in again with any spelling of its number. |
+
+Tests: `__tests__/oneBiodata.test.ts` (22), `supabase/tests/80_one_biodata.test.sql` (17 checks), `e2e/onebiodata.js`. Without the migration, the DB accepted `+91 09555500001` as a second account for an existing number.
+
+Not covered: one *person* using two *different* SIMs. A number can't prove identity. Admin duplicate-detection (same name + date of birth) is a possible Phase 2 item.

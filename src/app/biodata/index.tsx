@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { PhotoPicker } from '@/components/PhotoPicker';
 import { Button } from '@/components/ui/Button';
-import { Banner, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
+import { Banner, EmptyState, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { ChipGroup, Field, OptionList, RangeSelect, Reveal, Select, TextField, ToggleRow } from '@/components/ui/forms';
 import { Header, Row, Screen } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
@@ -16,6 +17,7 @@ import { useMyProfile, useSaveDraft } from '@/hooks/queries';
 import { haptic, playSound } from '@/services/feedback';
 import { useGoHome } from '@/hooks/useGoHome';
 import { useOptions } from '@/hooks/useOptions';
+import { backend } from '@/services';
 import { useSession } from '@/state/session';
 import { colors, radius, space } from '@/theme/tokens';
 
@@ -36,6 +38,8 @@ export default function BiodataWizard() {
   const [showErrors, setShowErrors] = useState(false);
   const goHome = useGoHome();
   const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  // One number = one biodata: if the team removed this account's biodata, a new one can't be started here.
+  const { data: fresh } = useQuery({ queryKey: ['session', 'fresh'], queryFn: () => backend.getSession(), enabled: !!user && !isLoading && !profile });
 
   // Initialise once from the saved draft (or a blank biodata) and resume at the last step.
   // Done during render (React's "adjust state on prop change" pattern) rather than in an effect.
@@ -53,6 +57,17 @@ export default function BiodataWizard() {
   }, []);
 
   if (!user) return <Redirect href="/login" />;
+  if (!profile && fresh?.profileRemovedAt)
+    return (
+      <Screen header={<Header title={t('wizard.title')} onHome={goHome} />}>
+        <EmptyState
+          icon="shield"
+          title={t('wizard.removedTitle')}
+          body={t('wizard.removedBody')}
+          action={<Button label={t('wizard.removedAction')} kind="secondary" onPress={() => router.replace('/settings')} testID="removed-settings" />}
+        />
+      </Screen>
+    );
   if (!bd) return <Loading />;
 
   const go = async (target: number, validate: boolean) => {

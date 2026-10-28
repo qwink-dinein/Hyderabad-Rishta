@@ -70,6 +70,8 @@
 | T-063 | Attack suite (app rules): input caps, report abuse, self-block, announcement link/image/forgery checks | ✅ |
 | T-064 | Photos up to 5 MB, compressed on the phone (≤1600 px JPEG, EXIF stripped); svg/gif/pdf refused; e2e `photos.js` | ✅ |
 | T-065 | Data retention (demo prune + SQL `run_retention()`), Supabase SDK out of demo bundle | ✅ |
+| T-066 | One number = one account = one biodata: phone normalisation, E.164 uniqueness, one-biodata trigger, removed-biodata mark + notice (only Delete account frees the number) | ✅ |
+| T-067 | Optional: flag likely duplicate people across different numbers (same name + DOB) for admins | ⏳ owner decision |
 | T-033 | Bug: "Send contact request" greyed out — button now always tappable with clear guidance; edits keep a live profile live; demo starts with approval off | ✅ |
 
 ## Phase 2 (next)

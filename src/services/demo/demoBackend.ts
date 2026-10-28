@@ -41,9 +41,9 @@ import type {
   ViewEvent,
 } from '@/domain/types';
 import { isAdminRole } from '@/domain/types';
-import { firstInvalidStep, otpSchema, phoneSchema, requestMessageSchema } from '@/domain/validation';
+import { firstInvalidStep, otpSchema, requestMessageSchema } from '@/domain/validation';
 import { REPORT_REASONS } from '@/domain/options';
-import { biodataProblem, isHttpsUrl, isInternalLink, LANGS, MAX_IDEM_KEY, MAX_PUSH_TOKEN, MAX_REPORTS_PER_DAY, MAX_SEARCH_PAGE } from '@/domain/security';
+import { biodataProblem, normalizePhone, isHttpsUrl, isInternalLink, LANGS, MAX_IDEM_KEY, MAX_PUSH_TOKEN, MAX_REPORTS_PER_DAY, MAX_SEARCH_PAGE } from '@/domain/security';
 import { AppError, type AdminRequestRow, type AdminStats, type Backend, type MemberDetail, type MemberRow, type ConnectionMetrics, type SendInterestInput, type NotificationView, type Page, type RecipientRow, type RequestView, type TrashItem } from '../backend';
 import type { KV } from '../storage';
 
@@ -286,8 +286,16 @@ export class DemoBackend implements Backend {
     db.otps = db.otps.filter((o) => o.key !== key);
   }
 
+  /** Same number however it was typed; compared as full E.164 so "+1 2025…" and "+12 025…" can't both exist. */
   private findUserByPhone(db: DemoDb, countryCode: string, phone: string) {
-    return db.users.find((u) => u.countryCode === countryCode && u.phone === phone);
+    const e164 = `${countryCode}${phone}`;
+    return db.users.find((u) => `${u.countryCode}${u.phone}` === e164);
+  }
+
+  private normPhone(countryCode: string, phone: string) {
+    const n = normalizePhone(countryCode, phone);
+    if (!n) throw new AppError('validation', 'v.phone');
+    return n;
   }
 
   private audit(db: DemoDb, actorId: string, action: string, target?: string, meta?: Record<string, unknown>) {
@@ -511,7 +519,7 @@ export class DemoBackend implements Backend {
   // ---------- auth ----------
   requestOtp(countryCode: string, phone: string) {
     return this.run((db) => {
-      if (!phoneSchema.safeParse(phone).success || !/^\+\d{1,4}$/.test(countryCode)) throw new AppError('validation', 'v.phone');
+      ({ countryCode, phone } = this.normPhone(countryCode, phone));
       const key = `${countryCode}${phone}`;
       const now = this.now().getTime();
       let st = db.otps.find((o) => o.key === key);
@@ -533,6 +541,7 @@ export class DemoBackend implements Backend {
 
   verifyOtp(countryCode: string, phone: string, code: string) {
     return this.run((db) => {
+      ({ countryCode, phone } = this.normPhone(countryCode, phone));
       if (!otpSchema.safeParse(code).success) throw new AppError('invalid_otp');
       const key = `${countryCode}${phone}`;
       const st = db.otps.find((o) => o.key === key);
@@ -544,7 +553,7 @@ export class DemoBackend implements Backend {
         throw new AppError('invalid_otp', undefined, { attemptsLeft: MAX_OTP_ATTEMPTS - st.attempts });
       }
       db.otps = db.otps.filter((o) => o.key !== key);
-      let user = db.users.find((u) => u.countryCode === countryCode && u.phone === phone);
+      let user = this.findUserByPhone(db, countryCode, phone);
       let isNew = false;
       if (!user) {
         user = { id: uid('u_'), countryCode, phone, role: 'user', language: 'en', createdAt: this.iso() };
@@ -625,6 +634,9 @@ export class DemoBackend implements Backend {
       lastStep = Math.max(0, Math.min(7, Math.floor(Number(lastStep) || 0)));
       let p = this.myProfile(db, u.id);
       if (!p) {
+        // One number = one account = one biodata. A biodata removed by the team (in Trash, or purged
+        // from it) can't be replaced by a fresh one; only deleting the account frees the number.
+        if (u.profileRemovedAt || db.profiles.some((x) => x.userId === u.id)) throw new AppError('profile_removed');
         p = { id: uid('p_'), code: `HR-${db.nextCode++}`, userId: u.id, biodata: clone(biodata), status: 'draft', createdAt: this.iso(), updatedAt: this.iso(), lastStep };
         db.profiles.push(p);
       } else {
@@ -1598,6 +1610,7 @@ export class DemoBackend implements Backend {
       p.deletedAt = this.iso();
       p.deletedBy = a.id;
       p.deleteReason = reason.trim().slice(0, 300) || undefined;
+      if (owner) owner.profileRemovedAt = p.deletedAt;
       for (const r of db.requests) if (r.status === 'pending' && (r.fromProfileId === p.id || r.toProfileId === p.id)) r.status = 'withdrawn';
       this.notify(db, p.userId, 'safety', {}, '/dashboard');
       this.audit(db, a.id, 'profile.deleted', p.id, { reason: p.deleteReason });
@@ -1716,12 +1729,17 @@ export class DemoBackend implements Backend {
         const deletedAt = u.deletedAt;
         u.deletedAt = u.deletedBy = u.deleteReason = undefined;
         const p = db.profiles.find((x) => x.userId === u.id && x.deletedAt === deletedAt);
-        if (p && !this.myProfile(db, u.id)) p.deletedAt = p.deletedBy = p.deleteReason = undefined;
+        if (p && !this.myProfile(db, u.id)) {
+          p.deletedAt = p.deletedBy = p.deleteReason = undefined;
+          u.profileRemovedAt = undefined;
+        }
       } else {
         const p = db.profiles.find((x) => x.id === id && x.deletedAt);
         if (!p) throw new AppError('not_found');
-        if (this.myProfile(db, p.userId)) throw new AppError('invalid_state', 'This member already created a new profile');
+        if (this.myProfile(db, p.userId)) throw new AppError('invalid_state', 'This member already has a live profile');
         p.deletedAt = p.deletedBy = p.deleteReason = undefined;
+        const owner = db.users.find((x) => x.id === p.userId);
+        if (owner) owner.profileRemovedAt = undefined;
       }
       this.audit(db, m.id, `${kind}.restored`, id);
     }, true);
@@ -1755,7 +1773,7 @@ export class DemoBackend implements Backend {
   masterAddSubAdmin(countryCode: string, phone: string) {
     return this.run((db) => {
       const m = this.master(db);
-      if (!phoneSchema.safeParse(phone).success || !/^\+\d{1,4}$/.test(countryCode)) throw new AppError('validation', 'v.phone');
+      ({ countryCode, phone } = this.normPhone(countryCode, phone));
       if (db.users.filter((u) => u.role === 'admin' && !u.deletedAt).length >= MAX_SUB_ADMINS) throw new AppError('rate_limited', `At most ${MAX_SUB_ADMINS} sub-admins`);
       let u = this.findUserByPhone(db, countryCode, phone);
       if (u?.role === 'master') throw new AppError('invalid_state', 'That is the master account');
@@ -1830,6 +1848,7 @@ export class DemoBackend implements Backend {
   masterSetBackupPhone(countryCode: string, phone: string, otp: string) {
     return this.run((db) => {
       const m = this.master(db);
+      ({ countryCode, phone } = this.normPhone(countryCode, phone));
       if (countryCode === m.countryCode && phone === m.phone) throw new AppError('invalid_state', 'Use a different number from your login phone');
       const owner = this.findUserByPhone(db, countryCode, phone);
       if (owner && isAdminRole(owner.role)) throw new AppError('invalid_state', 'That number belongs to another admin');
@@ -1861,6 +1880,7 @@ export class DemoBackend implements Backend {
       if (sec.failedAttempts.length >= MAX_RECOVERY_FAILURES_PER_HOUR) throw new AppError('rate_limited');
       // One recovery at a time: a second attempt can't hijack or reset an in-flight one.
       if (sec.pendingRecovery) throw new AppError('invalid_state', 'A recovery is already in progress');
+      ({ countryCode, phone } = this.normPhone(countryCode, phone));
       this.consumeOtp(db, countryCode, phone, otp);
       const hash = sha256Hex(sec.salt + normaliseCode(code));
       const match = sec.recoveryCodes.find((c) => c.hash === hash && !c.usedAt);

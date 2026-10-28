@@ -77,6 +77,7 @@ Reset everything: Settings → “Reset demo data”.
 - SQL tests must NOT grant table privileges broadly (masks column-level revokes). New RPCs need adding to the allow-list in `20261102000000_security_hardening.sql` style (execute is deny-by-default).
 - Any new input field: add a cap in `src/domain/security.ts` + an attack test. Notification links → `safeDeepLink()`.
 - Report reasons are the closed set in `src/domain/options.ts` (`fake`, not `fake_profile`).
+- Owner rule: ONE number = ONE account = ONE biodata. Always pass phones through `normalizePhone()`; never create a profile if any profile row exists for the user or `profileRemovedAt` is set. Only Delete account frees a number (Architecture §15).
 
 ## Environment limits observed (cloud session)
 - Network policy blocks `api.expo.dev`, `exp.host`, ngrok, `docs.expo.dev` → no Expo tunnel from the cloud; run locally to scan with Expo Go.
