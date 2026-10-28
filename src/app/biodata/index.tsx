@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { PhotoPicker } from '@/components/PhotoPicker';
 import { Button } from '@/components/ui/Button';
 import { Banner, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
-import { ChipGroup, Field, RangeSelect, Select, TextField, ToggleRow } from '@/components/ui/forms';
+import { ChipGroup, Field, OptionList, RangeSelect, Reveal, Select, TextField, ToggleRow } from '@/components/ui/forms';
 import { Header, Row, Screen } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { ageFromDob, maskPhone } from '@/domain/format';
@@ -13,6 +13,7 @@ import { citiesOf, COUNTRIES, districtsOf, statesOf } from '@/domain/options';
 import type { Biodata } from '@/domain/types';
 import { emptyBiodata, STEP_KEYS, stepErrors } from '@/domain/validation';
 import { useMyProfile, useSaveDraft } from '@/hooks/queries';
+import { haptic, playSound } from '@/services/feedback';
 import { useOptions } from '@/hooks/useOptions';
 import { useSession } from '@/state/session';
 import { colors, radius, space } from '@/theme/tokens';
@@ -65,6 +66,8 @@ export default function BiodataWizard() {
     try {
       await save.mutateAsync({ biodata: bd, step: validate ? Math.max(step + 1, target) : step });
       setShowErrors(false);
+      if (validate) haptic('light'); // saved — quiet confirmation, no sound on every step
+      if (target > 6) playSound('save');
       if (target > 6) router.push('/biodata/preview');
       else {
         setStep(target);
@@ -103,7 +106,13 @@ export default function BiodataWizard() {
         <PhotoPicker photos={bd.photos} onChange={(p) => setBd({ ...bd, photos: p })} />
       </View>
       <Field label={t('f.createdFor')} required error={err('createdFor')}>
-        <ChipGroup options={opts('createdFor')} value={b.createdFor} onChange={(v) => set('basic', 'createdFor', v ?? '')} accessibilityLabel={t('f.createdFor')} />
+        <OptionList
+          options={opts('createdFor')}
+          value={b.createdFor}
+          onChange={(v) => set('basic', 'createdFor', v ?? '')}
+          icons={{ self: 'user', son: 'user', daughter: 'user', brother: 'users', sister: 'users', relative: 'users', other: 'sparkle' }}
+          accessibilityLabel={t('f.createdFor')}
+        />
       </Field>
       <Field label={t('f.lookingFor')} required error={err('lookingFor')}>
         <ChipGroup options={opts('lookingFor')} value={b.lookingFor} onChange={(v) => set('basic', 'lookingFor', v ?? '')} accessibilityLabel={t('f.lookingFor')} />
@@ -136,6 +145,7 @@ export default function BiodataWizard() {
         />
       </Field>
       {b.maritalStatus && b.maritalStatus !== 'never_married' ? (
+        <Reveal>
         <Field label={t('f.children')} required error={err('children')} hint={t('f.childrenHint')}>
           <TextField
             value={b.children != null ? String(b.children) : ''}
@@ -148,6 +158,7 @@ export default function BiodataWizard() {
             testID="children-input"
           />
         </Field>
+        </Reveal>
       ) : null}
       <Field label={t('f.motherTongue')} required error={err('motherTongue')}>
         <Select label={t('f.motherTongue')} options={opts('tongue')} value={b.motherTongue || undefined} onChange={(v: string) => set('basic', 'motherTongue', v)} error={!!err('motherTongue')} />
@@ -208,9 +219,11 @@ export default function BiodataWizard() {
         <Select label={t('f.education')} options={opts('education')} value={car.education || undefined} onChange={(v: string) => set('career', 'education', v)} error={!!err('education')} />
       </Field>
       {car.education === 'other' ? (
+        <Reveal>
         <Field label={t('f.educationOther')} required error={err('educationOther')}>
           <TextField value={car.educationOther} onChangeText={(v) => set('career', 'educationOther', v)} accessibilityLabel={t('f.educationOther')} error={!!err('educationOther')} maxLength={80} />
         </Field>
+        </Reveal>
       ) : null}
       <Field label={t('f.educationDetails')} optional>
         <TextField value={car.educationDetails} onChangeText={(v) => set('career', 'educationDetails', v)} accessibilityLabel={t('f.educationDetails')} maxLength={120} />
@@ -219,9 +232,11 @@ export default function BiodataWizard() {
         <Select label={t('f.profession')} options={opts('profession')} value={car.profession || undefined} onChange={(v: string) => set('career', 'profession', v)} error={!!err('profession')} />
       </Field>
       {car.profession === 'other' ? (
+        <Reveal>
         <Field label={t('f.professionOther')} required error={err('professionOther')}>
           <TextField value={car.professionOther} onChangeText={(v) => set('career', 'professionOther', v)} accessibilityLabel={t('f.professionOther')} error={!!err('professionOther')} maxLength={80} />
         </Field>
+        </Reveal>
       ) : null}
       <Field label={t('f.professionDetails')} optional>
         <TextField value={car.professionDetails} onChangeText={(v) => set('career', 'professionDetails', v)} accessibilityLabel={t('f.professionDetails')} maxLength={120} />
@@ -263,9 +278,11 @@ export default function BiodataWizard() {
         </Field>
       ) : null}
       {rel.maslak === 'other' || rel.subMaslak === 'other' ? (
+        <Reveal>
         <Field label={t('f.maslakOther')} optional>
           <TextField value={rel.maslakOther} onChangeText={(v) => set('religion', 'maslakOther', v)} accessibilityLabel={t('f.maslakOther')} maxLength={60} />
         </Field>
+        </Reveal>
       ) : null}
       <Field label={t('f.namaz')} optional>
         <ChipGroup options={opts('practice')} value={rel.namaz} onChange={(v) => set('religion', 'namaz', v)} />
@@ -404,6 +421,7 @@ export default function BiodataWizard() {
             onPress={() => go(step + 1, true)}
             loading={save.isPending}
             style={{ flex: 2 }}
+            arrow
             testID="wizard-next"
           />
         </Row>
@@ -415,7 +433,9 @@ export default function BiodataWizard() {
           {t(`wizard.steps.${STEP_KEYS[step]}`)}
         </Text>
         <View style={styles.progressTrack} accessibilityRole="progressbar" accessibilityValue={{ min: 1, max: 7, now: step + 1 }}>
-          <View style={[styles.progressFill, { width: `${((step + 1) / 7) * 100}%` }]} />
+          {STEP_KEYS.map((k, i) => (
+            <View key={k} style={[styles.segment, i < step && styles.segmentDone, i === step && styles.segmentNow]} />
+          ))}
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.xs, paddingVertical: space.sm }}>
           {STEP_KEYS.map((k, i) => {
@@ -443,8 +463,10 @@ export default function BiodataWizard() {
 }
 
 const styles = StyleSheet.create({
-  progressTrack: { height: 6, borderRadius: 3, backgroundColor: colors.sage, overflow: 'hidden' },
-  progressFill: { height: 6, backgroundColor: colors.gold, borderRadius: 3 },
+  progressTrack: { flexDirection: 'row', gap: 4, marginTop: space.xs },
+  segment: { flex: 1, height: 5, borderRadius: 3, backgroundColor: colors.border },
+  segmentDone: { backgroundColor: colors.gold },
+  segmentNow: { backgroundColor: colors.emerald },
   stepPill: { paddingHorizontal: space.md, paddingVertical: 6, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.white },
   stepPillOn: { backgroundColor: colors.emerald, borderColor: colors.emerald },
 });

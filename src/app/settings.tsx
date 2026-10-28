@@ -14,6 +14,7 @@ import { qk, useBlocked, useMyProfile } from '@/hooks/queries';
 import { ToggleRow } from '@/components/ui/forms';
 import { backend, backendInfo } from '@/services';
 import { DemoBackend } from '@/services/demo/demoBackend';
+import { useFeedbackPrefs } from '@/services/feedback';
 import { useFilters } from '@/state/filters';
 import { useSession } from '@/state/session';
 import { colors, space } from '@/theme/tokens';
@@ -28,6 +29,7 @@ export default function Settings() {
   const { data: blocked } = useBlocked();
   const { data: myProfile } = useMyProfile();
   const demo = backend instanceof DemoBackend ? backend : null;
+  const { sound, haptics, setSound, setHaptics } = useFeedbackPrefs();
 
   const signOut = async () => {
     await backend.logout();
@@ -56,12 +58,27 @@ export default function Settings() {
         <LanguageSwitcher />
       </Section>
 
+      <Section title={t('settings.feedback')}>
+        <Card>
+          <ToggleRow label={t('settings.soundEffects')} hint={t('settings.soundEffectsHelp')} value={sound} onChange={(v) => setSound(v)} />
+          <ToggleRow label={t('settings.haptics')} hint={t('settings.hapticsHelp')} value={haptics} onChange={(v) => setHaptics(v)} />
+        </Card>
+      </Section>
+
       {user ? (
         <Section title={t('settings.account')}>
           <Card>
             <InfoRow label={t('settings.phone')} value={`${user.countryCode} ${maskPhone(user.phone)}`} />
             <Text variant="caption">{t('settings.phoneHelp')}</Text>
           </Card>
+          {myProfile ? (
+            <Card style={{ gap: space.xs }}>
+              <Text variant="label" onPress={() => router.push({ pathname: '/biodata', params: { step: '6' } })} accessibilityRole="link" color={colors.emerald}>
+                {t('settings.visibility')}
+              </Text>
+              <Text variant="caption">{t('settings.visibilityHelp')}</Text>
+            </Card>
+          ) : null}
           {isAdminRole(user.role) ? <Button label={t('settings.admin')} onPress={() => router.push('/admin')} /> : null}
         </Section>
       ) : null}
@@ -121,6 +138,9 @@ export default function Settings() {
           </Text>
           <Text variant="label" onPress={() => router.push('/legal/terms')} accessibilityRole="link" color={colors.emerald}>
             {t('settings.terms')}
+          </Text>
+          <Text variant="label" onPress={() => router.push('/legal/help')} accessibilityRole="link" color={colors.emerald}>
+            {t('settings.help')}
           </Text>
           <Text variant="caption">{t('settings.version', { v: Constants.expoConfig?.version ?? '1.0.0' })}</Text>
           {backendInfo.kind === 'demo' ? <Text variant="caption">{t('settings.backendDemo')}</Text> : null}

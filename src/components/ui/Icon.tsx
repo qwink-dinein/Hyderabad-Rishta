@@ -9,7 +9,8 @@ import { colors } from '@/theme/tokens';
 export type IconName =
   | 'heart' | 'heartFilled' | 'search' | 'filter' | 'bell' | 'user' | 'users' | 'mail' | 'chevronLeft' | 'chevronRight'
   | 'chevronDown' | 'close' | 'check' | 'camera' | 'lock' | 'shield' | 'globe' | 'settings' | 'star' | 'eye' | 'phone'
-  | 'flag' | 'ban' | 'plus' | 'pause' | 'play' | 'sparkle' | 'home' | 'chart';
+  | 'flag' | 'ban' | 'plus' | 'pause' | 'play' | 'sparkle' | 'home' | 'chart'
+  | 'arrowRight' | 'arrowLeft' | 'message' | 'mapPin' | 'briefcase' | 'cap' | 'ruler' | 'volume' | 'vibrate' | 'help' | 'info' | 'compass' | 'clock';
 
 const PATHS: Record<IconName, string> = {
   heart: 'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z',
@@ -41,6 +42,19 @@ const PATHS: Record<IconName, string> = {
   sparkle: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16z',
   home: 'M4 11l8-7 8 7v9h-5v-6h-6v6H4z',
   chart: 'M4 20V10m6 10V4m6 16v-7m4 7H3',
+  arrowRight: 'M5 12h14m-5-5 5 5-5 5',
+  arrowLeft: 'M19 12H5m5-5-5 5 5 5',
+  message: 'M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-8l-4 3v-3H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm3 5h8m-8 3h5',
+  mapPin: 'M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11zm0-8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z',
+  briefcase: 'M4 8h16v11H4zM9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M4 13h16',
+  cap: 'M2.5 9.5 12 5l9.5 4.5L12 14 2.5 9.5zM6.5 11.5v4c1.5 1.5 3.5 2.2 5.5 2.2s4-.7 5.5-2.2v-4M21.5 9.5v5',
+  ruler: 'M7 3h6v18H7zM7 7h3m-3 4h3m-3 4h3m-3 4h3',
+  volume: 'M4 9.5h3.5L12 6v12l-4.5-3.5H4zM15.5 9a4 4 0 0 1 0 6m2.5-8.5a7.5 7.5 0 0 1 0 11',
+  vibrate: 'M8 4h8v16H8zM4 8v8m16-8v8M11 17h2',
+  help: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zm-2.5-11.5a2.6 2.6 0 0 1 5 .8c0 1.8-2.5 2.2-2.5 4m0 2.7v.1',
+  info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zm0-10v6m0-9v.1',
+  compass: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zm3.5-12.5-2 5-5 2 2-5z',
+  clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zm0-13v5l3 2',
 };
 
 export interface IconProps {

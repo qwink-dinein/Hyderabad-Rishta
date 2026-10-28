@@ -1,20 +1,23 @@
-import { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Animated, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { ContactActions } from '@/components/ContactActions';
 import { ProfilePhoto } from '@/components/ProfileCard';
+import { TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
 import { Badge, Banner, confirm, EmptyState, ErrorView, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
-import { ChipGroup, ToggleRow } from '@/components/ui/forms';
+import { Segmented, ToggleRow } from '@/components/ui/forms';
 import { Icon } from '@/components/ui/Icon';
 import { Card, Divider, Row } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { formatDate, uid } from '@/domain/format';
 import type { ConsentScopes, PhoneOffer, RequestStatus } from '@/domain/types';
 import { useOfferPhone, usePokeRequest, useRequests, useRespondPhoneOffer, useRespondRequest, useSetConsent, useWithdrawPhoneOffer, useWithdrawRequest } from '@/hooks/queries';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import type { RequestView } from '@/services/backend';
+import { celebrate } from '@/services/feedback';
 import { useSession } from '@/state/session';
 import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
 
@@ -38,17 +41,15 @@ export default function Requests() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <View style={[styles.column, { padding: space.lg, gap: space.md }]}>
-        <Text variant="h1" accessibilityRole="header">
-          {t('requests.title')}
-        </Text>
-        <ChipGroup
+      <TabHeader title={t('requests.title')} />
+      <View style={[styles.column, { paddingHorizontal: space.lg, paddingBottom: space.md, gap: space.md }]}>
+        <Segmented
           options={[
             { value: 'received', label: `${t('requests.received')}${pendingCount ? ` (${pendingCount})` : ''}` },
             { value: 'sent', label: t('requests.sent') },
           ]}
           value={tab}
-          onChange={(v) => v && setTab(v)}
+          onChange={setTab}
         />
       </View>
       {isLoading ? (
@@ -98,12 +99,19 @@ function RequestCard({ view }: { view: RequestView }) {
     <Card padded={false} style={{ overflow: 'hidden' }}>
       <Pressable onPress={profileLink} accessibilityRole="button" accessibilityLabel={`${t('card.view')}: ${other.displayName}`} style={styles.head}>
         <View style={styles.thumb}>
-          <ProfilePhoto profile={other} height={64} rounded={false} />
+          <ProfilePhoto profile={other} height={60} rounded={false} />
         </View>
         <View style={{ flex: 1, gap: 2 }}>
-          <Text variant="h3">{other.displayName}</Text>
+          <Text variant="h3">
+            {other.displayName}, {other.age}
+          </Text>
+          {direction === 'received' && open && view.theirOffer?.status === 'offered' ? (
+            <Text variant="caption" color={colors.goldDeep}>
+              {t('requests.offeredShort')}
+            </Text>
+          ) : null}
           <Text variant="caption">
-            {t('common.years', { n: other.age })} · {[other.location.city, other.location.state].filter(Boolean).join(', ')}
+            {[other.location.city, other.location.state].filter(Boolean).join(', ')}
           </Text>
           <Text variant="caption">{[t(`opt.education.${other.career.education}`, { defaultValue: '' }), other.career.professionOther ?? t(`opt.profession.${other.career.profession}`, { defaultValue: '' })].filter(Boolean).join(' · ')}</Text>
         </View>
@@ -130,7 +138,10 @@ function RequestCard({ view }: { view: RequestView }) {
             </Banner>
             <Row gap={space.sm}>
               <Button label={t('requests.decline')} kind="secondary" size="sm" onPress={() => run(() => respond.mutateAsync({ id: r.id, decision: 'declined' }))} style={{ flex: 1 }} disabled={respond.isPending} testID={`decline-${r.id}`} />
-              <Button label={t('requests.accept')} size="sm" onPress={() => run(() => respond.mutateAsync({ id: r.id, decision: 'accepted' }))} style={{ flex: 1 }} loading={respond.isPending} disabled={respond.isPending} testID={`accept-${r.id}`} />
+              <Button label={t('requests.accept')} size="sm" onPress={() => run(async () => {
+                await respond.mutateAsync({ id: r.id, decision: 'accepted' });
+                celebrate('accepted');
+              })} style={{ flex: 1 }} loading={respond.isPending} disabled={respond.isPending} testID={`accept-${r.id}`} />
             </Row>
             <Row gap={space.sm}>
               <Button label={t('requests.viewProfile')} kind="ghost" size="sm" onPress={profileLink} />
@@ -184,15 +195,36 @@ function PokeLine({ view, onPoke, busy }: { view: RequestView; onPoke: () => voi
     if (!view.poke.availableAt) return 0;
     return Math.max(1, Math.ceil((new Date(view.poke.availableAt).getTime() - mountedAt) / 3600000));
   }, [view.poke.availableAt, mountedAt]);
-  if (view.poke.canPoke) return <Button label={t('requests.poke')} size="sm" kind="gold" onPress={onPoke} loading={busy} disabled={busy} style={{ alignSelf: 'flex-start' }} testID={`poke-${view.request.id}`} />;
+  if (view.poke.canPoke)
+    return <Button label={t('requests.poke')} size="sm" kind="gold" icon={<PokeBell />} onPress={onPoke} loading={busy} disabled={busy} style={{ alignSelf: 'flex-start' }} testID={`poke-${view.request.id}`} />;
   const reason = view.poke.reason;
   const text =
     reason === 'wait' ? t('requests.pokeWait', { hours }) : reason === 'used' ? t('requests.pokeUsed') : reason === 'limit' ? t('requests.pokeLimit') : reason === 'optout' ? t('requests.pokeOptout') : null;
   return text ? (
     <Text variant="caption" testID={`poke-status-${view.request.id}`}>
-      🔔 {text}
+      {text}
     </Text>
   ) : null;
+}
+
+/** Bell that makes one small, restrained swing when the reminder becomes available (Design PRD §9.2). */
+function PokeBell() {
+  const reduced = useReducedMotion();
+  const [r] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    if (reduced) return;
+    Animated.sequence([
+      Animated.delay(250),
+      Animated.timing(r, { toValue: 1, duration: 120, useNativeDriver: true }),
+      Animated.timing(r, { toValue: -1, duration: 160, useNativeDriver: true }),
+      Animated.timing(r, { toValue: 0, duration: 120, useNativeDriver: true }),
+    ]).start();
+  }, [r, reduced]);
+  return (
+    <Animated.View style={{ transform: [{ rotate: r.interpolate({ inputRange: [-1, 1], outputRange: ['-14deg', '14deg'] }) }] }}>
+      <Icon name="bell" size={16} color={colors.emerald} />
+    </Animated.View>
+  );
 }
 
 function AcceptedSection({ view }: { view: RequestView }) {
@@ -226,7 +258,10 @@ function AcceptedSection({ view }: { view: RequestView }) {
           <Text variant="body">{t('requests.theyOffered', { name: other.displayName })}</Text>
           <Row gap={space.sm}>
             <Button label={t('requests.declineNumber')} kind="secondary" size="sm" onPress={() => run(() => respondOffer.mutateAsync({ id: theirOffer.id, decision: 'declined' }))} style={{ flex: 1 }} />
-            <Button label={t('requests.acceptNumber')} size="sm" onPress={() => run(() => respondOffer.mutateAsync({ id: theirOffer.id, decision: 'accepted' }))} style={{ flex: 1.3 }} loading={respondOffer.isPending} testID={`accept-number-${view.request.id}`} />
+            <Button label={t('requests.acceptNumber')} size="sm" onPress={() => run(async () => {
+              await respondOffer.mutateAsync({ id: theirOffer.id, decision: 'accepted' });
+              celebrate('accepted');
+            })} style={{ flex: 1.3 }} loading={respondOffer.isPending} testID={`accept-number-${view.request.id}`} />
           </Row>
         </View>
       ) : (
@@ -274,7 +309,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.ivory },
   column: { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center' },
   head: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg },
-  thumb: { width: 64, height: 64, borderRadius: radius.md, overflow: 'hidden' },
+  thumb: { width: 60, height: 60, borderRadius: 30, overflow: 'hidden', borderWidth: 2, borderColor: colors.gold },
   msg: { backgroundColor: colors.ivory, borderRadius: radius.md, padding: space.md, gap: 4 },
   offerBox: { backgroundColor: colors.warningBg, borderRadius: radius.md, padding: space.md, gap: space.sm },
   consent: { backgroundColor: colors.sage, borderRadius: radius.md, padding: space.md, gap: space.xs, marginTop: space.sm },

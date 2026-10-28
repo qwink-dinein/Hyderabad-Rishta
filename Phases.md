@@ -15,6 +15,8 @@ Supabase schema with RLS (tested on Postgres 16) · 52 Jest tests · Playwright 
 
 **Since Phase 1:** governance (master/sub-admins/Trash/recovery), interest + consent-based phone offers + poke, and the admin console (profile IDs, member search, alerts bell, relation badges on cards). 106 Jest tests, 4 SQL suites, 5 Playwright suites, lint clean.
 
+**Design phase (after V1):** premium redesign per Design PRD v1.0. Phases 1–5 were done in one pass: tokens and type, landing, auth and navigation; biodata, cards and details; discovery and connection; notifications, settings and dashboard; motion, sound, a11y and regression. All existing tests still pass.
+
 **Exit criteria met:** typecheck clean, all tests green, web export builds, E2E journeys pass with zero console errors.
 
 ## Phase 2 — Production backend (est. 2–3 weeks)

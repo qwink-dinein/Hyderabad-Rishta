@@ -7,7 +7,8 @@ import type { Lang } from '@/domain/types';
  * Subpath imports keep unused weights out of the bundle.
  */
 export const baseFontAssets = {
-  'Cormorant-Bold': require('@expo-google-fonts/cormorant-garamond/700Bold/CormorantGaramond_700Bold.ttf'),
+  // Lora: refined editorial serif for headings (Design PRD §2.2); Inter for the functional UI.
+  'Lora-SemiBold': require('@expo-google-fonts/lora/600SemiBold/Lora_600SemiBold.ttf'),
   'Inter-Regular': require('@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf'),
   'Inter-Medium': require('@expo-google-fonts/inter/500Medium/Inter_500Medium.ttf'),
   'Inter-SemiBold': require('@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf'),
@@ -39,7 +40,7 @@ export const isFontLoaded = (lang: Lang) => loaded.has(lang);
 export type FontRole = 'display' | 'body' | 'medium' | 'semibold';
 
 const families: Record<Lang, Record<FontRole, string>> = {
-  en: { display: 'Cormorant-Bold', body: 'Inter-Regular', medium: 'Inter-Medium', semibold: 'Inter-SemiBold' },
+  en: { display: 'Lora-SemiBold', body: 'Inter-Regular', medium: 'Inter-Medium', semibold: 'Inter-SemiBold' },
   // Nastaliq conveys emphasis through size rather than weight; one weight keeps the download small.
   ur: { display: 'Urdu-Regular', body: 'Urdu-Regular', medium: 'Urdu-Regular', semibold: 'Urdu-Regular' },
   te: { display: 'Telugu-SemiBold', body: 'Telugu-Regular', medium: 'Telugu-Regular', semibold: 'Telugu-SemiBold' },

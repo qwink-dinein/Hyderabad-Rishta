@@ -8,7 +8,9 @@ import { Field, TextField } from '@/components/ui/forms';
 import { Icon } from '@/components/ui/Icon';
 import { Card, Header, Row, Screen } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
+import { ProfilePhoto } from '@/components/ProfileCard';
 import { maskPhone, uid } from '@/domain/format';
+import { celebrate } from '@/services/feedback';
 import { useProfile, useSendRequest } from '@/hooks/queries';
 import { useSession } from '@/state/session';
 import { colors, radius, space } from '@/theme/tokens';
@@ -44,6 +46,7 @@ export default function Connect() {
   const submit = async () => {
     try {
       await send.mutateAsync({ to: profile.id, input: { message: message.trim() || undefined, offerPhone: mode === 'offer', consent: mode === 'offer' && consent, idempotencyKey } });
+      celebrate('sent');
       toast(t('connect.sent'));
       router.back();
     } catch (e) {
@@ -51,7 +54,7 @@ export default function Connect() {
     }
   };
 
-  const option = (m: Mode, icon: 'mail' | 'phone', title: string, desc: string) => {
+  const option = (m: Mode, icon: 'message' | 'phone', title: string, desc: string) => {
     const on = mode === m;
     return (
       <Pressable
@@ -86,27 +89,36 @@ export default function Connect() {
         loading={send.isPending}
         disabled={send.isPending}
         style={{ flex: 1.6 }}
+        arrow
         testID="confirm-send"
       />
     </Row>
   ) : (
-    <Button label={t('common.preview')} onPress={() => setConfirming(true)} disabled={!canContinue} full testID="preview-request" />
+    <Button label={t('common.preview')} onPress={() => setConfirming(true)} disabled={!canContinue} full arrow testID="preview-request" />
   );
 
   return (
     <Screen header={<Header title={t('profile.expressInterest')} />} footer={footer}>
       <View style={{ gap: space.lg, paddingTop: space.lg }}>
-        <View style={{ gap: 4 }}>
-          <Text variant="overline">{t('request.to', { name: profile.displayName })}</Text>
-          <Text variant="h1" accessibilityRole="header">
+        <View style={{ alignItems: 'center', gap: space.xs }}>
+          <View style={styles.avatar}>
+            <ProfilePhoto profile={profile} height={76} rounded={false} />
+          </View>
+          <Text variant="bodyStrong">
+            {profile.displayName}, {profile.age}
+          </Text>
+          <Text variant="h1" center accessibilityRole="header" style={{ marginTop: space.sm }}>
             {t('connect.title')}
+          </Text>
+          <Text variant="caption" center>
+            {t('request.to', { name: profile.displayName })}
           </Text>
         </View>
 
         {!confirming ? (
           <>
             <View style={{ gap: space.sm }} accessibilityRole="radiogroup">
-              {option('intro', 'mail', t('connect.optA'), t('connect.optADesc'))}
+              {option('intro', 'message', t('connect.optA'), t('connect.optADesc'))}
               {option('offer', 'phone', t('connect.optB'), t('connect.optBDesc'))}
             </View>
 
@@ -164,6 +176,7 @@ export default function Connect() {
 }
 
 const styles = StyleSheet.create({
+  avatar: { width: 76, height: 76, borderRadius: 38, overflow: 'hidden', borderWidth: 2, borderColor: colors.gold },
   option: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.white },
   optionOn: { borderColor: colors.emerald, backgroundColor: '#FBFDFB' },
   optionIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.sage, alignItems: 'center', justifyContent: 'center' },

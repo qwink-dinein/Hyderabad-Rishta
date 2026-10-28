@@ -101,7 +101,8 @@ const step = async (name, fn) => {
   });
   await step('bride finds groom via custom education keyword', async () => {
     await logout();
-    await login('9000000100'); // seed bride p_0
+    await login('9000000100'); // seed bride p_0 → lands on Home
+    await page.goto(BASE + '/discover');
     await page.getByText(/\d+ profiles/).waitFor();
     await page.getByTestId('open-filters').click();
     await page.getByLabel('Keyword').fill('Hafiz');

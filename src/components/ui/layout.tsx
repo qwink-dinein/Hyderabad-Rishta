@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.md,
     minHeight: 54,
   },
-  headerBtn: { width: 64, minHeight: 44, justifyContent: 'center' },
+  headerBtn: { minWidth: 64, minHeight: 44, justifyContent: 'center' },
   headerTitle: { flex: 1 },
   card: { backgroundColor: colors.white, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, ...shadow.card },
   sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

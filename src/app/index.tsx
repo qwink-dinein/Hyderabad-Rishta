@@ -1,96 +1,246 @@
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Redirect, router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { BrandMark, HeroScene } from '@/components/art/Illustrations';
 import { HeroCarousel } from '@/components/HeroCarousel';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { Button } from '@/components/ui/Button';
 import { Banner } from '@/components/ui/feedback';
-import { Icon, StarMotif, type IconName } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { Card, Row, Screen } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { isAdminRole } from '@/domain/types';
+import { hasChosenLanguage } from '@/i18n';
 import { backendInfo } from '@/services';
 import { useSession } from '@/state/session';
-import { colors, space } from '@/theme/tokens';
+import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
 
-/** Landing page (PRD §5). No testimonials, user counts or badges — nothing fabricated. */
+/**
+ * Landing page (Design PRD §4). Registration is reachable immediately — no marketing gate.
+ * No testimonials, user counts, success stories or "verified" claims: nothing fabricated.
+ */
 export default function Landing() {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const user = useSession((s) => s.user);
-  if (user) return <Redirect href={isAdminRole(user.role) ? '/admin' : '/discover'} />;
+  const [langChosen, setLangChosen] = useState(true);
+  useEffect(() => {
+    hasChosenLanguage().then(setLangChosen);
+  }, []);
+  if (user) return <Redirect href={isAdminRole(user.role) ? '/admin' : '/home'} />;
 
+  // Registration journey: choose language (only if never chosen) → mobile → OTP → biodata.
+  const create = () => (langChosen ? router.push({ pathname: '/login', params: { next: 'biodata' } }) : router.push({ pathname: '/language', params: { next: 'biodata' } }));
+  const find = () => router.push({ pathname: '/login', params: { next: 'discover' } });
+
+  const trust: { icon: IconName; key: 'privacy' | 'family' | 'consent' }[] = [
+    { icon: 'lock', key: 'privacy' },
+    { icon: 'users', key: 'family' },
+    { icon: 'heart', key: 'consent' },
+  ];
   const steps: { icon: IconName; key: 'how1' | 'how2' | 'how3' }[] = [
     { icon: 'user', key: 'how1' },
     { icon: 'search', key: 'how2' },
     { icon: 'shield', key: 'how3' },
   ];
+  const why: { icon: IconName; key: 'w1' | 'w2' | 'w3' | 'w4' }[] = [
+    { icon: 'shield', key: 'w1' },
+    { icon: 'users', key: 'w2' },
+    { icon: 'heart', key: 'w3' },
+    { icon: 'compass', key: 'w4' },
+  ];
 
   return (
-    <Screen>
-      <Row style={styles.top}>
-        <Row gap={space.sm}>
-          <StarMotif size={28} color={colors.emerald} />
-          <Text variant="h2">{t('common.appName')}</Text>
-        </Row>
-        <LanguageSwitcher />
-      </Row>
-
-      <View style={{ gap: space.md, marginVertical: space.lg }}>
-        <Text variant="display" accessibilityRole="header">
-          {t('landing.headline')}
-        </Text>
-        <Text variant="body" color={colors.muted}>
-          {t('landing.sub')}
-        </Text>
-      </View>
-
-      <View style={{ gap: space.sm, marginBottom: space.xl }}>
-        <Button label={t('landing.findMatch')} onPress={() => router.push({ pathname: '/login', params: { next: 'discover' } })} full testID="cta-find" />
-        <Button label={t('landing.createBiodata')} kind="secondary" onPress={() => router.push({ pathname: '/login', params: { next: 'biodata' } })} full testID="cta-create" />
-        <Button label={t('landing.login')} kind="ghost" onPress={() => router.push('/login')} />
-      </View>
-
-      <HeroCarousel />
-
-      <Text variant="h2" style={{ marginTop: space.xxl, marginBottom: space.md }} accessibilityRole="header">
-        {t('landing.howTitle')}
-      </Text>
-      <View style={{ gap: space.md }}>
-        {steps.map((s, i) => (
-          <Card key={s.key} style={styles.step}>
-            <View style={styles.stepIcon}>
-              <Icon name={s.icon} />
-            </View>
-            <View style={{ flex: 1, gap: 2 }}>
-              <Text variant="overline">{String(i + 1).padStart(2, '0')}</Text>
-              <Text variant="h3">{t(`landing.${s.key}.title`)}</Text>
-              <Text variant="caption">{t(`landing.${s.key}.body`)}</Text>
-            </View>
-          </Card>
-        ))}
-      </View>
-
-      {backendInfo.kind === 'demo' ? (
-        <View style={{ marginTop: space.xl }}>
-          <Banner tone="warning" icon="sparkle">
-            {t('common.demoBanner')}
-          </Banner>
+    <Screen padded={false} edges={[]}>
+      {/* A + B: brand header and hero on Dark Forest */}
+      <LinearGradient colors={[colors.forest, colors.emerald]} style={[styles.hero, { paddingTop: insets.top + space.sm }]}>
+        <View style={styles.inner}>
+          <Row style={styles.header}>
+            <Row gap={space.sm} style={{ flexShrink: 1 }}>
+              <BrandMark size={34} />
+              <View style={{ flexShrink: 1 }}>
+                <Text variant="h2" color={colors.ivory} numberOfLines={1}>
+                  {t('common.appName')}
+                </Text>
+                <Text variant="caption" color={colors.gold} numberOfLines={1}>
+                  {t('landing.tagline')}
+                </Text>
+              </View>
+            </Row>
+            <LanguageSwitcher tone="dark" compact />
+          </Row>
+          <HeroCarousel />
         </View>
-      ) : null}
-      <Row style={{ justifyContent: 'center', marginTop: space.xl }} gap={space.lg}>
-        <Text variant="caption" onPress={() => router.push('/legal/privacy')} accessibilityRole="link">
-          {t('settings.privacyPolicy')}
-        </Text>
-        <Text variant="caption" onPress={() => router.push('/legal/terms')} accessibilityRole="link">
-          {t('settings.terms')}
-        </Text>
-      </Row>
+      </LinearGradient>
+
+      <View style={[styles.inner, styles.padded]}>
+        {/* C: primary actions — stable position, never moves with the slides */}
+        <View style={styles.ctas}>
+          <Button label={t('landing.createBiodata')} onPress={create} full arrow testID="cta-create" />
+          <Button label={t('landing.findMatch')} kind="secondary" onPress={find} full testID="cta-find" />
+          <Row style={{ justifyContent: 'center' }} gap={space.xs}>
+            <Text variant="body" color={colors.muted}>
+              {t('landing.registered')}
+            </Text>
+            <Text variant="bodyStrong" color={colors.emerald} onPress={() => router.push('/login')} accessibilityRole="link" style={styles.link} testID="cta-login">
+              {t('landing.logIn')}
+            </Text>
+          </Row>
+        </View>
+
+        {/* D: trust indicators — claims we can actually keep */}
+        <View style={styles.trust}>
+          {trust.map((x) => (
+            <View key={x.key} style={styles.trustItem}>
+              <View style={styles.trustIcon}>
+                <Icon name={x.icon} size={18} color={colors.goldMuted} />
+              </View>
+              <Text variant="label" center>
+                {t(`landing.trust.${x.key}`)}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {backendInfo.kind === 'demo' ? (
+          <View style={{ marginTop: space.lg }}>
+            <Banner tone="warning" icon="sparkle">
+              {t('common.demoBanner')}
+            </Banner>
+          </View>
+        ) : null}
+
+        {/* E: lower content */}
+        <SectionTitle overline={t('landing.howOverline')} title={t('landing.howTitle')} />
+        <View style={{ gap: space.md }}>
+          {steps.map((s, i) => (
+            <Card key={s.key} style={styles.step}>
+              <View style={styles.stepNum}>
+                <Text variant="h3" color={colors.gold}>
+                  {i + 1}
+                </Text>
+              </View>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text variant="h3">{t(`landing.${s.key}.title`)}</Text>
+                <Text variant="caption">{t(`landing.${s.key}.body`)}</Text>
+              </View>
+              <Icon name={s.icon} size={20} color={colors.goldMuted} />
+            </Card>
+          ))}
+        </View>
+
+        <SectionTitle overline={t('landing.whyOverline')} title={t('landing.whyTitle')} />
+        <View style={styles.grid}>
+          {why.map((w) => (
+            <View key={w.key} style={styles.whyTile}>
+              <View style={styles.whyIcon}>
+                <Icon name={w.icon} size={24} color={colors.goldMuted} />
+              </View>
+              <Text variant="h3" center>
+                {t(`landing.why.${w.key}.title`)}
+              </Text>
+              <Text variant="caption" center>
+                {t(`landing.why.${w.key}.body`)}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        <Card style={[styles.feature, { marginTop: space.xxl }]}>
+          <View style={styles.featureIcon}>
+            <Icon name="lock" size={22} color={colors.ivory} />
+          </View>
+          <View style={{ flex: 1, gap: space.xs }}>
+            <Text variant="h3">{t('landing.privacyTitle')}</Text>
+            <Text variant="caption">{t('landing.privacyBody')}</Text>
+          </View>
+        </Card>
+        <Card style={[styles.feature, { marginTop: space.md }]}>
+          <View style={styles.featureIcon}>
+            <Icon name="filter" size={22} color={colors.ivory} />
+          </View>
+          <View style={{ flex: 1, gap: space.xs }}>
+            <Text variant="h3">{t('landing.discoverTitle')}</Text>
+            <Text variant="caption">{t('landing.discoverBody')}</Text>
+          </View>
+        </Card>
+
+        {/* Final CTA */}
+        <View style={styles.final}>
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            <HeroScene kind="connect" width={720} height={260} />
+            <LinearGradient colors={['rgba(11,48,40,0.35)', 'rgba(11,48,40,0.92)']} style={StyleSheet.absoluteFill} />
+          </View>
+          <Text variant="h1" color={colors.ivory} center>
+            {t('landing.finalTitle')}
+          </Text>
+          <Text variant="body" color={colors.sage} center>
+            {t('landing.finalBody')}
+          </Text>
+          <Button label={t('landing.createBiodata')} kind="gold" onPress={create} arrow style={{ alignSelf: 'center', marginTop: space.sm }} />
+        </View>
+
+        <Row style={styles.footer} gap={space.lg} wrap>
+          <Text variant="caption" onPress={() => router.push('/legal/privacy')} accessibilityRole="link">
+            {t('settings.privacyPolicy')}
+          </Text>
+          <Text variant="caption" onPress={() => router.push('/legal/terms')} accessibilityRole="link">
+            {t('settings.terms')}
+          </Text>
+          <Text variant="caption" onPress={() => router.push('/legal/help')} accessibilityRole="link">
+            {t('settings.help')}
+          </Text>
+        </Row>
+        <View style={{ height: insets.bottom }} />
+      </View>
     </Screen>
   );
 }
 
+function SectionTitle({ overline, title }: { overline: string; title: string }) {
+  return (
+    <View style={{ gap: 4, marginTop: space.xxl, marginBottom: space.lg }}>
+      <Text variant="overline" center>
+        {overline}
+      </Text>
+      <Text variant="h1" center accessibilityRole="header">
+        {title}
+      </Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  top: { justifyContent: 'space-between', paddingVertical: space.md, flexWrap: 'wrap', gap: space.sm },
+  hero: { paddingBottom: space.xl, borderBottomLeftRadius: radius.xl, borderBottomRightRadius: radius.xl, overflow: 'hidden' },
+  inner: { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center' },
+  padded: { paddingHorizontal: space.xl },
+  header: { justifyContent: 'space-between', paddingHorizontal: space.lg, paddingBottom: space.md, gap: space.sm },
+  ctas: { gap: space.md, marginTop: space.xl },
+  link: { textDecorationLine: 'underline', paddingVertical: space.sm },
+  trust: { flexDirection: 'row', justifyContent: 'space-between', gap: space.sm, marginTop: space.xl, paddingVertical: space.lg, borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.border },
+  trustItem: { flex: 1, alignItems: 'center', gap: space.sm },
+  trustIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.goldSoft, alignItems: 'center', justifyContent: 'center' },
   step: { flexDirection: 'row', gap: space.lg, alignItems: 'center' },
-  stepIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.sage, alignItems: 'center', justifyContent: 'center' },
+  stepNum: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.emerald, alignItems: 'center', justifyContent: 'center' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
+  whyTile: {
+    flexGrow: 1,
+    flexBasis: '45%',
+    minWidth: 140,
+    alignItems: 'center',
+    gap: space.xs,
+    padding: space.lg,
+    backgroundColor: colors.white,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  whyIcon: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.goldSoft, alignItems: 'center', justifyContent: 'center', marginBottom: space.xs },
+  feature: { flexDirection: 'row', gap: space.lg, alignItems: 'flex-start' },
+  featureIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.emerald, alignItems: 'center', justifyContent: 'center' },
+  final: { marginTop: space.xxl, borderRadius: radius.xl, overflow: 'hidden', padding: space.xl, paddingVertical: space.xxl, gap: space.sm, backgroundColor: colors.forest },
+  footer: { justifyContent: 'center', marginTop: space.xl, paddingVertical: space.md },
 });

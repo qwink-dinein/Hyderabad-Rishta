@@ -1,9 +1,10 @@
-import { useEffect, type ReactNode } from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useState, type ReactNode } from 'react';
+import { ActivityIndicator, Animated, Easing, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { create } from 'zustand';
 import { AppError } from '@/services/backend';
-import { colors, maxContentWidth, radius, shadow, space } from '@/theme/tokens';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { colors, maxContentWidth, motion, radius, shadow, space } from '@/theme/tokens';
 import { Button } from './Button';
 import { Icon, StarMotif, type IconName } from './Icon';
 import { Text } from './Text';
@@ -70,7 +71,7 @@ export function EmptyState({ icon = 'sparkle', title, body, action }: { icon?: I
 
 export function Banner({ tone = 'info', children, icon }: { tone?: 'info' | 'warning' | 'success' | 'danger'; children: ReactNode; icon?: IconName }) {
   const bg = { info: colors.sage, warning: colors.warningBg, success: colors.successBg, danger: colors.dangerBg }[tone];
-  const fg = { info: colors.emerald, warning: colors.goldDeep, success: colors.success, danger: colors.danger }[tone];
+  const fg = { info: colors.emerald, warning: colors.goldDeep, success: colors.success, danger: colors.dangerText }[tone];
   return (
     <View style={[styles.banner, { backgroundColor: bg }]} accessibilityRole="summary">
       {icon ? <Icon name={icon} size={18} color={fg} /> : null}
@@ -112,20 +113,30 @@ export const useToast = create<ToastState>((set) => ({
 
 export function ToastHost() {
   const { message, tone, hide } = useToast();
+  const reduced = useReducedMotion();
+  const [v] = useState(() => new Animated.Value(0));
   useEffect(() => {
     if (!message) return;
+    v.setValue(reduced ? 1 : 0);
+    if (!reduced) Animated.timing(v, { toValue: 1, duration: motion.success, easing: Easing.out(Easing.back(1.4)), useNativeDriver: true }).start();
     const id = setTimeout(hide, 3200);
     return () => clearTimeout(id);
-  }, [message, hide]);
+  }, [message, hide, reduced, v]);
   if (!message) return null;
   const bg = { success: colors.emerald, danger: colors.danger, info: colors.charcoal }[tone];
+  const icon: IconName = tone === 'success' ? 'check' : tone === 'danger' ? 'info' : 'info';
   return (
     <View pointerEvents="box-none" style={styles.toastWrap}>
-      <Pressable onPress={hide} style={[styles.toast, { backgroundColor: bg }]} accessibilityLiveRegion="assertive" accessibilityRole="alert">
-        <Text variant="label" color={colors.white} center>
-          {message}
-        </Text>
-      </Pressable>
+      <Animated.View style={{ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }}>
+        <Pressable onPress={hide} style={[styles.toast, { backgroundColor: bg }]} accessibilityLiveRegion="assertive" accessibilityRole="alert">
+          <Animated.View style={[styles.toastIcon, { transform: [{ scale: v }] }]}>
+            <Icon name={icon} size={14} color={bg} strokeWidth={2.6} />
+          </Animated.View>
+          <Text variant="label" color={colors.white} style={{ flexShrink: 1 }}>
+            {message}
+          </Text>
+        </Pressable>
+      </Animated.View>
     </View>
   );
 }
@@ -178,7 +189,8 @@ const styles = StyleSheet.create({
   banner: { flexDirection: 'row', gap: space.sm, alignItems: 'flex-start', padding: space.md, borderRadius: radius.md },
   badge: { paddingHorizontal: space.sm, paddingVertical: 2, borderRadius: radius.pill, alignSelf: 'flex-start' },
   toastWrap: { position: 'absolute', left: 0, right: 0, bottom: 96, alignItems: 'center', paddingHorizontal: space.lg },
-  toast: { paddingVertical: space.md, paddingHorizontal: space.xl, borderRadius: radius.pill, maxWidth: 480, ...shadow.card },
+  toast: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingVertical: space.md, paddingHorizontal: space.lg, borderRadius: radius.pill, maxWidth: 480, ...shadow.card },
+  toastIcon: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
   dialogBackdrop: { flex: 1, backgroundColor: colors.overlay, alignItems: 'center', justifyContent: 'center', padding: space.lg },
   dialog: { backgroundColor: colors.ivory, borderRadius: radius.lg, padding: space.xl, gap: space.md, width: '100%', maxWidth: Math.min(maxContentWidth, 440) },
 });

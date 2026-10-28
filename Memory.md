@@ -4,6 +4,7 @@
 > Last updated: 2026-10-28
 
 ## Snapshot
+- **Latest (after V1):** premium UI redesign per Design PRD v1.0. UI only, no backend or logic changes. Reference image is in `docs/design/reference-ui.jpg`; the spec is summarised in `design.md`. To compare with V1: `git diff 4636968 -- src/`.
 - **CHECKPOINT V1 = commit `4636968089a30394f9c9ca594b1a06783c1c4775`** (tag `v1` locally; pushing tags is blocked here) (2026-10-28, owner asked to save it). Full feature list, verification results and revert commands are in `CHECKPOINTS.md`. If anything breaks, compare with `git diff v1` and restore from there. Never move or delete the tag.
 - **What:** Hyderabad Rishta — Muslim matrimony app (PRD v1.1 in `PRD.md`). Owner: mukarramjahmm.
 - **Repo:** `qwink-dinein/Hyderabad-Rishta`, working branch `claude/sharp-bell-xxyxmj`.
@@ -44,6 +45,12 @@ Reset everything: Settings → “Reset demo data”.
 | 2026-10-28 | Admin search runs on submit, not per keystroke; phone searches audited | Every keystroke of a phone search would flood the audit log. |
 | 2026-10-28 | Admin alerts reuse `notifications` (type `admin_alert`, params.kind) | One inbox, RLS already in place; the bell counts only admin_alert. |
 | 2026-10-28 | Card badge shows the latest request between the pair, either direction | Owner: "show accepted / connected / rejected so they won't re-send". |
+| 2026-10-28 | Redesign keeps V1 behaviour; only presentation/navigation changed | Owner: "Only do the UI/UX changes, you must not touch any existing functionality". |
+| 2026-10-28 | Members land on **Home** after login (was Discover); "Find your match" still goes to Discover | PRD §10 adds a Home tab. |
+| 2026-10-28 | Card "Express Interest" opens the profile with `?express=1`, which continues to the connect screen only if the profile screen's existing checks pass | One source of truth for eligibility messages. |
+| 2026-10-28 | Vector art instead of photos for the hero | No licensed imagery available; PRD forbids unlicensed or fake imagery. |
+| 2026-10-28 | Gold small text uses `goldDeep #8A6A30`, not PRD `#A98543` | `#A98543` is 3.1:1 on ivory and fails AA for small text; it's still used for icons and large text. |
+| 2026-10-28 | Sound OFF by default, haptics ON (both toggleable) | PRD §13. |
 | 2026-10-28 | Named the design doc `design.md` (owner wrote “design.ms”) | Renders on GitHub; mention if owner prefers otherwise. |
 
 ## Gotchas
@@ -57,6 +64,8 @@ Reset everything: Settings → “Reset demo data”.
 - Test logins in Playwright must `waitForURL` after verify — navigating early aborts the login.
 - After a container restart Postgres is down: `pg_ctlcluster 16 main start`, then `su postgres -c ./scripts/test-db.sh`.
 - `expo lint` installs eslint + eslint-config-expo on first run (adds `eslint.config.js`).
+- `href: null` on a js-tabs screen breaks direct URL access, so hidden screens live outside `(tabs)` (e.g. `src/app/notifications.tsx`).
+- react-native-web `Switch` needs `activeThumbColor` (web-only prop) or it shows a teal thumb.
 - Sandbox perms: Postgres test cluster runs as `nobody`; parent dirs need `o+x`.
 
 ## Environment limits observed (cloud session)

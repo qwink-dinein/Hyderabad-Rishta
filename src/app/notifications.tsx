@@ -1,13 +1,13 @@
 import { useCallback } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
-import { router, type Href } from 'expo-router';
+import { Redirect, router, type Href } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { Badge, EmptyState, ErrorView, Loading } from '@/components/ui/feedback';
 import { Icon, type IconName } from '@/components/ui/Icon';
-import { Row } from '@/components/ui/layout';
+import { Header, Row } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { formatDate } from '@/domain/format';
 import type { Lang } from '@/domain/types';
@@ -43,6 +43,7 @@ export default function Notifications() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const lang = useSession((s) => s.lang);
+  const user = useSession((s) => s.user);
   const qc = useQueryClient();
   const { data, isLoading, error, refetch, isRefetching } = useNotifications();
   const unread = data?.filter((n) => !n.readAt).length ?? 0;
@@ -67,14 +68,14 @@ export default function Notifications() {
     return { title: t(key, { ...n.params, note: n.params.note || '—' }), body: n.type === 'boost_started' && n.params.until ? formatDate(n.params.until) : undefined };
   };
 
+  if (!user) return <Redirect href="/login" />;
+
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
+      <Header title={t('notifications.title')} onBack={() => (router.canGoBack() ? router.back() : router.replace('/home'))} />
       <Row style={[styles.column, { padding: space.lg, justifyContent: 'space-between' }]} wrap>
         <View>
-          <Text variant="h1" accessibilityRole="header">
-            {t('notifications.title')}
-          </Text>
-          {unread ? <Text variant="caption">{t('notifications.unread', { count: unread })}</Text> : null}
+          <Text variant="label" color={colors.muted}>{unread ? t('notifications.unread', { count: unread }) : t('notifications.allRead')}</Text>
         </View>
         {unread ? (
           <Button

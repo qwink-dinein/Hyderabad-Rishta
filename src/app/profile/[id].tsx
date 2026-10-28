@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Modal, StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { ContactActions } from '@/components/ContactActions';
+import { HeartButton } from '@/components/ProfileCard';
 import { ProfileDetails } from '@/components/ProfileDetails';
 import { declinedRecently } from '@/domain/connections';
 import { Button } from '@/components/ui/Button';
@@ -16,21 +17,33 @@ import { Text } from '@/components/ui/Text';
 import { useMyProfile, useProfile, useRequestWith, useShortlistIds, useToggleShortlist } from '@/hooks/queries';
 import { useOptions } from '@/hooks/useOptions';
 import { backend } from '@/services';
+import { haptic } from '@/services/feedback';
 import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
 
 /** Profile details + shortlist, contact request status, report and block (PRD §10–12, §16). */
 export default function ProfileScreen() {
-  const { id, report } = useLocalSearchParams<{ id: string; report?: string }>();
+  const { id, report, express } = useLocalSearchParams<{ id: string; report?: string; express?: string }>();
   const { t } = useTranslation();
   const qc = useQueryClient();
   const toast = useToast((s) => s.show);
   const errMsg = useErrorMessage();
   const { data: profile, isLoading, error, refetch } = useProfile(id);
-  const { data: me } = useMyProfile();
-  const { data: req } = useRequestWith(id);
+  const { data: me, isLoading: meLoading } = useMyProfile();
+  const { data: req, isLoading: reqLoading } = useRequestWith(id);
   const { data: shortIds } = useShortlistIds();
   const toggle = useToggleShortlist();
   const [reportOpen, setReportOpen] = useState(report === '1'); // deep link from the requests inbox
+  const expressHandled = useRef(false);
+
+  // "Express Interest" tapped on a profile card: continue straight to the connect options when the
+  // same checks this screen uses pass; otherwise stay here so the reason banner explains why.
+  useEffect(() => {
+    if (express !== '1' || expressHandled.current || !profile || meLoading || reqLoading) return;
+    expressHandled.current = true;
+    const st = req?.request.status;
+    const busy = st === 'pending' || st === 'accepted' || st === 'blocked';
+    if (me?.id !== profile.id && !busy && !declinedRecently(profile.relation) && profile.acceptsRequests && me?.status === 'published') router.push(`/request/${profile.id}`);
+  }, [express, profile, me, meLoading, req, reqLoading]);
 
   if (isLoading) return <Loading />;
   if (error || !profile)
@@ -103,7 +116,7 @@ export default function ProfileScreen() {
           title={profile.displayName}
           right={
             !isOwn ? (
-              <Button label={shortlisted ? '♥' : '♡'} kind="ghost" size="sm" onPress={() => toggle.mutate(profile.id)} accessibilityHint={shortlisted ? t('card.shortlisted') : t('card.shortlist')} />
+              <HeartButton on={shortlisted} onToggle={() => toggle.mutate(profile.id)} tone="plain" />
             ) : null
           }
         />
@@ -118,10 +131,14 @@ export default function ProfileScreen() {
             ) : null}
             <Row gap={space.sm}>
               <Button
-                label={shortlisted ? t('card.shortlisted') : t('profile.addToShortlist')}
+                label={shortlisted ? t('card.shortlisted') : t('card.shortlist')}
+                accessibilityHint={shortlisted ? undefined : t('profile.addToShortlist')}
                 kind="secondary"
-                icon={<Icon name={shortlisted ? 'heartFilled' : 'heart'} size={18} color={shortlisted ? colors.gold : colors.emerald} />}
-                onPress={() => toggle.mutate(profile.id)}
+                icon={<Icon name={shortlisted ? 'heartFilled' : 'heart'} size={18} color={shortlisted ? colors.goldMuted : colors.emerald} />}
+                onPress={() => {
+                  haptic('select');
+                  toggle.mutate(profile.id);
+                }}
                 style={{ flex: 1 }}
                 testID="shortlist-toggle"
               />
@@ -131,6 +148,7 @@ export default function ProfileScreen() {
                   onPress={onExpress}
                   style={{ flex: 1.3 }}
                   disabled={!profile.acceptsRequests}
+                  arrow
                   testID="express-interest"
                 />
               ) : null}

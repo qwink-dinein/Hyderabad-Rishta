@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { CheckoutSheet, PricingNotice } from '@/components/Checkout';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
 import { Badge, Banner, ErrorView, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { Icon, type IconName } from '@/components/ui/Icon';
@@ -33,22 +34,14 @@ export default function Dashboard() {
   if (isLoading) return <Loading />;
 
   const header = (
-    <Row style={{ justifyContent: 'space-between', paddingTop: space.md }} wrap>
-      <Text variant="h1" accessibilityRole="header">
-        {t('dashboard.title')}
-      </Text>
-      <Row gap={space.sm}>
-        <LanguageSwitcher />
-        <Pressable onPress={() => router.push('/settings')} accessibilityRole="button" accessibilityLabel={t('common.settings')} hitSlop={10} style={{ padding: space.sm }}>
-          <Icon name="settings" />
-        </Pressable>
-      </Row>
-    </Row>
+    <View style={{ paddingTop: space.xs }}>
+      <LanguageSwitcher compact />
+    </View>
   );
 
   if (!profile) {
     return (
-      <Screen>
+      <Screen header={<TabHeader title={t('nav.profile')} settings />}>
         {header}
         <Card style={{ marginTop: space.xl, gap: space.md, alignItems: 'flex-start' }}>
           <Text variant="h2">{t('dashboard.createTitle')}</Text>
@@ -100,7 +93,7 @@ export default function Dashboard() {
   );
 
   return (
-    <Screen>
+    <Screen header={<TabHeader title={t('nav.profile')} settings />}>
       {header}
       <Card style={{ marginTop: space.lg, gap: space.sm }}>
         <Row style={{ justifyContent: 'space-between' }} wrap>

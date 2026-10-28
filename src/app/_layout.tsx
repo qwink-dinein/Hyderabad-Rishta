@@ -10,6 +10,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { isRTL, restoreLanguage } from '@/i18n';
 import { ConfirmHost, ToastHost } from '@/components/ui/feedback';
 import { backend } from '@/services';
+import { loadFeedbackPrefs } from '@/services/feedback';
 import { AppError } from '@/services/backend';
 import { useSession } from '@/state/session';
 import { baseFontAssets } from '@/theme/fonts';
@@ -35,6 +36,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     (async () => {
+      loadFeedbackPrefs(); // sound/haptics preferences (fire-and-forget)
       const l = await restoreLanguage();
       setLang(l);
       try {

@@ -12,6 +12,7 @@ import ur from './ur';
 export const LANGS: Lang[] = ['en', 'ur', 'te'];
 export const RTL_LANGS: Lang[] = ['ur'];
 const STORAGE_KEY = 'hr.lang';
+const CHOSEN_KEY = 'hr.langChosen';
 
 export const isRTL = (lang: Lang) => RTL_LANGS.includes(lang);
 
@@ -42,6 +43,23 @@ export async function applyLanguage(lang: Lang): Promise<void> {
     await AsyncStorage.setItem(STORAGE_KEY, lang);
   } catch {
     // Non-fatal: preference just won't persist.
+  }
+}
+
+/** Whether the person has explicitly picked a language (vs. the device default). UI-only hint. */
+export async function hasChosenLanguage(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(CHOSEN_KEY)) === '1';
+  } catch {
+    return true; // storage unavailable → don't block the journey with an extra step
+  }
+}
+
+export async function markLanguageChosen(): Promise<void> {
+  try {
+    await AsyncStorage.setItem(CHOSEN_KEY, '1');
+  } catch {
+    // non-fatal
   }
 }
 

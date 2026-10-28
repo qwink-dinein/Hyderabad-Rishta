@@ -1,8 +1,9 @@
-import { useCallback, useMemo } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ProfileCard } from '@/components/ProfileCard';
+import { ProfileCard, ProfileCardSkeleton } from '@/components/ProfileCard';
+import { TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
 import { Banner, EmptyState, ErrorView, Loading } from '@/components/ui/feedback';
 import { ChipGroup } from '@/components/ui/forms';
@@ -16,6 +17,9 @@ import { useMyProfile, useSearch, useShortlistIds, useToggleShortlist } from '@/
 import { useOptions } from '@/hooks/useOptions';
 import { backendInfo } from '@/services';
 import { useFilters } from '@/state/filters';
+import { useSession } from '@/state/session';
+import { isRTL } from '@/i18n';
+import { fontFamily } from '@/theme/fonts';
 import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -33,6 +37,14 @@ export default function Discover() {
   const toggle = useToggleShortlist();
   const { label } = useOptions();
   const shortSet = useMemo(() => new Set(shortIds ?? []), [shortIds]);
+  const lang = useSession((s) => s.lang);
+  const [q, setQ] = useState(filters.keyword ?? '');
+  const [syncedKw, setSyncedKw] = useState(filters.keyword);
+  if (syncedKw !== filters.keyword) {
+    // keyword changed elsewhere (chip removed, Home search) → reflect it in the box
+    setSyncedKw(filters.keyword);
+    setQ(filters.keyword ?? '');
+  }
 
   const items = useMemo(() => search.data?.pages.flatMap((p) => p.items) ?? [], [search.data]);
   const total = search.data?.pages[0]?.total ?? 0;
@@ -88,13 +100,34 @@ export default function Discover() {
 
   const header = (
     <View style={{ paddingHorizontal: space.sm, gap: space.md, paddingBottom: space.sm }}>
-      <Row style={{ justifyContent: 'space-between', paddingTop: space.md }}>
-        <Text variant="h1" accessibilityRole="header">
-          {t('discover.title')}
-        </Text>
-        <Pressable onPress={() => router.push('/settings')} accessibilityRole="button" accessibilityLabel={t('common.settings')} hitSlop={10} style={styles.iconBtn}>
-          <Icon name="settings" />
-        </Pressable>
+      <Row gap={space.sm}>
+        <View style={styles.search}>
+          <Icon name="search" size={18} color={colors.muted} />
+          <TextInput
+            value={q}
+            onChangeText={setQ}
+            onSubmitEditing={() => patch({ keyword: q.trim() || undefined })}
+            returnKeyType="search"
+            placeholder={t('home.searchPlaceholder')}
+            placeholderTextColor={colors.muted}
+            accessibilityLabel={t('common.search')}
+            style={[styles.searchInput, { fontFamily: fontFamily(lang, 'body'), textAlign: isRTL(lang) ? 'right' : 'left' }]}
+            testID="discover-search"
+          />
+          {q ? (
+            <Pressable
+              onPress={() => {
+                setQ('');
+                patch({ keyword: undefined });
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.clearAll')}
+              hitSlop={8}
+            >
+              <Icon name="close" size={16} color={colors.muted} />
+            </Pressable>
+          ) : null}
+        </View>
       </Row>
       {backendInfo.kind === 'demo' ? <Banner tone="warning" icon="sparkle">{t('discover.demoData')}</Banner> : null}
       {me?.status !== 'published' ? (
@@ -157,10 +190,14 @@ export default function Discover() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
+      <TabHeader title={t('discover.title')} settings />
       {search.isLoading ? (
         <View style={styles.column}>
           {header}
-          <Loading />
+          <View style={{ padding: space.sm, gap: space.lg }}>
+            <ProfileCardSkeleton />
+            <ProfileCardSkeleton />
+          </View>
         </View>
       ) : search.isError ? (
         <View style={styles.column}>
@@ -216,7 +253,8 @@ export default function Discover() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.ivory },
   column: { width: '100%', maxWidth: maxContentWidth + 280, alignSelf: 'center' },
-  iconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  search: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 48, paddingHorizontal: space.md, borderRadius: radius.md, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
+  searchInput: { flex: 1, fontSize: 15, color: colors.charcoal, paddingVertical: space.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },
   chip: {
     flexDirection: 'row',

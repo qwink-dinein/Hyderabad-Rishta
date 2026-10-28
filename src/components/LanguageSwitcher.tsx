@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { applyLanguage, LANGS } from '@/i18n';
+import { applyLanguage, LANGS, markLanguageChosen } from '@/i18n';
 import type { Lang } from '@/domain/types';
 import { backend } from '@/services';
 import { useSession } from '@/state/session';
@@ -11,11 +11,15 @@ import { Text } from './ui/Text';
 /** Changes language instantly (no reload, no logout) and persists it locally and on the account. */
 export async function changeLanguage(lang: Lang) {
   await applyLanguage(lang);
+  await markLanguageChosen();
   useSession.getState().setLang(lang);
   if (useSession.getState().user) backend.setLanguage(lang).catch(() => undefined);
 }
 
-export function LanguageSwitcher({ tone = 'light' }: { tone?: 'light' | 'dark' }) {
+/** Short, script-native labels for tight headers (full names remain the accessibility labels). */
+const SHORT: Record<Lang, string> = { en: 'EN', ur: 'اردو', te: 'తె' };
+
+export function LanguageSwitcher({ tone = 'light', compact = false }: { tone?: 'light' | 'dark'; compact?: boolean }) {
   const { t } = useTranslation();
   const lang = useSession((s) => s.lang);
   const dark = tone === 'dark';
@@ -30,7 +34,7 @@ export function LanguageSwitcher({ tone = 'light' }: { tone?: 'light' | 'dark' }
             accessibilityRole="radio"
             accessibilityState={{ selected: on }}
             accessibilityLabel={t(`lang.${l}`)}
-            style={[styles.item, on && (dark ? styles.itemOnDark : styles.itemOn)]}
+            style={[styles.item, compact && styles.itemCompact, on && (dark ? styles.itemOnDark : styles.itemOn)]}
           >
             {/* Each label is rendered in its own script regardless of the active language. */}
             <Text
@@ -39,7 +43,7 @@ export function LanguageSwitcher({ tone = 'light' }: { tone?: 'light' | 'dark' }
               // Only reference a script font once it is registered (iOS warns on unknown families).
               style={isFontLoaded(l) ? { fontFamily: fontFamily(l, 'semibold'), lineHeight: l === 'ur' ? 26 : 18 } : { fontFamily: undefined, lineHeight: 20 }}
             >
-              {t(`lang.${l}`)}
+              {compact ? SHORT[l] : t(`lang.${l}`)}
             </Text>
           </Pressable>
         );
@@ -52,6 +56,7 @@ const styles = StyleSheet.create({
   wrap: { flexDirection: 'row', backgroundColor: colors.white, borderRadius: radius.pill, padding: 3, borderWidth: 1, borderColor: colors.border, alignSelf: 'flex-start' },
   wrapDark: { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.25)' },
   item: { paddingHorizontal: space.md, minHeight: 34, minWidth: 54, alignItems: 'center', justifyContent: 'center', borderRadius: radius.pill },
+  itemCompact: { paddingHorizontal: space.sm, minWidth: 40, minHeight: 32 },
   itemOn: { backgroundColor: colors.emerald },
   itemOnDark: { backgroundColor: colors.gold },
 });

@@ -109,6 +109,14 @@ Column-level grants stop users changing `role`, profile `status`, `boost_until`,
 - **Alerts:** `alertAdmins(kind, params, deepLink)` / `alert_admins()` insert a `notifications` row of type `admin_alert` for every active admin. In SQL they are fired by triggers: `reports` insert, `orders` status → paid/failed, `profiles` status → pending, `app_users` hard delete (member self-deletion only, not a purge from Trash), and security actions in `audit_events`. The English copy for the console is in `src/domain/adminAlerts.ts`.
 - **Migration:** `20261031000000_admin_console.sql`; tests: `supabase/tests/40_admin_console.test.sql`.
 
+## 12. UI layer (Design PRD v1.0)
+- **Theme:** `src/theme/tokens.ts` (colours, spacing, radius, shadow, `motion` timings) and `src/theme/fonts.ts` (Lora + Inter base; Urdu and Telugu loaded on demand).
+- **Art:** `src/components/art/Illustrations.tsx` (BrandMark, HeroScene, DomeArt, CornerFlourish), pure react-native-svg with no image downloads.
+- **Navigation:** `(tabs)` = home, discover, shortlist, requests, dashboard (labelled "Profile"). `/notifications`, `/language`, `/legal/help` are stack screens.
+- **Feedback:** `src/services/feedback.ts`. A zustand store persisted in AsyncStorage (`hr.prefs.feedback`), expo-haptics, and expo-audio players created lazily. All calls are fire-and-forget and swallow errors.
+- **Motion:** RN `Animated` with the native driver plus `useReducedMotion()`. No Reanimated dependency was added.
+- **No logic changes:** components call the same hooks and backend methods as V1. The card's Express Interest reuses the profile screen's checks via `?express=1`.
+
 ## 7. Testing strategy
 | Layer | Tooling | What |
 |---|---|---|

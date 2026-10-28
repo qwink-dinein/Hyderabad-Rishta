@@ -1,4 +1,5 @@
-import { View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { formatHeight } from '@/domain/format';
 import type { PublicProfile } from '@/domain/types';
@@ -6,6 +7,7 @@ import { useOptions } from '@/hooks/useOptions';
 import { colors, space } from '@/theme/tokens';
 import { ProfilePhoto } from './ProfileCard';
 import { Badge, Banner } from './ui/feedback';
+import { Icon, type IconName } from './ui/Icon';
 import { Card, InfoRow, Section } from './ui/layout';
 import { Text } from './ui/Text';
 
@@ -14,33 +16,82 @@ export function ProfileDetails({ profile, contactSlot }: { profile: PublicProfil
   const { t } = useTranslation();
   const { label, maslakLabel } = useOptions();
   const p = profile;
+  const [sel, setSel] = useState(0);
   const list = (g: Parameters<typeof label>[0], vals: string[]) => (vals.length ? vals.map((v) => label(g, v) ?? v).join(', ') : undefined);
   const range = (a?: number, b?: number, fmt: (n: number) => string = String) => (a == null && b == null ? undefined : `${a != null ? fmt(a) : '…'} – ${b != null ? fmt(b) : '…'}`);
+
+  const photo = p.photos[Math.min(sel, Math.max(0, p.photos.length - 1))];
+  const facts: { icon: IconName; text?: string }[] = [
+    { icon: 'ruler', text: formatHeight(p.heightCm, false) },
+    { icon: 'cap', text: label('education', p.career.education, p.career.educationOther) },
+    { icon: 'briefcase', text: label('profession', p.career.profession, p.career.professionOther) },
+  ];
 
   return (
     <View>
       <Card padded={false} style={{ overflow: 'hidden' }}>
-        <ProfilePhoto profile={p} height={260} />
+        {/* Gallery: main photo + thumbnails (only photos the viewer is allowed to see ever arrive here). */}
+        <View style={styles.gallery}>
+          <ProfilePhoto profile={{ ...p, photos: photo ? [photo] : [] }} height="100%" />
+          {p.photos.length > 1 ? (
+            <View style={styles.counter}>
+              <Text variant="caption" color={colors.white}>
+                {sel + 1}/{p.photos.length}
+              </Text>
+            </View>
+          ) : null}
+        </View>
         {p.photos.length > 1 ? (
-          <View style={{ flexDirection: 'row', gap: space.xs, padding: space.sm }}>
-            {p.photos.slice(1).map((ph) => (
-              <View key={ph.id} style={{ flex: 1 }}>
-                <ProfilePhoto profile={{ ...p, photos: [ph] }} height={110} rounded={false} />
-              </View>
+          <View style={styles.thumbs}>
+            {p.photos.map((ph, i) => (
+              <Pressable
+                key={ph.id}
+                onPress={() => setSel(i)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: i === sel }}
+                accessibilityLabel={t('f.photoN', { n: i + 1 })}
+                style={[styles.thumb, i === sel && styles.thumbOn]}
+              >
+                <ProfilePhoto profile={{ ...p, photos: [ph] }} height="100%" rounded={false} />
+              </Pressable>
             ))}
           </View>
         ) : null}
-        <View style={{ padding: space.lg, gap: 4 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: space.sm, flexWrap: 'wrap' }}>
-            <Text variant="h1">{p.displayName}</Text>
-            <Text variant="caption">{p.code}</Text>
+        <View style={{ padding: space.lg, gap: space.sm }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.sm, flexWrap: 'wrap' }}>
+            <Text variant="h1" style={{ flexShrink: 1 }}>
+              {p.displayName}, {p.age}
+            </Text>
             {p.boosted ? <Badge label={`★ ${t('discover.boosted')}`} /> : null}
           </View>
-          <Text variant="label" color={colors.muted}>
-            {t('common.years', { n: p.age })} · {formatHeight(p.heightCm)} · {[p.location.city, p.location.country].join(', ')}
-          </Text>
-          {p.createdFor !== 'self' ? <Text variant="caption">{t('profile.createdBy', { who: label('createdFor', p.createdFor) })}</Text> : null}
-          {p.photosHidden ? <Text variant="caption">🔒 {t('profile.photosHidden')}</Text> : null}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+            <Icon name="mapPin" size={16} color={colors.goldMuted} />
+            <Text variant="body" color={colors.muted} style={{ flexShrink: 1 }}>
+              {[p.location.city, p.location.state, p.location.country].filter(Boolean).join(', ')}
+            </Text>
+          </View>
+          <View style={styles.facts}>
+            {facts.map((f) =>
+              f.text ? (
+                <View key={f.icon} style={styles.fact}>
+                  <Icon name={f.icon} size={15} color={colors.goldMuted} />
+                  <Text variant="label" numberOfLines={1}>
+                    {f.text}
+                  </Text>
+                </View>
+              ) : null,
+            )}
+          </View>
+          <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center', flexWrap: 'wrap' }}>
+            <Badge label={p.code} tone="emerald" />
+            {p.createdFor !== 'self' ? <Text variant="caption">{t('profile.createdBy', { who: label('createdFor', p.createdFor) })}</Text> : null}
+          </View>
+          {p.photosHidden ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+              <Icon name="lock" size={14} color={colors.muted} />
+              <Text variant="caption">{t('profile.photosHidden')}</Text>
+            </View>
+          ) : null}
         </View>
       </Card>
 
@@ -143,3 +194,13 @@ export function ProfileDetails({ profile, contactSlot }: { profile: PublicProfil
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  gallery: { width: '100%', aspectRatio: 4 / 5, maxHeight: 460, backgroundColor: colors.sage },
+  counter: { position: 'absolute', top: space.md, right: space.md, paddingHorizontal: space.sm, paddingVertical: 2, borderRadius: 999, backgroundColor: 'rgba(11,48,40,0.6)' },
+  thumbs: { flexDirection: 'row', gap: space.sm, paddingHorizontal: space.lg, paddingTop: space.md },
+  thumb: { width: 64, height: 80, borderRadius: 10, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent' },
+  thumbOn: { borderColor: colors.gold },
+  facts: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, marginTop: 2 },
+  fact: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: space.md, paddingVertical: 6, borderRadius: 999, backgroundColor: colors.ivory, borderWidth: 1, borderColor: colors.border, maxWidth: '100%' },
+});

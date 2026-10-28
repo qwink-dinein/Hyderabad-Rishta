@@ -183,6 +183,7 @@ export default function AdminHome() {
               onValueChange={toggleApproval}
               trackColor={{ true: colors.emeraldSoft, false: colors.border }}
               thumbColor={colors.white}
+              {...({ activeThumbColor: colors.white } as object)}
               accessibilityElementsHidden
               importantForAccessibility="no"
             />

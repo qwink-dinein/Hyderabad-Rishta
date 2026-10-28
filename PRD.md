@@ -212,6 +212,9 @@ Profile review & moderation; user management; publication status; pricing & boos
 ### 15.2 Relationship status on profile cards
 Cards show your history with each person, so nobody re-sends blindly: **Connected**, **Interest sent**, **Sent you interest**, **Declined your interest**, **You declined**, **Interest expired** and **You withdrew**. During the 30-day cool-down after someone declines, the profile page replaces Express Interest with a short, respectful explanation, and the server enforces the same rule.
 
+### 15.3 Visual design
+The visual, motion and sound specification is **Design PRD v1.0** (owner, 2026-10-28), summarised and tracked in `design.md`, with the approved reference in `docs/design/reference-ui.jpg`. Design changes never alter the behaviour defined in this PRD.
+
 ## 16. Privacy and Safety
 Mobile numbers private by default; explicit consent before sharing; visibility settings; reporting and blocking; deactivation and deletion; secure image storage and access-controlled URLs; input validation and rate limiting; backend-enforced permissions; minimal sensitive data; privacy disclosures, terms, consent records.
 

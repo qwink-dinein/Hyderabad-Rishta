@@ -41,8 +41,13 @@ const step = async (name, fn) => {
     await shot('03-landing-telugu');
     await page.getByRole('radio', { name: 'English' }).first().click();
   });
-  await step('demo member logs in → discover', async () => {
+  await step('demo member logs in → home → discover', async () => {
     await login('9000000001');
+    await page.waitForURL((u) => u.pathname === '/home', { timeout: 10000 });
+    await page.getByText('Featured profiles').waitFor({ timeout: 10000 });
+    await page.getByTestId('bell').waitFor();
+    await shot('04a-home');
+    await page.getByRole('tab', { name: /Discover/ }).first().click();
     await page.getByText(/\d+ profiles/).waitFor({ timeout: 10000 });
     await shot('04-discover');
   });
@@ -106,7 +111,7 @@ const step = async (name, fn) => {
     await page.goto(BASE + '/settings');
     await page.getByTestId('logout').click();
     await login('9000000001');
-    await page.getByText(/\d+ profiles/).waitFor();
+    await page.waitForURL((u) => u.pathname === '/home');
     await page.goto(BASE + '/admin');
     await page.getByText(/\d+ profiles/).waitFor();
   });

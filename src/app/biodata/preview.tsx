@@ -13,6 +13,7 @@ import type { Order } from '@/domain/types';
 import { firstInvalidStep, STEP_KEYS } from '@/domain/validation';
 import { useInvalidateProfileState, useMyProfile, usePricing } from '@/hooks/queries';
 import { backend } from '@/services';
+import { celebrate, playSound } from '@/services/feedback';
 import { space } from '@/theme/tokens';
 
 /** Full preview exactly as others will see it (privacy applied), then publish (PRD §7). */
@@ -49,6 +50,8 @@ export default function Preview() {
 
   const done = (status: string) => {
     invalidate();
+    if (status === 'published') celebrate('published');
+    else playSound('save');
     toast(status === 'published' ? t('preview.published') : t('preview.submitted'));
     router.replace('/dashboard');
   };

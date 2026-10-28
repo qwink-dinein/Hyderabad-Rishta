@@ -1,9 +1,12 @@
 import { memo, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { colors, radius, space } from '@/theme/tokens';
+import { isRTL } from '@/i18n';
+import { useSession } from '@/state/session';
+import { Icon } from './Icon';
 import { Text } from './Text';
 
-type Kind = 'primary' | 'secondary' | 'ghost' | 'gold' | 'danger';
+type Kind = 'primary' | 'secondary' | 'ghost' | 'gold' | 'danger' | 'light';
 
 export interface ButtonProps {
   label: string;
@@ -13,6 +16,8 @@ export interface ButtonProps {
   loading?: boolean;
   disabled?: boolean;
   icon?: ReactNode;
+  /** Show a trailing arrow (→, mirrored in RTL) — used on forward-moving primary actions. */
+  arrow?: boolean;
   full?: boolean;
   style?: StyleProp<ViewStyle>;
   accessibilityHint?: string;
@@ -24,11 +29,13 @@ const KIND: Record<Kind, { bg: string; fg: string; border: string }> = {
   secondary: { bg: colors.white, fg: colors.emerald, border: colors.emerald },
   ghost: { bg: 'transparent', fg: colors.emerald, border: 'transparent' },
   gold: { bg: colors.gold, fg: colors.emerald, border: colors.gold },
-  danger: { bg: colors.white, fg: colors.danger, border: colors.danger },
+  danger: { bg: colors.white, fg: colors.dangerText, border: colors.danger },
+  light: { bg: 'transparent', fg: colors.ivory, border: 'rgba(248,244,235,0.7)' },
 };
 
-export const Button = memo(function Button({ label, onPress, kind = 'primary', size = 'md', loading, disabled, icon, full, style, accessibilityHint, testID }: ButtonProps) {
+export const Button = memo(function Button({ label, onPress, kind = 'primary', size = 'md', loading, disabled, icon, arrow, full, style, accessibilityHint, testID }: ButtonProps) {
   const k = KIND[kind];
+  const rtl = isRTL(useSession((s) => s.lang));
   const inactive = disabled || loading;
   return (
     <Pressable
@@ -55,6 +62,7 @@ export const Button = memo(function Button({ label, onPress, kind = 'primary', s
         <Text variant={size === 'sm' ? 'label' : 'bodyStrong'} color={k.fg} numberOfLines={2} center>
           {label}
         </Text>
+        {arrow && !loading ? <Icon name={rtl ? 'arrowLeft' : 'arrowRight'} size={18} color={k.fg} /> : null}
       </View>
     </Pressable>
   );
@@ -62,7 +70,7 @@ export const Button = memo(function Button({ label, onPress, kind = 'primary', s
 
 const styles = StyleSheet.create({
   base: { borderRadius: radius.pill, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  md: { minHeight: 50, paddingHorizontal: space.xl, paddingVertical: space.sm },
+  md: { minHeight: 52, paddingHorizontal: space.lg, paddingVertical: space.sm },
   sm: { minHeight: 38, paddingHorizontal: space.lg, paddingVertical: space.xs },
   full: { alignSelf: 'stretch' },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm },

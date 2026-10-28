@@ -55,6 +55,14 @@
 | T-048 | Admin search (`/admin/search`, also on the dashboard) by profile ID, name, city or phone digits — phone look-ups audited, results masked; member page (`/admin/member/[id]`) with every action in one place | ✅ |
 | T-049 | Admin bell with unread count → `/admin/alerts`: reports, payments (paid/failed), profiles waiting for approval, self-deleted accounts, admin-team/master security changes; deep links; mark read / all | ✅ |
 | T-050 | Lint set up (`expo lint`, eslint-config-expo) and all errors fixed (React Compiler purity/refs/set-state-in-effect, unescaped entities) | ✅ |
+| T-051 | Premium redesign (Design PRD v1.0): tokens (PRD palette), Lora + Inter, original arch/lantern/Charminar artwork, landing hero carousel + trust strip + lower sections + Help page | ✅ |
+| T-052 | Registration UX: language step (first time only), login "Enter your mobile number"/"Welcome back", 6-box OTP with paste/autofill, masked number, mm:ss resend countdown | ✅ |
+| T-053 | Navigation: Home · Discover · Shortlist · Requests · Profile tabs; bell with unread badge in every tab header; notifications as a stack route | ✅ |
+| T-054 | New Home tab (status card, new-interest shortcut, featured rail, recently published) built only on existing queries | ✅ |
+| T-055 | ProfileCard v2 (4:5 photo, icon metadata, contextual Express Interest, heart animation, skeleton), elegant photo placeholder | ✅ |
+| T-056 | PhotoPicker v2 (large main + 2 stacked), OptionList for "created for", segmented wizard progress, animated "Other" reveal | ✅ |
+| T-057 | Profile details gallery + fact chips; connect screen avatar header; request inbox segmented control, avatars, poke bell swing | ✅ |
+| T-058 | Sound effects (off by default, original chimes) + haptics with Settings toggles; animated success toast | ✅ |
 | T-033 | Bug: "Send contact request" greyed out — button now always tappable with clear guidance; edits keep a live profile live; demo starts with approval off | ✅ |
 
 ## Phase 2 (next)
@@ -80,6 +88,8 @@
 | T-119 | Push delivery for interest/offer/poke notifications (generic lock-screen text only) | ⏳ |
 | T-120 | Admin alerts by SMS/email/push for urgent items (failed payments, reports, recovery started) | ⏳ needs providers |
 | T-121 | Wire `SupabaseBackend.adminSearch/adminGetMember` to the `admin_search` RPC + member queries | ⏳ (with T-102) |
+| T-122 | Licensed, consented photography for the hero (optional; vector art ships today) | ⏳ owner decision |
+| T-123 | Filters: jump-to-section tabs (Basic / Education / Location / Religion) like the reference | ⏳ nice-to-have |
 | T-116 | Post-edit moderation queue (re-review edited live profiles without hiding them) | ⏳ |
 
 ## Known issues / tech debt

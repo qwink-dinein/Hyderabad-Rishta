@@ -9,14 +9,14 @@ type Variant = 'display' | 'h1' | 'h2' | 'h3' | 'body' | 'bodyStrong' | 'label' 
 
 const VARIANTS: Record<Variant, { size: number; role: FontRole; color?: string; upper?: boolean; spacing?: number }> = {
   display: { size: 34, role: 'display', color: colors.emerald },
-  h1: { size: 28, role: 'display', color: colors.emerald },
-  h2: { size: 22, role: 'display', color: colors.emerald },
+  h1: { size: 27, role: 'display', color: colors.emerald },
+  h2: { size: 20, role: 'display', color: colors.emerald },
   h3: { size: 17, role: 'semibold', color: colors.charcoal },
   body: { size: 15, role: 'body', color: colors.charcoal },
   bodyStrong: { size: 15, role: 'semibold', color: colors.charcoal },
   label: { size: 13, role: 'medium', color: colors.charcoal },
-  caption: { size: 12.5, role: 'body', color: colors.muted },
-  overline: { size: 11.5, role: 'semibold', color: colors.goldDeep, upper: true, spacing: 1.2 },
+  caption: { size: 13, role: 'body', color: colors.muted },
+  overline: { size: 12, role: 'semibold', color: colors.goldDeep, upper: true, spacing: 1.2 },
 };
 
 export interface AppTextProps extends TextProps {
@@ -37,7 +37,8 @@ export const Text = memo(function Text({ variant = 'body', color, center, style,
   const base: TextStyle = {
     fontFamily: fontFamily(lang, v.role),
     fontSize: size,
-    lineHeight: Math.round(size * lineHeightScale[lang]),
+    // Serif headings read better tight; scripts with tall glyphs keep their own scale.
+    lineHeight: Math.round(size * (v.role === 'display' && lang === 'en' ? 1.24 : lineHeightScale[lang])),
     color: color ?? v.color,
     textAlign: center ? 'center' : isRTL(lang) ? 'right' : 'left',
     writingDirection: isRTL(lang) ? 'rtl' : 'ltr',

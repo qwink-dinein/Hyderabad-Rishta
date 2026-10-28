@@ -54,6 +54,7 @@ export default function Filters() {
             router.back();
           }}
           full
+          arrow
           testID="apply-filters"
         />
       }

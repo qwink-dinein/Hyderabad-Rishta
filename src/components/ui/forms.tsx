@@ -1,13 +1,15 @@
-import { memo, useMemo, useState, type ReactNode } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Switch, TextInput, View, type TextInputProps } from 'react-native';
+import { memo, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Animated, Easing, FlatList, Modal, Pressable, StyleSheet, Switch, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { haptic } from '@/services/feedback';
+import { colors, maxContentWidth, motion, radius, space } from '@/theme/tokens';
 import { fontFamily } from '@/theme/fonts';
 import { useSession } from '@/state/session';
 import { isRTL } from '@/i18n';
 import { Button } from './Button';
-import { Icon } from './Icon';
+import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
 
 export interface Option {
@@ -68,6 +70,86 @@ export const TextField = memo(function TextField({ error, multiline, style, ...p
 });
 
 /** Inline pill choices for short option lists (≤ ~6). Supports single or multiple selection. */
+/** Segmented control (e.g. Received / Sent). Radio semantics for assistive tech. */
+export function Segmented({ options, value, onChange, accessibilityLabel }: { options: Option[]; value: string; onChange: (v: any) => void; accessibilityLabel?: string }) {
+  return (
+    <View style={styles.segmented} accessibilityRole="radiogroup" accessibilityLabel={accessibilityLabel}>
+      {options.map((o) => {
+        const on = o.value === value;
+        return (
+          <Pressable
+            key={o.value}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: on }}
+            accessibilityLabel={o.label}
+            onPress={() => {
+              if (!on) haptic('select');
+              onChange(o.value);
+            }}
+            style={[styles.segment, on && styles.segmentOn]}
+          >
+            <Text variant="label" color={on ? colors.white : colors.emerald} numberOfLines={1}>
+              {o.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/** Single-choice list of large option cards (radio semantics), e.g. "I am creating biodata for". */
+export function OptionList({ options, value, onChange, icons, accessibilityLabel }: {
+  options: Option[];
+  value: string | undefined;
+  onChange: (v: any) => void;
+  icons?: Partial<Record<string, IconName>>;
+  accessibilityLabel?: string;
+}) {
+  return (
+    <View style={{ gap: space.sm }} accessibilityRole="radiogroup" accessibilityLabel={accessibilityLabel}>
+      {options.map((o) => {
+        const on = value === o.value;
+        return (
+          <Pressable
+            key={o.value}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: on }}
+            accessibilityLabel={o.label}
+            onPress={() => {
+              haptic('select');
+              onChange(on ? undefined : o.value);
+            }}
+            style={({ pressed }) => [styles.optionCard, on && styles.optionCardOn, pressed && { transform: [{ scale: 0.99 }] }]}
+          >
+            <View style={[styles.optionIcon, on && { backgroundColor: colors.emerald }]}>
+              <Icon name={icons?.[o.value] ?? 'user'} size={18} color={on ? colors.white : colors.emerald} />
+            </View>
+            <Text variant={on ? 'bodyStrong' : 'body'} style={{ flex: 1 }}>
+              {o.label}
+            </Text>
+            <View style={[styles.optionCheck, on && styles.optionCheckOn]}>{on ? <Icon name="check" size={13} color={colors.white} strokeWidth={2.6} /> : null}</View>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/** Fades and slides a conditional field into place (~220 ms); instant when Reduce Motion is on. */
+export function Reveal({ children }: { children: ReactNode }) {
+  const reduced = useReducedMotion();
+  const [v] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    if (reduced) {
+      v.setValue(1);
+      return;
+    }
+    Animated.timing(v, { toValue: 1, duration: motion.fade, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+  }, [reduced, v]);
+  return <Animated.View style={{ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [-6, 0] }) }] }}>{children}</Animated.View>;
+}
+
 export function ChipGroup({ options, value, onChange, multiple, accessibilityLabel }: {
   options: Option[];
   value: string | string[] | undefined;
@@ -111,7 +193,7 @@ export function ChipGroup({ options, value, onChange, multiple, accessibilityLab
  * Searchable dropdown in a modal sheet. Works identically on iOS, Android and web.
  * `allowCustom` lets users type a value not in the list (PRD §6.3: manual location entry).
  */
-export function Select({ options, value, onChange, placeholder, multiple, allowCustom, error, label, disabled }: {
+export function Select({ options, value, onChange, placeholder, multiple, allowCustom, error, label, disabled, displayValue, style }: {
   options: Option[];
   value: string | string[] | undefined;
   onChange: (v: any) => void;
@@ -121,6 +203,9 @@ export function Select({ options, value, onChange, placeholder, multiple, allowC
   error?: boolean;
   label: string;
   disabled?: boolean;
+  /** Short text for the closed control (e.g. just "+91" in a compact slot); the sheet still shows full labels. */
+  displayValue?: (values: string[]) => string;
+  style?: StyleProp<ViewStyle>;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -128,7 +213,7 @@ export function Select({ options, value, onChange, placeholder, multiple, allowC
   const insets = useSafeAreaInsets();
   const values = Array.isArray(value) ? value : value ? [value] : [];
   const labelFor = (v: string) => options.find((o) => o.value === v)?.label ?? v;
-  const display = values.length === 0 ? placeholder ?? t('common.select') : multiple && values.length > 2 ? t('common.selected', { n: values.length }) : values.map(labelFor).join(', ');
+  const display = values.length && displayValue ? displayValue(values) : values.length === 0 ? placeholder ?? t('common.select') : multiple && values.length > 2 ? t('common.selected', { n: values.length }) : values.map(labelFor).join(', ');
 
   const filtered = useMemo(() => {
     const n = q.trim().toLowerCase();
@@ -153,7 +238,7 @@ export function Select({ options, value, onChange, placeholder, multiple, allowC
         accessibilityLabel={`${label}: ${values.length ? display : t('common.select')}`}
         disabled={disabled}
         onPress={() => setOpen(true)}
-        style={[styles.input, styles.selectBtn, error && styles.inputError, disabled && { opacity: 0.5 }]}
+        style={[styles.input, styles.selectBtn, error && styles.inputError, disabled && { opacity: 0.5 }, style]}
       >
         <Text variant="body" color={values.length ? colors.charcoal : colors.muted} numberOfLines={1} style={{ flex: 1 }}>
           {display}
@@ -239,6 +324,7 @@ export function ToggleRow({ label, value, onChange, hint }: { label: string; val
         onValueChange={onChange}
         trackColor={{ true: colors.emeraldSoft, false: colors.border }}
         thumbColor={colors.white}
+        {...({ activeThumbColor: colors.white } as object) /* react-native-web otherwise uses its default teal */}
         accessibilityElementsHidden
         importantForAccessibility="no"
       />
@@ -273,7 +359,7 @@ export function RangeSelect({ label, options, min, max, onChange, error }: {
 
 const styles = StyleSheet.create({
   input: {
-    minHeight: 50,
+    minHeight: 52,
     borderWidth: 1.2,
     borderColor: colors.border,
     borderRadius: radius.md,
@@ -300,6 +386,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
   },
   chipOn: { backgroundColor: colors.emerald, borderColor: colors.emerald },
+  segmented: { flexDirection: 'row', padding: 4, gap: 4, borderRadius: radius.pill, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
+  segment: { flex: 1, minHeight: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.md },
+  segmentOn: { backgroundColor: colors.emerald },
+  optionCard: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 56, paddingHorizontal: space.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.white },
+  optionCardOn: { borderColor: colors.emerald, borderWidth: 1.5, backgroundColor: '#FBFDFB' },
+  optionIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.sage, alignItems: 'center', justifyContent: 'center' },
+  optionCheck: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  optionCheckOn: { backgroundColor: colors.emerald, borderColor: colors.emerald },
   backdrop: { flex: 1, backgroundColor: colors.overlay },
   sheet: {
     maxHeight: '80%',

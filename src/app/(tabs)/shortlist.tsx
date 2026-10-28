@@ -4,9 +4,9 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { ProfileCard } from '@/components/ProfileCard';
+import { TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
 import { EmptyState, ErrorView, Loading } from '@/components/ui/feedback';
-import { Text } from '@/components/ui/Text';
 import type { PublicProfile } from '@/domain/types';
 import { useShortlist, useToggleShortlist } from '@/hooks/queries';
 import { colors, maxContentWidth, space } from '@/theme/tokens';
@@ -21,11 +21,7 @@ export default function ShortlistScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <View style={styles.column}>
-        <Text variant="h1" style={{ padding: space.lg }} accessibilityRole="header">
-          {t('shortlist.title')}
-        </Text>
-      </View>
+      <TabHeader title={t('shortlist.title')} subtitle={data?.length ? t('shortlist.count', { count: data.length }) : undefined} />
       {isLoading ? (
         <Loading />
       ) : error ? (
