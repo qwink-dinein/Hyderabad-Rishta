@@ -108,7 +108,7 @@ describe('admin search & member console', () => {
   it('member page gathers profile, interests, reports and orders with codes', async () => {
     const b = make();
     await as(b, DEMO_USER_PHONE);
-    await b.reportProfile('p_2', 'fake_profile');
+    await b.reportProfile('p_2', 'fake');
     await as(b, DEMO_ADMIN_PHONE);
     const m = await b.adminGetMember('u_demo');
     expect(m.member.code).toBe('HR-10002');

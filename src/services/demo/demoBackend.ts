@@ -42,6 +42,8 @@ import type {
 } from '@/domain/types';
 import { isAdminRole } from '@/domain/types';
 import { firstInvalidStep, otpSchema, phoneSchema, requestMessageSchema } from '@/domain/validation';
+import { REPORT_REASONS } from '@/domain/options';
+import { biodataProblem, isHttpsUrl, isInternalLink, LANGS, MAX_IDEM_KEY, MAX_PUSH_TOKEN, MAX_REPORTS_PER_DAY, MAX_SEARCH_PAGE } from '@/domain/security';
 import { AppError, type AdminRequestRow, type AdminStats, type Backend, type MemberDetail, type MemberRow, type ConnectionMetrics, type SendInterestInput, type NotificationView, type Page, type RecipientRow, type RequestView, type TrashItem } from '../backend';
 import type { KV } from '../storage';
 
@@ -550,6 +552,7 @@ export class DemoBackend implements Backend {
 
   setLanguage(lang: Lang) {
     return this.run((db) => {
+      if (!LANGS.includes(lang)) throw new AppError('validation');
       const u = db.users.find((x) => x.id === db.sessionUserId);
       if (u) u.language = lang;
     }, true);
@@ -590,10 +593,12 @@ export class DemoBackend implements Backend {
   saveDraft(biodata: Biodata, lastStep: number) {
     return this.run((db) => {
       const u = this.me(db);
-      if (biodata.photos.length > 3) throw new AppError('validation', 'v.maxPhotos');
+      const problem = biodataProblem(biodata);
+      if (problem) throw new AppError('validation', problem);
+      lastStep = Math.max(0, Math.min(7, Math.floor(Number(lastStep) || 0)));
       let p = this.myProfile(db, u.id);
       if (!p) {
-        p = { id: uid('p_'), code: `HR-${db.nextCode++}`, userId: u.id, biodata, status: 'draft', createdAt: this.iso(), updatedAt: this.iso(), lastStep };
+        p = { id: uid('p_'), code: `HR-${db.nextCode++}`, userId: u.id, biodata: clone(biodata), status: 'draft', createdAt: this.iso(), updatedAt: this.iso(), lastStep };
         db.profiles.push(p);
       } else {
         p.biodata = clone(biodata);
@@ -748,6 +753,8 @@ export class DemoBackend implements Backend {
   searchProfiles(filters: SearchFilters, page: number, pageSize = 10): Promise<Page<ReturnType<typeof projectProfile>>> {
     return this.run((db) => {
       const u = this.me(db);
+      pageSize = Math.max(1, Math.min(MAX_SEARCH_PAGE, Math.floor(Number(pageSize) || 10)));
+      page = Math.max(0, Math.floor(Number(page) || 0));
       const mine = this.myProfile(db, u.id);
       const shortlisted = new Set(db.shortlists.filter((s) => s.userId === u.id).map((s) => s.profileId));
       const candidates = db.profiles.filter((p) => {
@@ -820,7 +827,7 @@ export class DemoBackend implements Backend {
   registerPushDevice(token: string, platform: 'ios' | 'android') {
     return this.run((db) => {
       const u = this.me(db);
-      if (!/^Expo(nent)?PushToken\[[^\]]{6,}\]$/.test(token) || (platform !== 'ios' && platform !== 'android')) throw new AppError('validation');
+      if (typeof token !== 'string' || token.length > MAX_PUSH_TOKEN || !/^Expo(nent)?PushToken\[[^\]]{6,}\]$/.test(token) || (platform !== 'ios' && platform !== 'android')) throw new AppError('validation');
       // One phone ↔ one account: a shared phone stops receiving the previous account's alerts.
       db.pushDevices = db.pushDevices.filter((d) => d.token !== token);
       db.pushDevices.push({ token, userId: u.id, platform, createdAt: this.iso(), lastSeenAt: this.iso() });
@@ -895,6 +902,7 @@ export class DemoBackend implements Backend {
   sendRequest(toProfileId: string, input: SendInterestInput) {
     return this.run((db) => {
       const u = this.me(db);
+      if ((input.idempotencyKey?.length ?? 0) > MAX_IDEM_KEY || (input.message?.length ?? 0) > 4000) throw new AppError('validation', 'v.tooLong');
       // Double taps / retries with the same key return the original request (no duplicates).
       const prior = input.idempotencyKey ? this.idemLookup(db, u.id, `interest:${input.idempotencyKey}`) : undefined;
       if (prior) {
@@ -1029,6 +1037,7 @@ export class DemoBackend implements Backend {
   offerPhone(requestId: string, consent: boolean, idempotencyKey: string) {
     return this.run((db) => {
       const u = this.me(db);
+      if ((idempotencyKey?.length ?? 0) > MAX_IDEM_KEY) throw new AppError('validation');
       const prior = idempotencyKey ? this.idemLookup(db, u.id, `offer:${idempotencyKey}`) : undefined;
       if (prior) {
         const o = db.phoneOffers.find((x) => x.id === prior);
@@ -1119,7 +1128,7 @@ export class DemoBackend implements Backend {
       const r = db.requests.find((x) => x.id === requestId);
       if (!r || (r.toUserId !== u.id && r.fromUserId !== u.id)) throw new AppError('not_found');
       if (r.status !== 'accepted') throw new AppError('invalid_state');
-      const clean = { photos: scopes.photos, phone: false, fullBiodata: scopes.fullBiodata };
+      const clean = { photos: scopes?.photos === true, phone: false, fullBiodata: scopes?.fullBiodata === true };
       const granteeUserId = r.toUserId === u.id ? r.fromUserId : r.toUserId;
       const grantorProfileId = r.toUserId === u.id ? r.toProfileId : r.fromProfileId;
       const existing = db.consents.find((c) => c.requestId === r.id && c.grantorUserId === u.id);
@@ -1141,9 +1150,16 @@ export class DemoBackend implements Backend {
   reportProfile(profileId: string, reason: string, details?: string) {
     return this.run((db) => {
       const u = this.me(db);
-      if (!db.profiles.some((p) => p.id === profileId)) throw new AppError('not_found');
+      if (!(REPORT_REASONS as readonly string[]).includes(reason)) throw new AppError('validation');
+      const target = db.profiles.find((p) => p.id === profileId);
+      // Reportable: anything the member could have seen (live, or paused/blocked after they saw it) — never drafts.
+      if (!target || target.deletedAt || (target.status !== 'published' && target.status !== 'paused')) throw new AppError('not_found');
+      if (target.userId === u.id) throw new AppError('invalid_state');
       if (db.reports.some((r) => r.reporterUserId === u.id && r.profileId === profileId && r.status === 'open')) throw new AppError('duplicate');
-      db.reports.unshift({ id: uid('rp_'), reporterUserId: u.id, profileId, reason, details: details?.slice(0, 1000), status: 'open', createdAt: this.iso() });
+      const dayAgo = this.now().getTime() - 86400000;
+      if (db.reports.filter((r) => r.reporterUserId === u.id && new Date(r.createdAt).getTime() > dayAgo).length >= MAX_REPORTS_PER_DAY) throw new AppError('rate_limited');
+      const note = typeof details === 'string' ? details.trim().slice(0, 1000) : undefined;
+      db.reports.unshift({ id: uid('rp_'), reporterUserId: u.id, profileId, reason, details: note || undefined, status: 'open', createdAt: this.iso() });
       this.track(db, 'user_reported', u.id, { reason });
       this.alertAdmins(db, 'report', { code: this.codeOf(db, profileId), reason }, '/admin/reports');
     }, true);
@@ -1152,6 +1168,9 @@ export class DemoBackend implements Backend {
   blockProfile(profileId: string) {
     return this.run((db) => {
       const u = this.me(db);
+      const target = db.profiles.find((p) => p.id === profileId);
+      if (!target || target.deletedAt) throw new AppError('not_found');
+      if (target.userId === u.id) throw new AppError('invalid_state');
       if (!db.blocks.some((b) => b.userId === u.id && b.blockedProfileId === profileId)) db.blocks.push({ userId: u.id, blockedProfileId: profileId, createdAt: this.iso() });
       db.shortlists = db.shortlists.filter((s) => !(s.userId === u.id && s.profileId === profileId));
       // Every open or accepted request between the two becomes Blocked: no requests, pokes or sharing,
@@ -1391,12 +1410,18 @@ export class DemoBackend implements Backend {
   adminSaveAnnouncement(input: Partial<Announcement> & Pick<Announcement, 'title' | 'body' | 'segment'>) {
     return this.run((db) => {
       const admin = this.admin(db);
-      if (!input.title.en?.trim() || !input.body.en?.trim()) throw new AppError('validation', 'English title and body are required');
+      if (!input.title?.en?.trim() || !input.body?.en?.trim()) throw new AppError('validation', 'English title and body are required');
+      const tooLong = (l: Partial<Record<string, string>>, max: number) => Object.values(l).some((v) => typeof v === 'string' && v.length > max);
+      if (tooLong(input.title, 200) || tooLong(input.body, 4000)) throw new AppError('validation', 'Title or message is too long');
+      if (input.deepLink && !isInternalLink(input.deepLink)) throw new AppError('validation', 'Links must be an in-app path such as /biodata');
+      if (input.imageUrl && !isHttpsUrl(input.imageUrl)) throw new AppError('validation', 'Images must use an https:// address');
       if (input.id) {
         const a = db.announcements.find((x) => x.id === input.id);
         if (!a) throw new AppError('not_found');
         if (a.status !== 'draft' && a.status !== 'scheduled') throw new AppError('invalid_state', 'Only drafts can be edited');
-        Object.assign(a, { ...input, status: a.status, updatedAt: this.iso() });
+        // Only editable fields — status, author and timestamps can never be forged through an edit.
+        const { title, body, imageUrl, priority, deepLink, segment, pushEnabled, expiresAt } = input;
+        Object.assign(a, { title, body, imageUrl, priority: priority ?? a.priority, deepLink, segment, pushEnabled: !!pushEnabled, expiresAt, updatedAt: this.iso() });
         this.audit(db, admin.id, 'announcement.updated', a.id);
         return clone(a);
       }
@@ -1844,8 +1869,8 @@ export class DemoBackend implements Backend {
   adminSearch(query: string) {
     return this.run((db): MemberRow[] => {
       const a = this.admin(db);
-      const q = query.trim().toLowerCase();
-      if (q.length < 2) return [];
+      const q = String(query ?? '').trim().toLowerCase();
+      if (q.length < 2 || q.length > 100) return [];
       const digits = q.replace(/\D/g, '');
       const codeQuery = /^hr-?\d+$/.test(q) ? `hr-${digits}` : null;
       const byPhone = !codeQuery && /^[+\d\s-]+$/.test(q) && digits.length >= 4;
