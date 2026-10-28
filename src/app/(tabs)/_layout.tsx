@@ -4,6 +4,7 @@ import { Tabs } from 'expo-router/js-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Icon, type IconName } from '@/components/ui/Icon';
+import { useTabTransitions } from '@/navigation/transitions';
 import { useSession } from '@/state/session';
 import { colors, radius } from '@/theme/tokens';
 import { fontFamily } from '@/theme/fonts';
@@ -18,6 +19,7 @@ export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const user = useSession((s) => s.user);
   const lang = useSession((s) => s.lang);
+  const tabMotion = useTabTransitions();
   if (!user) return <Redirect href="/login" />;
 
   const icon = (name: IconName, filled?: IconName) =>
@@ -34,6 +36,8 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        ...tabMotion,
+        sceneStyle: { backgroundColor: colors.ivory },
         tabBarActiveTintColor: colors.emerald,
         tabBarInactiveTintColor: colors.muted,
         tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.border, minHeight: 62 + insets.bottom, paddingTop: 6 },

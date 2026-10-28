@@ -93,7 +93,12 @@ Scale (pt): display 34 (hero) · h1 27 (screen titles) · h2 20 (card titles 18�
 | Toast / success | 340 ms | slide + check scale |
 | Carousel | ~420 ms paging | autoplay 6 s |
 | Poke bell | ~400 ms once | ±14° swing |
-- Reduce Motion (`useReducedMotion`) disables every animation above and stops autoplay. Information never depends on motion.
+| **Screen → screen (phones)** | 340 ms | Native stack slide: iOS default; Android uses the iOS-style slide (`ios_from_right`) so both feel the same. Urdu slides from the left. Swipe-back from anywhere on iOS. Login → app (replace) also slides. |
+| **Modal (Filters)** | native | Rises from the bottom (`slide_from_bottom`). |
+| **Tab switch** | 240 ms | Short sideways shift, ease-out-quint `cubic-bezier(.22,1,.36,1)`. |
+| **Screen → screen (web)** | 320 ms | Fade + 14 px rise each time a screen gains focus (also on back). Browsers get no native transition. |
+- All screen motion lives in `src/navigation/transitions.tsx` (stacks, admin stack, tabs). Don't set animations per screen.
+- Reduce Motion (`useReducedMotion`) disables every animation above and stops autoplay. Screen changes become a quick cross-fade (phones and tabs) or a 140 ms fade with no movement (web). Information never depends on motion.
 - There is no confetti, no bouncy form motion, and no full-screen loaders for minor actions.
 
 ## 8b. Notifications & Featured

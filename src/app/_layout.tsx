@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { isRTL, restoreLanguage } from '@/i18n';
 import { PushBridge } from '@/components/PushBridge';
+import { modalTransition, useStackTransitions, webScreenLayout } from '@/navigation/transitions';
 import { ConfirmHost, ToastHost } from '@/components/ui/feedback';
 import { backend } from '@/services';
 import { loadFeedbackPrefs } from '@/services/feedback';
@@ -33,6 +34,7 @@ const queryClient = new QueryClient({
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(baseFontAssets);
   const { ready, setReady, setUser, setLang, lang } = useSession();
+  const transitions = useStackTransitions();
   const [booted, setBooted] = useState(false);
 
   useEffect(() => {
@@ -66,8 +68,8 @@ export default function RootLayout() {
           {/* Layout direction flips instantly for Urdu without an app restart. */}
           <View style={[styles.root, { direction: isRTL(lang) ? 'rtl' : 'ltr' }]}>
             <StatusBar style="dark" />
-            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.ivory }, animation: Platform.OS === 'web' ? 'none' : 'default' }}>
-              <Stack.Screen name="filters" options={{ presentation: 'modal' }} />
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.ivory }, ...transitions }} screenLayout={webScreenLayout}>
+              <Stack.Screen name="filters" options={{ presentation: 'modal', ...modalTransition }} />
             </Stack>
             <PushBridge />
             <ToastHost />

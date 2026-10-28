@@ -1,5 +1,6 @@
 import { Redirect, Stack } from 'expo-router';
 import { isAdminRole } from '@/domain/types';
+import { useStackTransitions, webScreenLayout } from '@/navigation/transitions';
 import { useSession } from '@/state/session';
 import { colors } from '@/theme/tokens';
 
@@ -10,7 +11,8 @@ import { colors } from '@/theme/tokens';
  */
 export default function AdminLayout() {
   const user = useSession((s) => s.user);
+  const transitions = useStackTransitions();
   if (!user) return <Redirect href="/login" />;
   if (!isAdminRole(user.role)) return <Redirect href="/discover" />;
-  return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.ivory } }} />;
+  return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.ivory }, ...transitions }} screenLayout={webScreenLayout} />;
 }
