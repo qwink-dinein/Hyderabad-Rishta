@@ -42,7 +42,9 @@ const PROF_GROOM = ['it', 'engineering', 'healthcare', 'business', 'finance', 'g
 const PROF_BRIDE = ['it', 'healthcare', 'education', 'homemaker', 'student', 'finance', 'it', 'education', 'other'];
 const PROF_OTHER = ['Calligraphy artist', 'Unani physician', 'Interior designer'];
 const TONGUES = ['urdu', 'urdu', 'dakhini', 'urdu', 'telugu', 'hindi', 'urdu', 'english'];
-const MASLAK = ['sunni', 'sunni', 'shia', 'ahle_hadith', 'deobandi', 'barelvi', undefined, 'prefer_not'];
+const MASLAK: [string | undefined, string | undefined][] = [
+  ['sunni', 'hanafi'], ['sunni', 'shafii'], ['shia', 'ithna_ashari'], ['sunni', 'ahle_hadith'], ['sunni', 'deobandi'], ['sunni', 'barelvi'], [undefined, undefined], ['prefer_not', undefined],
+];
 const INCOME = ['5to10', '10to20', 'undisclosed', '3to5', '20to35', 'undisclosed', '35to50', 'lt3'];
 
 const pick = <T,>(arr: T[], r: () => number) => arr[Math.floor(r() * arr.length)];
@@ -85,6 +87,7 @@ export function buildSeed(now = new Date('2026-10-01T09:00:00Z')): SeedData {
         dob: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
         heightCm: isBride ? 150 + Math.floor(r() * 20) : 165 + Math.floor(r() * 22),
         maritalStatus: marital,
+        children: marital === 'never_married' ? undefined : i % 3 === 0 ? 0 : 1,
         motherTongue: TONGUES[i % TONGUES.length],
         aboutMe: `[Demo] Fictional profile for testing. ${isBride ? 'She' : 'He'} values family, deen and kindness, and enjoys ${pick(['reading', 'cooking', 'travelling', 'calligraphy', 'cricket', 'volunteering'], r)}.`,
       },
@@ -113,7 +116,8 @@ export function buildSeed(now = new Date('2026-10-01T09:00:00Z')): SeedData {
         workLocation: city,
       },
       religion: {
-        maslak: MASLAK[i % MASLAK.length],
+        maslak: MASLAK[i % MASLAK.length][0],
+        subMaslak: MASLAK[i % MASLAK.length][1],
         namaz: pick(['regularly', 'mostly', 'sometimes', undefined] as (string | undefined)[], r),
         fasting: pick(['regularly', 'mostly', undefined] as (string | undefined)[], r),
         hajj: pick(['no', 'yes', undefined] as (string | undefined)[], r),
@@ -195,4 +199,5 @@ export function buildSeed(now = new Date('2026-10-01T09:00:00Z')): SeedData {
   return { users, profiles, requests, consents, views, announcements };
 }
 
-export const SEED_PRICING = DEFAULT_PRICING;
+/** Demo starts with approval OFF so a single tester can publish and send requests immediately; admins can turn it on. */
+export const SEED_PRICING = { ...DEFAULT_PRICING, requireApproval: false };

@@ -27,6 +27,7 @@ export interface SearchFilters {
   /** Minimum income band key — only matches profiles that publicly disclose income. */
   incomeMin?: string;
   maslak: string[];
+  subMaslak: string[];
   familyType: string[];
   familyValues: string[];
   relocation: string[];
@@ -50,6 +51,7 @@ export const EMPTY_FILTERS: SearchFilters = {
   profession: [],
   employmentType: [],
   maslak: [],
+  subMaslak: [],
   familyType: [],
   familyValues: [],
   relocation: [],
@@ -120,6 +122,7 @@ export function matchesFilters(
   }
 
   if (!optionalInList(f.maslak, p.religion.maslak, strict)) return false;
+  if (!optionalInList(f.subMaslak, p.religion.subMaslak, strict)) return false;
   if (!optionalInList(f.familyType, p.family?.familyType, strict)) return false;
   if (!optionalInList(f.familyValues, p.family?.familyValues, strict)) return false;
   if (!optionalInList(f.relocation, p.location.willingToRelocate, strict)) return false;
@@ -184,7 +187,7 @@ export function activeFilterCount(f: SearchFilters): number {
   let n = 0;
   const arrays: (keyof SearchFilters)[] = [
     'maritalStatus', 'countries', 'states', 'districts', 'cities', 'motherTongues', 'education', 'profession',
-    'employmentType', 'maslak', 'familyType', 'familyValues', 'relocation',
+    'employmentType', 'maslak', 'subMaslak', 'familyType', 'familyValues', 'relocation',
   ];
   for (const k of arrays) n += (f[k] as string[]).length;
   if (f.ageMin != null || f.ageMax != null) n++;

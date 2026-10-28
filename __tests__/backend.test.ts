@@ -71,6 +71,9 @@ describe('auth', () => {
 describe('biodata → publication → discovery', () => {
   it('saves drafts, blocks incomplete publication, publishes via admin approval', async () => {
     const b = makeBackend();
+    await login(b, DEMO_ADMIN_PHONE);
+    await b.adminUpdatePricing({ ...(await b.getPricing()), requireApproval: true });
+    await b.logout();
     await login(b, '9111111111');
     const empty = { ...validBiodata(), basic: { ...validBiodata().basic, fullName: '' } };
     await b.saveDraft(empty, 1);
@@ -104,7 +107,20 @@ describe('biodata → publication → discovery', () => {
     await expectCode(b.saveDraft(bd, 0), 'validation');
     bd.photos = [];
     await b.saveDraft(bd, 7);
-    expect((await b.submitForPublication()).profile.status).toBe('pending');
+    // Demo default: approval off → goes live immediately so a single tester can continue.
+    expect((await b.submitForPublication()).profile.status).toBe('published');
+  });
+
+  it('editing a live profile keeps it live (request button never silently disappears)', async () => {
+    const b = makeBackend();
+    await login(b, DEMO_ADMIN_PHONE);
+    await b.adminUpdatePricing({ ...(await b.getPricing()), requireApproval: true });
+    await b.logout();
+    await login(b, DEMO_USER_PHONE);
+    const mine = (await b.getMyProfile())!;
+    const edited = await b.saveDraft({ ...mine.biodata, basic: { ...mine.biodata.basic, aboutMe: 'Updated' } }, 7);
+    expect(edited.status).toBe('published');
+    await expect(b.sendRequest('p_6')).resolves.toMatchObject({ status: 'pending' });
   });
 
   it('never returns phone numbers or hidden fields from discovery', async () => {

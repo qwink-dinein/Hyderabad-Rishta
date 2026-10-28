@@ -52,7 +52,7 @@ export const ProfileCard = memo(function ProfileCard({ profile, shortlisted, onT
   onOpen: (id: string) => void;
 }) {
   const { t } = useTranslation();
-  const { label } = useOptions();
+  const { label, maslakLabel } = useOptions();
   const edu = label('education', profile.career.education, profile.career.educationOther);
   const prof = label('profession', profile.career.profession, profile.career.professionOther);
   const place = [profile.location.city, profile.location.state].filter(Boolean).join(', ');
@@ -84,7 +84,7 @@ export const ProfileCard = memo(function ProfileCard({ profile, shortlisted, onT
           </Text>
           <View style={styles.tags}>
             <Badge label={label('tongue', profile.motherTongue) ?? ''} tone="emerald" />
-            {profile.religion.maslak && profile.religion.maslak !== 'prefer_not' ? <Badge label={label('maslak', profile.religion.maslak, profile.religion.maslakOther) ?? ''} tone="muted" /> : null}
+            {profile.religion.maslak && profile.religion.maslak !== 'prefer_not' ? <Badge label={maslakLabel(profile.religion.maslak, profile.religion.subMaslak, profile.religion.maslakOther) ?? ''} tone="muted" /> : null}
             {profile.location.willingToRelocate === 'yes' ? <Badge label={`${t('f.willingToRelocate')}`} tone="muted" /> : null}
           </View>
         </View>

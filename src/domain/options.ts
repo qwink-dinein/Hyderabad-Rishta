@@ -21,7 +21,14 @@ export const EMPLOYMENT_TYPE = ['private', 'government', 'self_employed', 'busin
 export const INCOME_BANDS = ['lt3', '3to5', '5to10', '10to20', '20to35', '35to50', 'gt50', 'undisclosed'] as const;
 export const RELOCATE = ['yes', 'no', 'maybe'] as const;
 
-export const MASLAK = ['sunni', 'shia', 'ahle_hadith', 'deobandi', 'barelvi', 'other', 'prefer_not'] as const;
+export const MASLAK = ['sunni', 'shia', 'just_muslim', 'other', 'prefer_not'] as const;
+/** Sub-maslak / school options per maslak. "other" pairs with the free-text maslakOther field. */
+export const SUB_MASLAK: Record<string, readonly string[]> = {
+  sunni: ['hanafi', 'shafii', 'maliki', 'hanbali', 'barelvi', 'deobandi', 'ahle_hadith', 'salafi', 'sufi', 'other'],
+  shia: ['ithna_ashari', 'dawoodi_bohra', 'ismaili', 'zaidi', 'other'],
+};
+export const ALL_SUB_MASLAK = [...new Set(Object.values(SUB_MASLAK).flat())];
+export const MAX_CHILDREN = 15;
 export const PRACTICE = ['regularly', 'mostly', 'sometimes', 'learning', 'prefer_not'] as const;
 export const YES_NO_PNS = ['yes', 'no', 'prefer_not'] as const;
 export const IMPORTANCE = ['very', 'somewhat', 'not_much', 'prefer_not'] as const;

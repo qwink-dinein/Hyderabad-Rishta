@@ -37,6 +37,8 @@ export interface BasicInfo {
   dob: string; // YYYY-MM-DD
   heightCm: number;
   maritalStatus: string;
+  /** Required when marital status is anything other than never married. */
+  children?: number;
   motherTongue: string;
   aboutMe?: string;
 }
@@ -68,6 +70,8 @@ export interface CareerInfo {
 
 export interface ReligionInfo {
   maslak?: string;
+  /** School / sub-group within the maslak, e.g. Sunni → Hanafi. */
+  subMaslak?: string;
   maslakOther?: string;
   namaz?: string;
   fasting?: string;
@@ -158,9 +162,11 @@ export interface PublicProfile {
   age: number;
   heightCm: number;
   maritalStatus: string;
+  children?: number;
   motherTongue: string;
   aboutMe?: string;
   createdFor: string;
+  acceptsRequests: boolean;
   photos: Photo[];
   photosHidden: boolean;
   location: Omit<LocationInfo, 'nativePlace'> & { nativePlace?: string };

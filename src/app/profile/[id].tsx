@@ -81,7 +81,26 @@ export default function ProfileScreen() {
     <Banner icon="lock">{t('profile.contactLocked')}</Banner>
   );
 
-  const canRequest = !isOwn && !req && profile;
+  const canRequest = !isOwn && !req;
+  // Why the viewer can't send yet (null = they can). Shown as guidance; the button stays tappable.
+  const blocker: { msg: string; cta?: { label: string; go: () => void } } | null = !me
+    ? { msg: t('profile.sendNeedsBiodata'), cta: { label: t('dashboard.createCta'), go: () => router.push('/biodata') } }
+    : me.status === 'published'
+      ? null
+      : me.status === 'pending'
+        ? { msg: t('profile.sendPending') }
+        : me.status === 'paused'
+          ? { msg: t('profile.sendPaused'), cta: { label: t('dashboard.resume'), go: () => router.push('/dashboard') } }
+          : { msg: t('profile.sendNeedsPublish'), cta: { label: t('preview.publish'), go: () => router.push('/biodata/preview') } };
+  const onSend = () => {
+    if (!profile.acceptsRequests) return toast(t('err.not_accepting'), 'info');
+    if (blocker) {
+      if (blocker.cta) blocker.cta.go();
+      else toast(blocker.msg, 'info');
+      return;
+    }
+    router.push(`/request/${profile.id}`);
+  };
   return (
     <Screen
       header={
@@ -105,10 +124,10 @@ export default function ProfileScreen() {
               style={{ flex: 1 }}
             />
             <Button
-              label={t('profile.sendRequest')}
-              onPress={() => router.push(`/request/${profile.id}`)}
+              label={profile.acceptsRequests ? t('profile.sendRequest') : t('profile.notAccepting')}
+              onPress={onSend}
               style={{ flex: 1.4 }}
-              disabled={me?.status !== 'published'}
+              disabled={!profile.acceptsRequests}
               testID="send-request"
             />
           </Row>
@@ -117,7 +136,14 @@ export default function ProfileScreen() {
     >
       <View style={{ gap: space.md, paddingTop: space.lg }}>
         {action}
-        {canRequest && me?.status !== 'published' ? <Banner tone="warning">{t('discover.needProfile')}</Banner> : null}
+        {canRequest && blocker && profile.acceptsRequests ? (
+          <Banner tone="warning" icon="mail">
+            <Text variant="caption" color={colors.goldDeep}>
+              {blocker.msg}
+            </Text>
+            {blocker.cta ? <Button label={blocker.cta.label} size="sm" kind="secondary" onPress={blocker.cta.go} style={{ alignSelf: 'flex-start', marginTop: space.sm }} /> : null}
+          </Banner>
+        ) : null}
       </View>
       <View style={{ marginTop: space.md }}>
         <ProfileDetails profile={profile} contactSlot={contact} />

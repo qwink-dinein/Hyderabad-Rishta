@@ -327,6 +327,8 @@ begin
     'age', date_part('year', age(p.dob))::int,
     'heightCm', p.height_cm,
     'maritalStatus', p.marital_status,
+    'children', case when p.marital_status <> 'never_married' then (b #>> '{basic,children}')::int end,
+    'acceptsRequests', coalesce((b #>> '{privacy,acceptContactRequests}')::boolean, true),
     'motherTongue', p.mother_tongue,
     'aboutMe', b #>> '{basic,aboutMe}',
     'createdFor', b #>> '{basic,createdFor}',

@@ -36,6 +36,9 @@
 | T-028 | Playwright E2E smoke + full journey on web export (`e2e/`) | ✅ |
 | T-029 | Docs: PRD, Architecture, Tasks, Phases, design, Memory, README | ✅ |
 | T-030 | Draft privacy policy & terms screens | ✅ (draft) |
+| T-031 | Owner feedback: "number of children" (required unless never married) | ✅ |
+| T-032 | Owner feedback: maslak dropdown + dependent sub-maslak (Sunni: Hanafi/Shafi'i/…; Shia: Ithna Ashari/Bohra/…), searchable filter | ✅ |
+| T-033 | Bug: "Send contact request" greyed out — button now always tappable with clear guidance; edits keep a live profile live; demo starts with approval off | ✅ |
 
 ## Phase 2 (next)
 | ID | Task | Status |
@@ -55,6 +58,7 @@
 | T-113 | Admin console translations (currently English-only) | ⏳ low priority |
 | T-114 | EAS build profiles + app icons/splash in brand colours | ⏳ |
 | T-115 | Replace carousel line-art with licensed photography (optional) | ⏳ |
+| T-116 | Post-edit moderation queue (re-review edited live profiles without hiding them) | ⏳ |
 
 ## Known issues / tech debt
 | ID | Item | Severity |

@@ -42,8 +42,12 @@ const step = async (name, fn) => {
     await select('Year', '1996');
     await page.getByText('Age: ').waitFor();
     await select('Height', '5′ 9″ (175 cm)');
-    await page.getByRole('radio', { name: 'Never married' }).click();
+    await page.getByRole('radio', { name: 'Divorced' }).click();
     await select('Mother tongue', 'Urdu');
+    await next(); // children is now required
+    await page.getByText('Enter the number of children (0 if none)').waitFor();
+    await page.getByTestId('children-input').fill('1');
+    await page.screenshot({ path: `${SHOTS}/19-children.png` });
     await next();
     await page.getByText('Step 2 of 7').waitFor();
   });
@@ -64,33 +68,34 @@ const step = async (name, fn) => {
     await page.getByText('Step 4 of 7').waitFor();
   });
   await step('steps 4–6 optional sections', async () => {
-    await page.getByRole('radio', { name: 'Sunni' }).click();
+    await select('Maslak / sect', 'Sunni');
+    await select('Sub-maslak / school of thought', 'Hanafi');
+    await page.screenshot({ path: `${SHOTS}/20b-maslak.png` });
     await next(); await page.getByText('Step 5 of 7').waitFor();
     await next(); await page.getByText('Step 6 of 7').waitFor();
     await next(); await page.getByText('Step 7 of 7').waitFor();
     await page.screenshot({ path: `${SHOTS}/21-privacy.png` });
   });
-  await step('preview & publish → pending', async () => {
+  await step('preview & publish → live immediately (demo default)', async () => {
     await next();
     await page.getByTestId('publish').waitFor();
     await page.screenshot({ path: `${SHOTS}/22-preview.png` });
     await page.getByTestId('publish').click();
-    await page.getByText('Our team is reviewing your profile.').waitFor();
+    await page.getByText('Visible in discovery.').waitFor();
     await page.screenshot({ path: `${SHOTS}/23-dashboard-pending.png` });
   });
   await step('draft persisted across reload', async () => {
     await page.reload();
     await page.getByText('Test Groom Kareem').waitFor();
   });
-  await step('admin approves', async () => {
-    await logout();
-    await login('9000000000');
-    await page.getByText('Admin dashboard').waitFor();
-    await page.goto(BASE + '/admin/profiles');
-    await page.getByText('Test Groom Kareem').waitFor();
-    await page.getByRole('button', { name: 'Review biodata' }).first().click();
-    await page.getByRole('button', { name: 'Approve & publish' }).click();
-    await page.getByText('Profile published.').waitFor();
+  await step('send a contact request (button enabled, preview, send)', async () => {
+    await page.goto(BASE + '/discover');
+    await page.getByRole('button', { name: /^View profile/ }).first().click();
+    await page.getByTestId('send-request').click();
+    await page.getByTestId('preview-request').click();
+    await page.getByTestId('confirm-send').click();
+    await page.getByText('Request pending').waitFor();
+    await page.screenshot({ path: `${SHOTS}/25-request-sent.png` });
   });
   await step('bride finds groom via custom education keyword', async () => {
     await logout();
@@ -103,11 +108,14 @@ const step = async (name, fn) => {
     await page.getByText('Hafiz-e-Quran and B.Tech').first().waitFor();
     await page.screenshot({ path: `${SHOTS}/24-custom-search.png` });
   });
-  await step('groom sees approval notification', async () => {
+  await step('groom sees published notification and sent request', async () => {
     await logout();
     await login('9876500001');
     await page.goto(BASE + '/notifications');
-    await page.getByText('Your profile has been approved').waitFor();
+    await page.getByText('Your profile is now published').waitFor();
+    await page.goto(BASE + '/requests');
+    await page.getByRole('radio', { name: 'Sent' }).click();
+    await page.getByText('Pending').first().waitFor();
   });
   await browser.close();
   console.log('\nERRORS:', errors.length ? '\n' + [...new Set(errors)].join('\n') : 'none');

@@ -22,6 +22,8 @@ Legend: ✅ done & tested · 🟡 done on demo backend / partially · ⏳ planne
 | 6 | Biodata wizard (7 steps), progress, save & continue, validation, preview | ✅ | Zod schemas per step; age from DOB; min age 18 (bride) / 21 (groom). |
 | 6.2 | Optional photos (0–3) upload/preview/replace/remove/progress | 🟡 | Works on web/iOS/Android; demo stores compressed images locally. Private Supabase Storage + signed URLs = Phase 2. |
 | 6.4 | "Other" education/profession → required specify field, searchable | ✅ | Unit + E2E tested. |
+| 6.1+ | **Owner addition:** number of children when not never married | ✅ | Required, 0–15. |
+| 6.5+ | **Owner addition:** maslak dropdown with sub-maslak (schools) | ✅ | Searchable filter for both. |
 | 6.8 | Privacy controls (name, photos, income, family, requests) | ✅ | Enforced in the single projection function (client demo + SQL). |
 | 7 | Preview & publication workflow + statuses | ✅ | Draft / Pending / Published / Paused / Rejected (+ admin note). |
 | 8 | Dynamic pricing (free/paid/disabled per bride/groom), boosts, audit | ✅ | One config drives all copy; orders snapshot terms; payments are **simulated** & labelled. Real gateway = Phase 2. |

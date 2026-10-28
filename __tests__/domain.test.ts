@@ -52,6 +52,13 @@ describe('validation', () => {
     expect(stepErrors(2, { education: 'bachelors', profession: 'other', professionOther: ' ' }).professionOther).toBe('v.specifyProfession');
     expect(careerSchema.safeParse({ education: 'other', educationOther: 'Aalim course', profession: 'other', professionOther: 'Calligrapher' }).success).toBe(true);
   });
+  it('requires number of children unless never married', () => {
+    expect(stepErrors(0, { ...basic, maritalStatus: 'divorced' }).children).toBe('v.children');
+    expect(basicSchema.safeParse({ ...basic, maritalStatus: 'divorced', children: 0 }).success).toBe(true);
+    expect(basicSchema.safeParse({ ...basic, maritalStatus: 'widowed', children: 2 }).success).toBe(true);
+    expect(basicSchema.safeParse({ ...basic, maritalStatus: 'divorced', children: 1.5 }).success).toBe(false);
+    expect(basicSchema.safeParse({ ...basic, maritalStatus: 'never_married' }).success).toBe(true);
+  });
   it('validates sibling counts and preference ranges', () => {
     expect(familySchema.safeParse({ siblings: 1, brothers: 1, sisters: 1 }).success).toBe(false);
     expect(preferencesSchema.safeParse({ ...emptyBiodata().preferences, ageMin: 30, ageMax: 25 }).success).toBe(false);
@@ -120,6 +127,13 @@ describe('search & filters (PRD §9)', () => {
     const p = { ...all[0], religion: { ...all[0].religion, maslak: undefined } };
     expect(matchesFilters(p, { ...EMPTY_FILTERS, maslak: ['sunni'] })).toBe(true);
     expect(matchesFilters(p, { ...EMPTY_FILTERS, maslak: ['sunni'], strictOptional: true })).toBe(false);
+  });
+  it('filters by sub-maslak and shows children only for previously married', () => {
+    const hanafi = all.filter((p) => matchesFilters(p, { ...EMPTY_FILTERS, maslak: ['sunni'], subMaslak: ['hanafi'], strictOptional: true }));
+    expect(hanafi.length).toBeGreaterThan(0);
+    expect(hanafi.every((p) => p.religion.subMaslak === 'hanafi')).toBe(true);
+    expect(all.filter((p) => p.maritalStatus === 'never_married').every((p) => p.children === undefined)).toBe(true);
+    expect(all.filter((p) => p.maritalStatus !== 'never_married').every((p) => typeof p.children === 'number')).toBe(true);
   });
   it('cannot probe hidden income via the income filter', () => {
     const hidden = all.find((p) => p.career.income === undefined)!;

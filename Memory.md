@@ -28,6 +28,10 @@ Reset everything: Settings → “Reset demo data”.
 | 2026-10-28 | Carousel uses original vector art, not stock photos | Licensing/consent; PRD forbids fabricated content. |
 | 2026-10-28 | Admin console English-only | Internal tool; tracked as T-113. |
 | 2026-10-28 | Urdu uses a single Nastaliq weight; script fonts lazy-load | Bundle size (−2.5 MB on first load). |
+| 2026-10-28 | Demo seed has `requireApproval: false`; production SQL default stays `true` | Owner couldn't send requests: new/edited profiles sat in "pending" with nobody to approve. |
+| 2026-10-28 | Editing a live profile no longer sends it back to pending | Hiding a member mid-conversation is hostile; moderation of edits → T-116. |
+| 2026-10-28 | Maslak = sunni/shia/just_muslim/other/prefer_not + `subMaslak` (schools) | Owner request; old top-level ahle_hadith/deobandi/barelvi moved under Sunni. Demo DB schema v4 (old local data reseeds). |
+| 2026-10-28 | `children` required when marital status ≠ never married | Owner request. |
 | 2026-10-28 | Named the design doc `design.md` (owner wrote “design.ms”) | Renders on GitHub; mention if owner prefers otherwise. |
 
 ## Gotchas

@@ -21,7 +21,7 @@ export default function Filters() {
   const { filters, setFilters } = useFilters();
   const [f, setF] = useState<SearchFilters>(filters);
   const [count, setCount] = useState<number | null>(null);
-  const { opts, heights, ages, plain } = useOptions();
+  const { opts, heights, ages, plain, subMaslakOpts } = useOptions();
   const patch = (p: Partial<SearchFilters>) => setF((prev) => ({ ...prev, ...p }));
 
   useEffect(() => {
@@ -119,8 +119,19 @@ export default function Filters() {
 
       <Section title={t('filters.religion')}>
         <Field label={t('f.maslak')} optional>
-          <ChipGroup multiple options={opts('maslak').filter((o) => o.value !== 'prefer_not')} value={f.maslak} onChange={(v) => patch({ maslak: v })} />
+          <Select
+            multiple
+            label={t('f.maslak')}
+            options={opts('maslak').filter((o) => o.value !== 'prefer_not')}
+            value={f.maslak}
+            onChange={(v: string[]) => patch({ maslak: v, subMaslak: f.subMaslak.filter((s) => subMaslakOpts(v).some((o) => o.value === s)) })}
+          />
         </Field>
+        {subMaslakOpts(f.maslak).length ? (
+          <Field label={t('f.subMaslak')} optional>
+            <Select multiple label={t('f.subMaslak')} options={subMaslakOpts(f.maslak)} value={f.subMaslak} onChange={(v: string[]) => patch({ subMaslak: v })} />
+          </Field>
+        ) : null}
       </Section>
 
       <Section title={t('filters.family')}>

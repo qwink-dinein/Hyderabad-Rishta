@@ -20,10 +20,14 @@ export const basicSchema = z
     dob: req.regex(/^\d{4}-\d{2}-\d{2}$/, 'v.dob'),
     heightCm: z.number({ message: 'v.required' }).min(120, 'v.height').max(230, 'v.height'),
     maritalStatus: req,
+    children: z.number({ message: 'v.children' }).int('v.children').min(0, 'v.children').max(15, 'v.children').optional(),
     motherTongue: req,
     aboutMe: z.string().max(1000, 'v.tooLong').optional(),
   })
   .superRefine((v, ctx) => {
+    // Anyone previously married states how many children they have (0 is a valid answer).
+    if (v.maritalStatus && v.maritalStatus !== 'never_married' && v.children == null)
+      ctx.addIssue({ code: 'custom', path: ['children'], message: 'v.children' });
     const age = ageFromDob(v.dob);
     if (Number.isNaN(age)) {
       ctx.addIssue({ code: 'custom', path: ['dob'], message: 'v.dob' });
@@ -72,6 +76,7 @@ export const careerSchema = z
 
 export const religionSchema = z.object({
   maslak: opt,
+  subMaslak: opt,
   maslakOther: opt,
   namaz: opt,
   fasting: opt,

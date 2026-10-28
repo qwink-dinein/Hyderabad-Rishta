@@ -34,6 +34,8 @@ do $$ declare j jsonb; begin
   assert j #>> '{career,income}' is null, 'hidden income leaked';
   assert (j ->> 'photosHidden')::boolean, 'photosHidden flag';
   assert j #>> '{career,educationOther}' = 'Hafiz-e-Quran', 'custom education present';
+  assert (j ->> 'acceptsRequests')::boolean, 'acceptsRequests exposed';
+  assert j -> 'children' is null, 'children omitted for never married';
   assert (select count(*) from search_profiles(p_keyword => 'hafiz')) = 1, 'custom value searchable';
   assert (select count(*) from search_profiles(p_show => 'groom')) = 0, 'type filter';
 end $$;

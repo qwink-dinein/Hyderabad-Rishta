@@ -12,7 +12,7 @@ import { Text } from './ui/Text';
 /** Read-only biodata, organised in the 7 PRD sections (§10). Renders only what the projection allows. */
 export function ProfileDetails({ profile, contactSlot }: { profile: PublicProfile; contactSlot?: React.ReactNode }) {
   const { t } = useTranslation();
-  const { label } = useOptions();
+  const { label, maslakLabel } = useOptions();
   const p = profile;
   const list = (g: Parameters<typeof label>[0], vals: string[]) => (vals.length ? vals.map((v) => label(g, v) ?? v).join(', ') : undefined);
   const range = (a?: number, b?: number, fmt: (n: number) => string = String) => (a == null && b == null ? undefined : `${a != null ? fmt(a) : '…'} – ${b != null ? fmt(b) : '…'}`);
@@ -55,6 +55,7 @@ export function ProfileDetails({ profile, contactSlot }: { profile: PublicProfil
       <Section title={t('profile.personal')}>
         <Card>
           <InfoRow label={t('f.maritalStatus')} value={label('marital', p.maritalStatus)} />
+          <InfoRow label={t('f.children')} value={p.children} />
           <InfoRow label={t('f.height')} value={formatHeight(p.heightCm)} />
           <InfoRow label={t('f.motherTongue')} value={label('tongue', p.motherTongue)} />
           <InfoRow label={t('f.createdFor')} value={label('createdFor', p.createdFor)} />
@@ -91,7 +92,7 @@ export function ProfileDetails({ profile, contactSlot }: { profile: PublicProfil
       {Object.values(p.religion).some(Boolean) ? (
         <Section title={t('profile.religion')}>
           <Card>
-            <InfoRow label={t('f.maslak')} value={label('maslak', p.religion.maslak, p.religion.maslakOther)} />
+            <InfoRow label={t('f.maslak')} value={maslakLabel(p.religion.maslak, p.religion.subMaslak, p.religion.maslakOther)} />
             <InfoRow label={t('f.namaz')} value={label('practice', p.religion.namaz)} />
             <InfoRow label={t('f.fasting')} value={label('practice', p.religion.fasting)} />
             <InfoRow label={t('f.hajj')} value={label('yesNo', p.religion.hajj)} />

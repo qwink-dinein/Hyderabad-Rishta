@@ -62,6 +62,7 @@ export default function Discover() {
     arr('profession', 'profession');
     arr('employmentType', 'employment');
     arr('maslak', 'maslak');
+    arr('subMaslak', 'subMaslak');
     arr('familyType', 'familyType');
     arr('familyValues', 'familyValues');
     arr('relocation', 'relocate');

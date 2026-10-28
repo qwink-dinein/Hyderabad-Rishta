@@ -28,7 +28,7 @@ export default function BiodataWizard() {
   const save = useSaveDraft();
   const toast = useToast((s) => s.show);
   const errMsg = useErrorMessage();
-  const { opts, heights, ages, plain } = useOptions();
+  const { opts, heights, ages, plain, subMaslakOpts } = useOptions();
   const [bd, setBd] = useState<Biodata | null>(null);
   const [step, setStep] = useState(0);
   const [showErrors, setShowErrors] = useState(false);
@@ -128,8 +128,27 @@ export default function BiodataWizard() {
         <Select label={t('f.height')} options={heights} value={b.heightCm ? String(b.heightCm) : undefined} onChange={(v: string) => set('basic', 'heightCm', Number(v))} error={!!err('heightCm')} />
       </Field>
       <Field label={t('f.maritalStatus')} required error={err('maritalStatus')}>
-        <ChipGroup options={opts('marital')} value={b.maritalStatus} onChange={(v) => set('basic', 'maritalStatus', v ?? '')} accessibilityLabel={t('f.maritalStatus')} />
+        <ChipGroup
+          options={opts('marital')}
+          value={b.maritalStatus}
+          onChange={(v) => setBd({ ...bd, basic: { ...b, maritalStatus: v ?? '', children: v && v !== 'never_married' ? b.children : undefined } })}
+          accessibilityLabel={t('f.maritalStatus')}
+        />
       </Field>
+      {b.maritalStatus && b.maritalStatus !== 'never_married' ? (
+        <Field label={t('f.children')} required error={err('children')} hint={t('f.childrenHint')}>
+          <TextField
+            value={b.children != null ? String(b.children) : ''}
+            onChangeText={(v) => set('basic', 'children', num(v))}
+            keyboardType="number-pad"
+            inputMode="numeric"
+            maxLength={2}
+            accessibilityLabel={t('f.children')}
+            error={!!err('children')}
+            testID="children-input"
+          />
+        </Field>
+      ) : null}
       <Field label={t('f.motherTongue')} required error={err('motherTongue')}>
         <Select label={t('f.motherTongue')} options={opts('tongue')} value={b.motherTongue || undefined} onChange={(v: string) => set('basic', 'motherTongue', v)} error={!!err('motherTongue')} />
       </Field>
@@ -226,9 +245,24 @@ export default function BiodataWizard() {
       <Banner>{t('wizard.religionNote')}</Banner>
       <View style={{ height: space.lg }} />
       <Field label={t('f.maslak')} optional>
-        <ChipGroup options={opts('maslak')} value={rel.maslak} onChange={(v) => set('religion', 'maslak', v)} />
+        <Select
+          label={t('f.maslak')}
+          options={opts('maslak')}
+          value={rel.maslak}
+          onChange={(v: string) => setBd({ ...bd, religion: { ...rel, maslak: v, subMaslak: undefined, maslakOther: undefined } })}
+        />
       </Field>
-      {rel.maslak === 'other' ? (
+      {subMaslakOpts([rel.maslak]).length ? (
+        <Field label={t('f.subMaslak')} optional>
+          <Select
+            label={t('f.subMaslak')}
+            options={subMaslakOpts([rel.maslak])}
+            value={rel.subMaslak}
+            onChange={(v: string) => setBd({ ...bd, religion: { ...rel, subMaslak: v, maslakOther: v === 'other' ? rel.maslakOther : undefined } })}
+          />
+        </Field>
+      ) : null}
+      {rel.maslak === 'other' || rel.subMaslak === 'other' ? (
         <Field label={t('f.maslakOther')} optional>
           <TextField value={rel.maslakOther} onChangeText={(v) => set('religion', 'maslakOther', v)} accessibilityLabel={t('f.maslakOther')} maxLength={60} />
         </Field>

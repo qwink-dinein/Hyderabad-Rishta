@@ -62,7 +62,7 @@ export interface DemoDb {
   otps: OtpState[];
 }
 
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 const STORAGE_KEY = 'hr.demo.db';
 export const OTP_TTL_MS = 10 * 60 * 1000;
 export const RESEND_COOLDOWN_MS = 30 * 1000;
@@ -376,11 +376,8 @@ export class DemoBackend implements Backend {
         p.updatedAt = this.iso();
         // Editing a rejected profile returns it to draft so it can be resubmitted.
         if (p.status === 'rejected') p.status = 'draft';
-        // Edits to a live profile go back for review when approval is required.
-        if (p.status === 'published' && db.pricing.requireApproval) {
-          p.status = 'pending';
-          p.adminNote = undefined;
-        }
+        // Edits to a live profile keep it live (members aren't silently hidden mid-conversation);
+        // post-edit moderation is a Phase 2 review queue (Tasks.md T-116).
       }
       return clone(p);
     }, true);
