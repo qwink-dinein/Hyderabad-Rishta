@@ -14,6 +14,8 @@
 **Preview at V3:** https://claude.ai/artifact/YK9mg5vQzR19CEfoaX4bSJ (phone-frame preview; full screen on a phone).
 **Builds on V2:** everything listed under V2 and V1 still works, and is covered by the tests below.
 
+**V3 commit ID: `dafa2120243b1bf067e78de03602e0c4fc4efd96`** (short `dafa212`).
+
 ### Verified at V3
 | Check | Result |
 |---|---|
@@ -72,7 +74,7 @@
 ### Key commits V2 → V3
 | Commit | What |
 |---|---|
-| (V3) | Checkpoint V3: docs only; code = `ae8776f` |
+| `dafa212` | **V3**: Checkpoint V3, docs only; code = `ae8776f` |
 | `ae8776f` | One boost at a time |
 | `240d6a5` | Boost centre tab + reminders; Shortlist blended into Discover/Home |
 | `b3931b7` | Smooth screen transitions |
@@ -84,7 +86,7 @@
 ### How to get back to V3
 ```bash
 git fetch origin claude/sharp-bell-xxyxmj
-V3=$(git log origin/claude/sharp-bell-xxyxmj --grep "Checkpoint V3" --format=%H -1)
+V3=dafa2120243b1bf067e78de03602e0c4fc4efd96   # or: git log --grep "Checkpoint V3: pin" --format=%H -1
 git tag -a v3 "$V3" -m V3 2>/dev/null || true   # recreate the tag locally if missing
 git diff v3 --stat                   # what changed since V3
 git checkout v3 -- <path>            # restore one file/folder to V3, then commit

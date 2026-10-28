@@ -11,7 +11,7 @@
   - The app runs on the offline **DemoBackend** (`src/services/demo/demoBackend.ts`, `SCHEMA_VERSION = 8`).
   - Supabase SQL (13 migrations), Edge Functions (`push-dispatch`, `pin-login`) and tests are ready but **not connected**: the client adapter is Phase 2.
 - **Checkpoints (never move or delete):**
-  - **V3 = LATEST**: the commit titled "Checkpoint V3: …", whose full ID is in the "V3 commit ID" line of `CHECKPOINTS.md`. Code = `ae8776f`.
+  - **V3 = LATEST = `dafa2120243b1bf067e78de03602e0c4fc4efd96`** ("Checkpoint V3: pin…"; code identical to `ae8776f`).
   - **V2** = `774ea9f34f3ebe0babe44520b297af610262c5fb`.
   - **V1** = `4636968089a30394f9c9ca594b1a06783c1c4775`.
   - Tags can't be pushed (403); recreate locally (`git tag -a v3 <id> -m V3`). Restore commands are in `CHECKPOINTS.md`.
