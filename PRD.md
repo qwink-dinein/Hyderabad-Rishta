@@ -226,3 +226,25 @@ Registrations; biodata completion rate; published profiles; discovery activity; 
 Users can register and complete biodata · photos optional, up to three · "Other" fields work · profiles publish and are discoverable · filters work across stored fields · custom education/profession searchable · shortlists and requests persist · restricted contact requires explicit consent · admin pricing updates all screens · free mode never triggers payment · announcements in-app with accurate readership analytics · EN/UR/TE across core journeys · runs on web and mobile · critical tests pass · privacy policy, terms and production integrations ready.
 
 **MVP principle:** Build a reliable platform that lets families create useful biodata, discover relevant matches, and establish contact safely. Launch the core workflows first, measure real usage, and expand only when the data justifies the complexity.
+
+---
+
+# Feature PRD: Express Interest, Consent-Based Contact Sharing & Poke (v1.0)
+
+**Core principle:** expressing interest never requires sharing a phone number; accepting a request never automatically reveals the recipient's number.
+
+| § | Requirement (owner's feature PRD, condensed) | Status | Where |
+|---|---|---|---|
+| 2 | Profile: primary **Express Interest** (+ supporting text), secondary **Add to Shortlist**; existing request shows its status instead of a duplicate; no numbers before consent | ✅ | `src/app/profile/[id].tsx` |
+| 3 | “How would you like to connect?” — **A** Send an Introduction (number private) · **B** Offer to Share My Number (masked number, explicit consent checkbox, consent record + timestamp); optional sanitised message, preview + confirmation; withdraw offer before acceptance | ✅ | `src/app/request/[id].tsx` |
+| 4 | Recipient inbox: photo/placeholder, name, age, location, details, message, offer notice; Accept · Decline · View Profile · Report | ✅ | `src/app/(tabs)/requests.tsx` |
+| 5 | Case A reveals only the sender's offered number (Call · Copy · SMS); Case B reveals nothing; either side can later **Share My Number** which the other must accept; never both ways automatically; screenshot disclaimer; audit of who/when | ✅ | backend `respondToRequest`, `offerPhone`, `respondToPhoneOffer` |
+| 6 | **Poke**: after 48 h, one per request, ≤ 2 per recipient per rolling 7 days, disabled after any non-pending status, opt-out respected, server rate-limited, status unchanged, guilt-free wording | ✅ | `src/domain/connections.ts#pokeEligibility` |
+| 7 | Statuses Pending/Accepted/Declined/Withdrawn/Expired/Blocked; phone sharing has its own status (Not offered/Offered/Shared/Declined/Withdrawn/Expired) | ✅ | |
+| 8 | Notifications for interest, accept/decline, offers (received/accepted/declined/withdrawn), poke, expiry — never containing numbers; no duplicates on retries | ✅ (push: Phase 2) | |
+| 9 | Admin-configurable expiry (default 14 d); expired can't be accepted; re-send after expiry; block stops everything; deleted profiles stop interactions; withdraw-vs-accept and accept-vs-decline races resolved server-side; double taps safe | ✅ | row locks (SQL), idempotency keys |
+| 10 | Admin: request counts & rates, config for expiry/reminders, audit of sharing, no casual browsing of numbers, no “ID verified” | ✅ | admin home “Connections”, Pricing & settings |
+| 11 | Analytics events with idempotent ids and **no numbers**; acceptance, sharing, response time, poke→response, decline/block rates | ✅ | `analytics` (demo) / `analytics_events` (SQL) |
+| 12 | Tests: two demo accounts — accept, decline, withdrawn offers, expiry, repeated pokes, blocking, simultaneous actions | ✅ | `__tests__/interest.test.ts` (21), `supabase/tests/30_interest.test.sql`, `e2e/interest.js` |
+
+Design decision (not in the feature PRD, flagged for owner review): after a **decline**, the same sender can't re-send to that person for **30 days** (anti-harassment).

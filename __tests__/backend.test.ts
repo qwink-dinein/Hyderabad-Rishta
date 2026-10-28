@@ -30,6 +30,8 @@ const validBiodata = (): Biodata => {
   return b;
 };
 
+const interest = (message?: string) => ({ message, offerPhone: false, consent: false, idempotencyKey: Math.random().toString(36) });
+
 async function expectCode(p: Promise<unknown>, code: string) {
   await expect(p).rejects.toBeInstanceOf(AppError);
   await p.catch((e: AppError) => expect(e.code).toBe(code));
@@ -120,7 +122,7 @@ describe('biodata → publication → discovery', () => {
     const mine = (await b.getMyProfile())!;
     const edited = await b.saveDraft({ ...mine.biodata, basic: { ...mine.biodata.basic, aboutMe: 'Updated' } }, 7);
     expect(edited.status).toBe('published');
-    await expect(b.sendRequest('p_6')).resolves.toMatchObject({ status: 'pending' });
+    await expect(b.sendRequest('p_8', interest())).resolves.toMatchObject({ status: 'pending' });
   });
 
   it('never returns phone numbers or hidden fields from discovery', async () => {
@@ -171,12 +173,12 @@ describe('shortlist', () => {
 });
 
 describe('contact requests & consent (PRD §12)', () => {
-  it('acceptance alone reveals nothing; explicit consent reveals only granted scopes', async () => {
+  it('acceptance alone reveals nothing; a separate accepted offer reveals only that number', async () => {
     const b = makeBackend();
     // demo groom (p_1) sends to bride p_2
     await login(b, DEMO_USER_PHONE);
-    const req = await b.sendRequest('p_2', 'Assalamu alaikum');
-    await expectCode(b.sendRequest('p_2'), 'duplicate');
+    const req = await b.sendRequest('p_2', interest('Assalamu alaikum'));
+    await expectCode(b.sendRequest('p_2', interest()), 'duplicate');
     await b.logout();
 
     await login(b, '9000000102'); // owner of p_2
@@ -189,21 +191,27 @@ describe('contact requests & consent (PRD §12)', () => {
     await b.logout();
 
     await login(b, '9000000102');
-    await b.setConsent(req.id, { photos: false, phone: true, fullBiodata: false });
+    // The generic consent toggle can no longer leak a phone number.
+    await b.setConsent(req.id, { photos: true, phone: true, fullBiodata: false });
+    const offer = await b.offerPhone(req.id, true, 'k1');
     await b.logout();
 
     await login(b, DEMO_USER_PHONE);
     view = await b.getProfile('p_2');
+    expect(view.contact).toBeUndefined(); // offered, not yet accepted
+    await b.respondToPhoneOffer(offer.id, 'accepted');
+    view = await b.getProfile('p_2');
     expect(view.contact?.phone).toBe('9000000102');
     const notes = await b.getNotifications();
     expect(notes.some((n) => n.type === 'request_accepted')).toBe(true);
-    expect(notes.some((n) => n.type === 'contact_shared')).toBe(true);
+    expect(notes.some((n) => n.type === 'phone_offer_received')).toBe(true);
+    expect(JSON.stringify(notes)).not.toContain('9000000102');
   });
 
   it('only the recipient can respond; consent requires acceptance', async () => {
     const b = makeBackend();
     await login(b, DEMO_USER_PHONE);
-    const req = await b.sendRequest('p_6');
+    const req = await b.sendRequest('p_8', interest());
     await expectCode(b.respondToRequest(req.id, 'accepted'), 'not_found');
     await expectCode(b.setConsent(req.id, { photos: true, phone: true, fullBiodata: true }), 'invalid_state');
   });
@@ -211,7 +219,7 @@ describe('contact requests & consent (PRD §12)', () => {
   it('requires a published profile to send requests', async () => {
     const b = makeBackend();
     await login(b, '9444444444');
-    await expectCode(b.sendRequest('p_2'), 'invalid_state');
+    await expectCode(b.sendRequest('p_2', interest()), 'invalid_state');
   });
 
   it('blocking hides profiles both ways and closes pending requests', async () => {
@@ -222,7 +230,7 @@ describe('contact requests & consent (PRD §12)', () => {
     expect(ids).not.toContain('p_0');
     await expectCode(b.getProfile('p_0'), 'not_found');
     const r1 = (await b.getRequests()).find((r) => r.request.id === 'r_1');
-    expect(r1?.request.status).toBe('declined');
+    expect(r1?.request.status).toBe('blocked');
   });
 });
 

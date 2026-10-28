@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Linking, Modal, Platform, StyleSheet, View } from 'react-native';
+import { Modal, StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { ContactActions } from '@/components/ContactActions';
 import { ProfileDetails } from '@/components/ProfileDetails';
 import { Button } from '@/components/ui/Button';
 import { Banner, confirm, ErrorView, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
@@ -18,7 +19,7 @@ import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
 
 /** Profile details + shortlist, contact request status, report and block (PRD §10–12, §16). */
 export default function ProfileScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, report } = useLocalSearchParams<{ id: string; report?: string }>();
   const { t } = useTranslation();
   const qc = useQueryClient();
   const toast = useToast((s) => s.show);
@@ -28,7 +29,7 @@ export default function ProfileScreen() {
   const { data: req } = useRequestWith(id);
   const { data: shortIds } = useShortlistIds();
   const toggle = useToggleShortlist();
-  const [reportOpen, setReportOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(report === '1'); // deep link from the requests inbox
 
   if (isLoading) return <Loading />;
   if (error || !profile)
@@ -55,33 +56,23 @@ export default function ProfileScreen() {
   };
 
   const status = req?.request.status;
-  const action = (() => {
+  // An "active" request holds the pair: show its status instead of allowing a duplicate (PRD §2).
+  const active = req && (status === 'pending' || status === 'accepted' || status === 'blocked');
+  const statusCard = (() => {
     if (isOwn) return <Banner icon="eye">{t('profile.ownPreview')}</Banner>;
-    if (status === 'pending' && req?.direction === 'sent') return <Button label={t('profile.requestPending')} kind="secondary" disabled full />;
-    if (status === 'pending' && req?.direction === 'received') return <Button label={t('profile.respond')} onPress={() => router.push('/requests')} full />;
-    if (status === 'accepted') return <Button label={t('profile.requestAccepted')} kind="secondary" onPress={() => router.push('/requests')} full />;
-    if (status === 'declined') return <Button label={t('profile.requestDeclined')} kind="secondary" disabled full />;
-    return null; // sticky footer CTA handles the default case
+    if (!req) return null;
+    const label = t(`requests.status.${status}`);
+    return (
+      <Card style={{ gap: space.sm }}>
+        <Text variant="bodyStrong">{req.direction === 'sent' ? t('profile.interestStatus', { status: label }) : `${t('profile.theirInterest')} · ${label}`}</Text>
+        {active ? <Button label={t('profile.openRequest')} size="sm" kind="secondary" onPress={() => router.push('/requests')} style={{ alignSelf: 'flex-start' }} testID="open-request" /> : null}
+      </Card>
+    );
   })();
 
-  const contact = profile.contact ? (
-    <Card style={{ gap: space.sm }}>
-      <Row>
-        <Icon name="shield" size={18} color={colors.success} />
-        <Text variant="caption" color={colors.success}>
-          {t('profile.contactShared')}
-        </Text>
-      </Row>
-      <Text variant="h3" selectable>
-        {profile.contact.countryCode} {profile.contact.phone}
-      </Text>
-      {Platform.OS !== 'web' ? <Button label={t('profile.phone')} size="sm" kind="secondary" icon={<Icon name="phone" size={16} />} onPress={() => Linking.openURL(`tel:${profile.contact!.countryCode}${profile.contact!.phone}`)} /> : null}
-    </Card>
-  ) : (
-    <Banner icon="lock">{t('profile.contactLocked')}</Banner>
-  );
+  const contact = profile.contact ? <ContactActions countryCode={profile.contact.countryCode} phone={profile.contact.phone} /> : <Banner icon="lock">{t('profile.contactLocked')}</Banner>;
 
-  const canRequest = !isOwn && !req;
+  const canExpress = !isOwn && !active;
   // Why the viewer can't send yet (null = they can). Shown as guidance; the button stays tappable.
   const blocker: { msg: string; cta?: { label: string; go: () => void } } | null = !me
     ? { msg: t('profile.sendNeedsBiodata'), cta: { label: t('dashboard.createCta'), go: () => router.push('/biodata') } }
@@ -92,7 +83,7 @@ export default function ProfileScreen() {
         : me.status === 'paused'
           ? { msg: t('profile.sendPaused'), cta: { label: t('dashboard.resume'), go: () => router.push('/dashboard') } }
           : { msg: t('profile.sendNeedsPublish'), cta: { label: t('preview.publish'), go: () => router.push('/biodata/preview') } };
-  const onSend = () => {
+  const onExpress = () => {
     if (!profile.acceptsRequests) return toast(t('err.not_accepting'), 'info');
     if (blocker) {
       if (blocker.cta) blocker.cta.go();
@@ -101,6 +92,7 @@ export default function ProfileScreen() {
     }
     router.push(`/request/${profile.id}`);
   };
+
   return (
     <Screen
       header={
@@ -114,29 +106,39 @@ export default function ProfileScreen() {
         />
       }
       footer={
-        canRequest ? (
-          <Row gap={space.sm}>
-            <Button
-              label={shortlisted ? t('card.shortlisted') : t('card.shortlist')}
-              kind="secondary"
-              icon={<Icon name={shortlisted ? 'heartFilled' : 'heart'} size={18} color={shortlisted ? colors.gold : colors.emerald} />}
-              onPress={() => toggle.mutate(profile.id)}
-              style={{ flex: 1 }}
-            />
-            <Button
-              label={profile.acceptsRequests ? t('profile.sendRequest') : t('profile.notAccepting')}
-              onPress={onSend}
-              style={{ flex: 1.4 }}
-              disabled={!profile.acceptsRequests}
-              testID="send-request"
-            />
-          </Row>
+        !isOwn ? (
+          <View style={{ gap: space.xs }}>
+            {canExpress ? (
+              <Text variant="caption" center>
+                {t('profile.expressInterestHelp')}
+              </Text>
+            ) : null}
+            <Row gap={space.sm}>
+              <Button
+                label={shortlisted ? t('card.shortlisted') : t('profile.addToShortlist')}
+                kind="secondary"
+                icon={<Icon name={shortlisted ? 'heartFilled' : 'heart'} size={18} color={shortlisted ? colors.gold : colors.emerald} />}
+                onPress={() => toggle.mutate(profile.id)}
+                style={{ flex: 1 }}
+                testID="shortlist-toggle"
+              />
+              {canExpress ? (
+                <Button
+                  label={profile.acceptsRequests ? t('profile.expressInterest') : t('profile.notAccepting')}
+                  onPress={onExpress}
+                  style={{ flex: 1.3 }}
+                  disabled={!profile.acceptsRequests}
+                  testID="express-interest"
+                />
+              ) : null}
+            </Row>
+          </View>
         ) : undefined
       }
     >
       <View style={{ gap: space.md, paddingTop: space.lg }}>
-        {action}
-        {canRequest && blocker && profile.acceptsRequests ? (
+        {statusCard}
+        {canExpress && blocker && profile.acceptsRequests ? (
           <Banner tone="warning" icon="mail">
             <Text variant="caption" color={colors.goldDeep}>
               {blocker.msg}

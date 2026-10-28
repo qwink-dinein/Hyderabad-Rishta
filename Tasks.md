@@ -44,6 +44,12 @@
 | T-037 | Master lost-phone recovery: hashed one-time codes, verified backup phone, 72 h time-lock + cancel, break-glass | ✅ |
 | T-038 | Trash (soft delete, 30-day auto-erase, master restore/erase); append-only audit & orders | ✅ |
 | T-039 | Bug: admin-suspended accounts were reactivated by logging in | ✅ fixed |
+| T-040 | Photo picker: three always-visible labelled slots (Main photo, Photo 2, Photo 3) + 0/3 counter | ✅ |
+| T-041 | Express Interest + “How would you like to connect?” (intro / offer number with consent) | ✅ |
+| T-042 | Phone offers with own lifecycle; reciprocal Share My Number; Call/Copy/SMS | ✅ |
+| T-043 | Poke with 48 h wait, 1/request, 2/person/7 days, opt-out | ✅ |
+| T-044 | Expiry (admin-configurable), Blocked status, 30-day re-send cooldown after decline | ✅ |
+| T-045 | Idempotent creates, race-safe accept/withdraw (row locks), analytics without numbers, admin connection metrics | ✅ |
 | T-033 | Bug: "Send contact request" greyed out — button now always tappable with clear guidance; edits keep a live profile live; demo starts with approval off | ✅ |
 
 ## Phase 2 (next)
@@ -66,6 +72,7 @@
 | T-115 | Replace carousel line-art with licensed photography (optional) | ⏳ |
 | T-117 | Edge Functions for Supabase: OTP to backup phone → `set_master_backup_phone`; `auth.admin.signOut` on delete/suspend; schedule `run_governance_jobs` with pg_cron | ⏳ |
 | T-118 | SMS + email alert to the master's primary AND backup phone when a recovery starts | ⏳ |
+| T-119 | Push delivery for interest/offer/poke notifications (generic lock-screen text only) | ⏳ |
 | T-116 | Post-edit moderation queue (re-review edited live profiles without hiding them) | ⏳ |
 
 ## Known issues / tech debt

@@ -99,9 +99,9 @@ export default function BiodataWizard() {
   const steps: React.ReactNode[] = [
     // 0 — Basic (photos first, per PRD §6.2)
     <View key="basic">
-      <Field label={t('f.photos')} optional>
+      <View style={{ marginBottom: space.xl }}>
         <PhotoPicker photos={bd.photos} onChange={(p) => setBd({ ...bd, photos: p })} />
-      </Field>
+      </View>
       <Field label={t('f.createdFor')} required error={err('createdFor')}>
         <ChipGroup options={opts('createdFor')} value={b.createdFor} onChange={(v) => set('basic', 'createdFor', v ?? '')} accessibilityLabel={t('f.createdFor')} />
       </Field>

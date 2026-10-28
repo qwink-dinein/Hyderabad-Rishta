@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SearchFilters } from '@/domain/search';
 import type { Biodata, ConsentScopes, ProfileStatus } from '@/domain/types';
-import { backend } from '@/services';
+import { backend, type SendInterestInput } from '@/services';
 import { useSession } from '@/state/session';
 
 /** Query keys in one place so invalidation stays consistent. */
@@ -94,7 +94,23 @@ function useInvalidateRequests() {
 
 export function useSendRequest() {
   const inv = useInvalidateRequests();
-  return useMutation({ mutationFn: (v: { to: string; message?: string }) => backend.sendRequest(v.to, v.message), onSuccess: inv });
+  return useMutation({ mutationFn: (v: { to: string; input: SendInterestInput }) => backend.sendRequest(v.to, v.input), onSuccess: inv });
+}
+export function useOfferPhone() {
+  const inv = useInvalidateRequests();
+  return useMutation({ mutationFn: (v: { requestId: string; idempotencyKey: string }) => backend.offerPhone(v.requestId, true, v.idempotencyKey), onSuccess: inv });
+}
+export function useRespondPhoneOffer() {
+  const inv = useInvalidateRequests();
+  return useMutation({ mutationFn: (v: { id: string; decision: 'accepted' | 'declined' }) => backend.respondToPhoneOffer(v.id, v.decision), onSuccess: inv });
+}
+export function useWithdrawPhoneOffer() {
+  const inv = useInvalidateRequests();
+  return useMutation({ mutationFn: (id: string) => backend.withdrawPhoneOffer(id), onSuccess: inv });
+}
+export function usePokeRequest() {
+  const inv = useInvalidateRequests();
+  return useMutation({ mutationFn: (id: string) => backend.pokeRequest(id), onSuccess: inv });
 }
 export function useRespondRequest() {
   const inv = useInvalidateRequests();

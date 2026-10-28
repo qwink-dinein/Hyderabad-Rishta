@@ -1,5 +1,6 @@
 import { buildSeed, DEMO_OTP, SEED_PRICING } from '@/data/seed';
 import { normaliseCode, recoveryCode, sha256Hex } from '@/domain/crypto';
+import { DECLINE_COOLDOWN_DAYS, isActiveRequest, PHONE_CONSENT_TEXT, pokeEligibility, sanitizeMessage } from '@/domain/connections';
 import { maskPhone, uid } from '@/domain/format';
 import { announcementStats, audienceFor, dashboardMetrics, isAnnouncementLive } from '@/domain/metrics';
 import { resolvePricing, validatePricing } from '@/domain/pricing';
@@ -16,10 +17,12 @@ import type {
   ConsentScopes,
   ContactRequest,
   AdminMember,
+  AnalyticsEvent,
   Lang,
   MasterSecurity,
   NotificationType,
   Order,
+  PhoneOffer,
   PricingChange,
   PricingConfig,
   Profile,
@@ -32,7 +35,7 @@ import type {
 } from '@/domain/types';
 import { isAdminRole } from '@/domain/types';
 import { firstInvalidStep, otpSchema, phoneSchema, requestMessageSchema } from '@/domain/validation';
-import { AppError, type AdminRequestRow, type AdminStats, type Backend, type NotificationView, type Page, type RecipientRow, type RequestView, type TrashItem } from '../backend';
+import { AppError, type AdminRequestRow, type AdminStats, type Backend, type ConnectionMetrics, type SendInterestInput, type NotificationView, type Page, type RecipientRow, type RequestView, type TrashItem } from '../backend';
 import type { KV } from '../storage';
 
 /** JSON deep clone — responses never share references with the "server" state. */
@@ -66,9 +69,13 @@ export interface DemoDb {
   audit: AuditEvent[];
   otps: OtpState[];
   security: MasterSecurity;
+  phoneOffers: PhoneOffer[];
+  analytics: AnalyticsEvent[];
+  /** Idempotency keys for create operations (24 h). */
+  idem: { key: string; userId: string; resultId: string; at: string }[];
 }
 
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 6;
 const STORAGE_KEY = 'hr.demo.db';
 export const OTP_TTL_MS = 10 * 60 * 1000;
 export const RESEND_COOLDOWN_MS = 30 * 1000;
@@ -105,6 +112,9 @@ export function freshDb(now = new Date()): DemoDb {
     audit: [],
     otps: [],
     security: { recoveryCodes: [], salt: recoveryCode(), failedAttempts: [] },
+    phoneOffers: seed.phoneOffers,
+    analytics: [],
+    idem: [],
   };
 }
 
@@ -269,7 +279,32 @@ export class DemoBackend implements Backend {
       const req = db.requests.find((r) => r.id === c.requestId);
       return req?.status === 'accepted';
     });
-    return records.length ? mergeScopes(records.map((c) => c.scopes)) : { ...NO_CONSENT };
+    const merged = records.length ? mergeScopes(records.map((c) => c.scopes)) : { ...NO_CONSENT };
+    // The phone number is revealed ONLY through an offer the owner made and the viewer accepted,
+    // on a request that is still accepted (not blocked) — never via the generic consent toggles.
+    merged.phone = db.phoneOffers.some((o) => {
+      if (o.fromUserId !== grantorUserId || o.toUserId !== granteeUserId || o.status !== 'accepted') return false;
+      return db.requests.find((r) => r.id === o.requestId)?.status === 'accepted';
+    });
+    return merged;
+  }
+
+  /** Analytics: no phone numbers or free text, de-duplicated by key (retries don't double count). */
+  private track(db: DemoDb, name: string, userId?: string, props: AnalyticsEvent['props'] = {}, dedupeKey?: string) {
+    const id = dedupeKey ? `ev:${dedupeKey}:${name}` : uid('ev_');
+    if (dedupeKey && db.analytics.some((e) => e.id === id)) return;
+    db.analytics.push({ id, name, at: this.iso(), userId, props });
+  }
+
+  private idemLookup(db: DemoDb, userId: string, key: string) {
+    const dayAgo = this.now().getTime() - 86400000;
+    db.idem = db.idem.filter((i) => new Date(i.at).getTime() > dayAgo);
+    return db.idem.find((i) => i.userId === userId && i.key === key)?.resultId;
+  }
+
+  private displayNameOf(db: DemoDb, userId: string) {
+    const p = this.myProfile(db, userId);
+    return p ? projectProfile(p).displayName : '';
   }
 
   private project(db: DemoDb, viewer: User, p: Profile) {
@@ -281,6 +316,15 @@ export class DemoBackend implements Backend {
     const now = this.now().getTime();
     for (const a of db.announcements) {
       if (a.status === 'scheduled' && a.scheduledAt && new Date(a.scheduledAt).getTime() <= now) this.fanOut(db, a);
+    }
+    // Interest requests expire; an expired request can no longer be accepted and its offers lapse.
+    for (const r of db.requests) {
+      if (r.status === 'pending' && new Date(r.expiresAt).getTime() <= now) {
+        r.status = 'expired';
+        for (const o of db.phoneOffers) if (o.requestId === r.id && o.status === 'offered') o.status = 'expired';
+        this.notify(db, r.fromUserId, 'request_expired', {}, '/requests');
+        this.track(db, 'request_expired', r.fromUserId, {}, `expired:${r.id}`);
+      }
     }
     // Time-locked master recovery completes only if the current master did not cancel it.
     const pr = db.security.pendingRecovery;
@@ -317,6 +361,7 @@ export class DemoBackend implements Backend {
     const reqIds = new Set(db.requests.filter((r) => r.fromProfileId === profileId || r.toProfileId === profileId).map((r) => r.id));
     db.requests = db.requests.filter((r) => !reqIds.has(r.id));
     db.consents = db.consents.filter((c) => !reqIds.has(c.requestId));
+    db.phoneOffers = db.phoneOffers.filter((o) => !reqIds.has(o.requestId));
     db.reports = db.reports.filter((r) => r.profileId !== profileId);
   }
 
@@ -671,43 +716,73 @@ export class DemoBackend implements Backend {
     }, true);
   }
 
-  // ---------- requests ----------
-  sendRequest(toProfileId: string, message?: string) {
+  // ---------- interests & phone sharing ----------
+  sendRequest(toProfileId: string, input: SendInterestInput) {
     return this.run((db) => {
       const u = this.me(db);
+      // Double taps / retries with the same key return the original request (no duplicates).
+      const prior = input.idempotencyKey ? this.idemLookup(db, u.id, `interest:${input.idempotencyKey}`) : undefined;
+      if (prior) {
+        const r = db.requests.find((x) => x.id === prior);
+        if (r) return { ...r };
+      }
       const mine = this.myProfile(db, u.id);
-      if (!mine || mine.status !== 'published') throw new AppError('invalid_state', 'Publish your biodata before sending requests');
-      const target = this.visibleProfile(db, u, toProfileId);
+      if (!mine || mine.status !== 'published') throw new AppError('invalid_state', 'Publish your biodata before expressing interest');
+      const target = this.visibleProfile(db, u, toProfileId); // also enforces blocks/deletion
       if (target.userId === u.id) throw new AppError('invalid_state');
       if (!target.biodata.privacy.acceptContactRequests) throw new AppError('not_accepting');
-      const msg = (message ?? '').trim();
+      if (input.offerPhone && !input.consent) throw new AppError('consent_required');
+      const msg = sanitizeMessage(input.message ?? '');
       if (!requestMessageSchema.safeParse(msg).success) throw new AppError('validation', 'v.tooLong');
-      const existing = db.requests.find(
-        (r) => r.status !== 'declined' && r.status !== 'withdrawn' && ((r.fromProfileId === mine.id && r.toProfileId === target.id) || (r.fromProfileId === target.id && r.toProfileId === mine.id)),
-      );
-      if (existing) throw new AppError('duplicate');
+      const pair = (r: ContactRequest) =>
+        (r.fromProfileId === mine.id && r.toProfileId === target.id) || (r.fromProfileId === target.id && r.toProfileId === mine.id);
+      if (db.requests.some((r) => pair(r) && isActiveRequest(r, this.now()))) throw new AppError('duplicate');
+      const cooldown = this.now().getTime() - DECLINE_COOLDOWN_DAYS * 86400000;
+      if (db.requests.some((r) => pair(r) && r.fromUserId === u.id && r.status === 'declined' && new Date(r.respondedAt ?? r.createdAt).getTime() > cooldown))
+        throw new AppError('declined_recently');
       const dayAgo = this.now().getTime() - 86400000;
       if (db.requests.filter((r) => r.fromUserId === u.id && new Date(r.createdAt).getTime() > dayAgo).length >= MAX_REQUESTS_PER_DAY)
         throw new AppError('rate_limited');
       const req: ContactRequest = {
         id: uid('r_'), fromUserId: u.id, fromProfileId: mine.id, toUserId: target.userId, toProfileId: target.id,
         message: msg || undefined, status: 'pending', createdAt: this.iso(),
+        expiresAt: new Date(this.now().getTime() + db.pricing.requestExpiryDays * 86400000).toISOString(), pokes: [],
       };
       db.requests.unshift(req);
-      this.notify(db, target.userId, 'request_received', { name: projectProfile(mine).displayName }, '/requests');
+      if (input.offerPhone) {
+        db.phoneOffers.push({ id: uid('po_'), requestId: req.id, fromUserId: u.id, toUserId: target.userId, status: 'offered', withInterest: true, consentText: PHONE_CONSENT_TEXT, consentAt: this.iso(), createdAt: this.iso() });
+        this.audit(db, u.id, 'phone.offered', req.id, { withInterest: true });
+        this.track(db, 'phone_offer_sent', u.id, { withInterest: true }, `offer:${req.id}:${u.id}`);
+      }
+      if (input.idempotencyKey) db.idem.push({ key: `interest:${input.idempotencyKey}`, userId: u.id, resultId: req.id, at: this.iso() });
+      // Notification text never contains a phone number — only that one was offered.
+      this.notify(db, target.userId, 'request_received', { name: this.displayNameOf(db, u.id), offered: input.offerPhone ? '1' : '' }, '/requests');
+      this.track(db, 'interest_initiated', u.id, { withMessage: !!msg, offerPhone: input.offerPhone }, `interest:${req.id}`);
+      if (msg) this.track(db, 'introduction_sent', u.id, {}, `intro:${req.id}`);
       return { ...req };
     }, true);
+  }
+
+  private latestOffer(db: DemoDb, requestId: string, fromUserId: string) {
+    const list = db.phoneOffers.filter((o) => o.requestId === requestId && o.fromUserId === fromUserId);
+    return list.length ? { ...list[list.length - 1] } : undefined;
   }
 
   private requestView(db: DemoDb, me: User, r: ContactRequest): RequestView | null {
     const direction = r.toUserId === me.id ? 'received' : 'sent';
     const otherProfile = db.profiles.find((p) => p.id === (direction === 'received' ? r.fromProfileId : r.toProfileId));
     if (!otherProfile || otherProfile.deletedAt) return null;
+    const otherUserId = direction === 'received' ? r.fromUserId : r.toUserId;
+    const recipientProfile = db.profiles.find((p) => p.id === r.toProfileId);
     return {
-      request: { ...r },
+      request: { ...r, pokes: [...r.pokes] },
       other: this.project(db, me, otherProfile),
       direction,
       myConsent: mergeScopes(db.consents.filter((c) => c.requestId === r.id && c.grantorUserId === me.id).map((c) => c.scopes)),
+      myOffer: this.latestOffer(db, r.id, me.id),
+      theirOffer: this.latestOffer(db, r.id, otherUserId),
+      poke: pokeEligibility(r, me.id, db.requests, db.pricing, recipientProfile?.biodata.privacy.allowReminders !== false, this.now()),
+      myPhoneMasked: maskPhone(me.phone),
     };
   }
 
@@ -716,6 +791,7 @@ export class DemoBackend implements Backend {
       const u = this.me(db);
       return db.requests
         .filter((r) => r.fromUserId === u.id || r.toUserId === u.id)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
         .map((r) => this.requestView(db, u, r))
         .filter((x): x is RequestView => !!x);
     });
@@ -726,24 +802,38 @@ export class DemoBackend implements Backend {
       const u = this.me(db);
       const mine = this.myProfile(db, u.id);
       if (!mine) return null;
-      const r = db.requests.find(
-        (x) => x.status !== 'withdrawn' && ((x.fromProfileId === mine.id && x.toProfileId === profileId) || (x.toProfileId === mine.id && x.fromProfileId === profileId)),
-      );
+      // Latest request between the pair, whatever its status (so the profile shows it).
+      const r = db.requests
+        .filter((x) => (x.fromProfileId === mine.id && x.toProfileId === profileId) || (x.toProfileId === mine.id && x.fromProfileId === profileId))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
       return r ? this.requestView(db, u, r) : null;
     });
   }
 
+  /** Accept/decline. Atomic: the offer's state is read at this instant, so a withdrawn offer is never revealed. */
   respondToRequest(requestId: string, decision: 'accepted' | 'declined') {
     return this.run((db) => {
       const u = this.me(db);
       const r = db.requests.find((x) => x.id === requestId);
       if (!r || r.toUserId !== u.id) throw new AppError('not_found');
-      if (r.status !== 'pending') throw new AppError('invalid_state');
+      if (r.status === 'pending' && new Date(r.expiresAt).getTime() <= this.now().getTime()) throw new AppError('expired');
+      if (r.status !== 'pending') throw new AppError(r.status === 'expired' ? 'expired' : 'invalid_state');
       r.status = decision;
       r.respondedAt = this.iso();
-      const mine = this.myProfile(db, u.id);
-      // Acceptance alone reveals nothing restricted — consent is a separate step (PRD §12).
-      this.notify(db, r.fromUserId, decision === 'accepted' ? 'request_accepted' : 'request_declined', { name: mine ? projectProfile(mine).displayName : '' }, '/requests');
+      const withInterest = db.phoneOffers.find((o) => o.requestId === r.id && o.fromUserId === r.fromUserId && o.withInterest && o.status === 'offered');
+      if (decision === 'accepted') {
+        if (withInterest) {
+          withInterest.status = 'accepted';
+          withInterest.respondedAt = this.iso();
+          this.audit(db, u.id, 'phone.revealed', r.id, { from: r.fromUserId, to: u.id });
+          this.track(db, 'number_revealed', u.id, { withInterest: true }, `reveal:${withInterest.id}`);
+        }
+        this.track(db, 'request_accepted', u.id, { hoursToRespond: Math.round((this.now().getTime() - new Date(r.createdAt).getTime()) / 3600000) }, `accept:${r.id}`);
+      } else {
+        if (withInterest) withInterest.status = 'expired';
+        this.track(db, 'request_declined', u.id, {}, `decline:${r.id}`);
+      }
+      this.notify(db, r.fromUserId, decision === 'accepted' ? 'request_accepted' : 'request_declined', { name: this.displayNameOf(db, u.id) }, '/requests');
       return { ...r };
     }, true);
   }
@@ -755,33 +845,120 @@ export class DemoBackend implements Backend {
       if (!r || r.fromUserId !== u.id) throw new AppError('not_found');
       if (r.status !== 'pending') throw new AppError('invalid_state');
       r.status = 'withdrawn';
+      for (const o of db.phoneOffers) if (o.requestId === r.id && o.status === 'offered') o.status = 'withdrawn';
+      this.audit(db, u.id, 'request.withdrawn', r.id);
       return { ...r };
     }, true);
   }
 
+  offerPhone(requestId: string, consent: boolean, idempotencyKey: string) {
+    return this.run((db) => {
+      const u = this.me(db);
+      const prior = idempotencyKey ? this.idemLookup(db, u.id, `offer:${idempotencyKey}`) : undefined;
+      if (prior) {
+        const o = db.phoneOffers.find((x) => x.id === prior);
+        if (o) return { ...o };
+      }
+      const r = db.requests.find((x) => x.id === requestId);
+      if (!r || (r.fromUserId !== u.id && r.toUserId !== u.id)) throw new AppError('not_found');
+      if (r.status !== 'accepted') throw new AppError('invalid_state', 'Offers can be made after the interest is accepted');
+      if (!consent) throw new AppError('consent_required');
+      const toUserId = r.fromUserId === u.id ? r.toUserId : r.fromUserId;
+      const existing = db.phoneOffers.find((o) => o.requestId === r.id && o.fromUserId === u.id && (o.status === 'offered' || o.status === 'accepted'));
+      if (existing) throw new AppError('duplicate');
+      const offer: PhoneOffer = { id: uid('po_'), requestId: r.id, fromUserId: u.id, toUserId, status: 'offered', withInterest: false, consentText: PHONE_CONSENT_TEXT, consentAt: this.iso(), createdAt: this.iso() };
+      db.phoneOffers.push(offer);
+      if (idempotencyKey) db.idem.push({ key: `offer:${idempotencyKey}`, userId: u.id, resultId: offer.id, at: this.iso() });
+      this.audit(db, u.id, 'phone.offered', r.id, { withInterest: false });
+      this.track(db, 'reciprocal_offer_sent', u.id, {}, `offer:${offer.id}`);
+      this.notify(db, toUserId, 'phone_offer_received', { name: this.displayNameOf(db, u.id) }, '/requests');
+      return { ...offer };
+    }, true);
+  }
+
+  respondToPhoneOffer(offerId: string, decision: 'accepted' | 'declined') {
+    return this.run((db) => {
+      const u = this.me(db);
+      const o = db.phoneOffers.find((x) => x.id === offerId);
+      if (!o || o.toUserId !== u.id) throw new AppError('not_found');
+      const r = db.requests.find((x) => x.id === o.requestId);
+      // Withdrawn/expired offers (or a blocked/closed request) can never be accepted.
+      if (o.status !== 'offered' || r?.status !== 'accepted') throw new AppError('invalid_state');
+      o.status = decision;
+      o.respondedAt = this.iso();
+      if (decision === 'accepted') {
+        this.audit(db, u.id, 'phone.revealed', o.requestId, { from: o.fromUserId, to: u.id });
+        this.track(db, 'number_revealed', u.id, { withInterest: false }, `reveal:${o.id}`);
+      }
+      this.notify(db, o.fromUserId, decision === 'accepted' ? 'phone_offer_accepted' : 'phone_offer_declined', { name: this.displayNameOf(db, u.id) }, '/requests');
+      return { ...o };
+    }, true);
+  }
+
+  withdrawPhoneOffer(offerId: string) {
+    return this.run((db) => {
+      const u = this.me(db);
+      const o = db.phoneOffers.find((x) => x.id === offerId);
+      if (!o || o.fromUserId !== u.id) throw new AppError('not_found');
+      if (o.status !== 'offered') throw new AppError('invalid_state', 'Only an offer that has not been accepted can be withdrawn');
+      o.status = 'withdrawn';
+      o.respondedAt = this.iso();
+      this.audit(db, u.id, 'phone.offer_withdrawn', o.requestId);
+      this.notify(db, o.toUserId, 'phone_offer_withdrawn', { name: this.displayNameOf(db, u.id) }, '/requests');
+      return { ...o };
+    }, true);
+  }
+
+  pokeRequest(requestId: string) {
+    return this.run((db) => {
+      const u = this.me(db);
+      const r = db.requests.find((x) => x.id === requestId);
+      if (!r || (r.fromUserId !== u.id && r.toUserId !== u.id)) throw new AppError('not_found');
+      const target = db.profiles.find((p) => p.id === r.toProfileId);
+      if (!target || target.deletedAt || this.isBlockedBetween(db, u.id, target)) throw new AppError('invalid_state');
+      const e = pokeEligibility(r, u.id, db.requests, db.pricing, target.biodata.privacy.allowReminders !== false, this.now());
+      if (!e.canPoke) {
+        const map = { wait: 'poke_wait', used: 'poke_used', limit: 'poke_limit', optout: 'poke_optout' } as const;
+        throw new AppError(map[e.reason as keyof typeof map] ?? 'invalid_state', undefined, { availableAt: e.availableAt });
+      }
+      r.pokes.push(this.iso()); // status deliberately unchanged
+      this.notify(db, r.toUserId, 'poke', {}, '/requests'); // anonymous, guilt-free wording
+      this.track(db, 'poke_sent', u.id, {}, `poke:${r.id}`);
+    }, true);
+  }
+
+  setAllowReminders(allow: boolean) {
+    return this.run((db) => {
+      const u = this.me(db);
+      const p = this.myProfile(db, u.id);
+      if (!p) throw new AppError('not_found');
+      p.biodata.privacy.allowReminders = allow;
+      p.updatedAt = this.iso();
+    }, true);
+  }
+
+  /** Photos / full-biodata consent after acceptance. Phone sharing uses offers and is ignored here. */
   setConsent(requestId: string, scopes: ConsentScopes) {
     return this.run((db) => {
       const u = this.me(db);
       const r = db.requests.find((x) => x.id === requestId);
       if (!r || (r.toUserId !== u.id && r.fromUserId !== u.id)) throw new AppError('not_found');
       if (r.status !== 'accepted') throw new AppError('invalid_state');
+      const clean = { photos: scopes.photos, phone: false, fullBiodata: scopes.fullBiodata };
       const granteeUserId = r.toUserId === u.id ? r.fromUserId : r.toUserId;
       const grantorProfileId = r.toUserId === u.id ? r.toProfileId : r.fromProfileId;
       const existing = db.consents.find((c) => c.requestId === r.id && c.grantorUserId === u.id);
       const before = existing ? { ...existing.scopes } : { ...NO_CONSENT };
       if (existing) {
-        existing.scopes = { ...scopes };
+        existing.scopes = clean;
         existing.updatedAt = this.iso();
       } else {
-        db.consents.push({ id: uid('c_'), requestId: r.id, grantorUserId: u.id, grantorProfileId, granteeUserId, scopes: { ...scopes }, createdAt: this.iso(), updatedAt: this.iso() });
+        db.consents.push({ id: uid('c_'), requestId: r.id, grantorUserId: u.id, grantorProfileId, granteeUserId, scopes: clean, createdAt: this.iso(), updatedAt: this.iso() });
       }
-      // Consent records are audit evidence.
-      this.audit(db, u.id, 'consent.updated', r.id, { before, after: scopes });
-      const newlyShared = (Object.keys(scopes) as (keyof ConsentScopes)[]).filter((k) => scopes[k] && !before[k]);
-      if (newlyShared.length) {
-        const mine = this.myProfile(db, u.id);
-        this.notify(db, granteeUserId, 'contact_shared', { name: mine ? projectProfile(mine).displayName : '', scopes: newlyShared.join(',') }, `/profile/${grantorProfileId}`);
-      }
+      this.audit(db, u.id, 'consent.updated', r.id, { before, after: clean });
+      const newlyShared = (['photos', 'fullBiodata'] as const).filter((k) => clean[k] && !before[k]);
+      if (newlyShared.length)
+        this.notify(db, granteeUserId, 'contact_shared', { name: this.displayNameOf(db, u.id), scopes: newlyShared.join(',') }, `/profile/${grantorProfileId}`);
     }, true);
   }
 
@@ -792,6 +969,7 @@ export class DemoBackend implements Backend {
       if (!db.profiles.some((p) => p.id === profileId)) throw new AppError('not_found');
       if (db.reports.some((r) => r.reporterUserId === u.id && r.profileId === profileId && r.status === 'open')) throw new AppError('duplicate');
       db.reports.unshift({ id: uid('rp_'), reporterUserId: u.id, profileId, reason, details: details?.slice(0, 1000), status: 'open', createdAt: this.iso() });
+      this.track(db, 'user_reported', u.id, { reason });
     }, true);
   }
 
@@ -800,12 +978,16 @@ export class DemoBackend implements Backend {
       const u = this.me(db);
       if (!db.blocks.some((b) => b.userId === u.id && b.blockedProfileId === profileId)) db.blocks.push({ userId: u.id, blockedProfileId: profileId, createdAt: this.iso() });
       db.shortlists = db.shortlists.filter((s) => !(s.userId === u.id && s.profileId === profileId));
-      // Pending requests between the two are closed.
+      // Every open or accepted request between the two becomes Blocked: no requests, pokes or sharing,
+      // and any shared number stops being visible (scopesFor requires an accepted request).
       const mine = this.myProfile(db, u.id);
       for (const r of db.requests) {
-        if (r.status === 'pending' && mine && ((r.fromProfileId === mine.id && r.toProfileId === profileId) || (r.toProfileId === mine.id && r.fromProfileId === profileId)))
-          r.status = r.fromProfileId === mine.id ? 'withdrawn' : 'declined';
+        if ((r.status === 'pending' || r.status === 'accepted') && mine && ((r.fromProfileId === mine.id && r.toProfileId === profileId) || (r.toProfileId === mine.id && r.fromProfileId === profileId))) {
+          r.status = 'blocked';
+          for (const o of db.phoneOffers) if (o.requestId === r.id && o.status === 'offered') o.status = 'withdrawn';
+        }
       }
+      this.track(db, 'user_blocked', u.id, {}, `block:${u.id}:${profileId}`);
     }, true);
   }
 
@@ -891,6 +1073,7 @@ export class DemoBackend implements Backend {
         brides: live.filter((p) => profileTypeOf(p) === 'bride').length,
         grooms: live.filter((p) => profileTypeOf(p) === 'groom').length,
         trash: db.profiles.filter((p) => p.deletedAt).length + db.users.filter((u) => u.deletedAt).length,
+        connections: this.connectionMetrics(db),
         requireApproval: db.pricing.requireApproval,
         openReports: db.reports.filter((r) => r.status === 'open').length,
         revenue: paid.filter((o) => !o.simulated).reduce((s, o) => s + o.amount, 0),
@@ -1103,6 +1286,31 @@ export class DemoBackend implements Backend {
     });
   }
 
+  private connectionMetrics(db: DemoDb): ConnectionMetrics {
+    const rq = db.requests;
+    const answered = rq.filter((r) => r.respondedAt);
+    const hours = answered.map((r) => (new Date(r.respondedAt!).getTime() - new Date(r.createdAt).getTime()) / 3600000).sort((a, b) => a - b);
+    const accepted = rq.filter((r) => r.status === 'accepted' || (r.status === 'blocked' && r.respondedAt)).length;
+    const shared = new Set(db.phoneOffers.filter((o) => o.status === 'accepted').map((o) => o.requestId)).size;
+    const poked = rq.filter((r) => r.pokes.length);
+    const pokedAnswered = poked.filter((r) => r.respondedAt && r.respondedAt > r.pokes[0]).length;
+    return {
+      interests: rq.length,
+      accepted,
+      declined: rq.filter((r) => r.status === 'declined').length,
+      expired: rq.filter((r) => r.status === 'expired').length,
+      blocked: rq.filter((r) => r.status === 'blocked').length,
+      phoneOffers: db.phoneOffers.length,
+      phoneShared: db.phoneOffers.filter((o) => o.status === 'accepted').length,
+      pokes: poked.length,
+      pokedThenAnswered: pokedAnswered,
+      acceptanceRate: rq.length ? accepted / rq.length : 0,
+      sharingRate: accepted ? shared / accepted : 0,
+      pokeResponseRate: poked.length ? pokedAnswered / poked.length : 0,
+      medianResponseHours: hours.length ? Math.round(hours[Math.floor(hours.length / 2)]) : undefined,
+    };
+  }
+
   // ---------- admin: approval mode & bulk ----------
   adminSetRequireApproval(requireApproval: boolean) {
     return this.run((db) => {
@@ -1199,6 +1407,7 @@ export class DemoBackend implements Backend {
       if (!db.requests.some((r) => r.id === requestId)) throw new AppError('not_found');
       db.requests = db.requests.filter((r) => r.id !== requestId);
       db.consents = db.consents.filter((c) => c.requestId !== requestId);
+      db.phoneOffers = db.phoneOffers.filter((o) => o.requestId !== requestId);
       this.audit(db, a.id, 'request.deleted', requestId);
     }, true);
   }

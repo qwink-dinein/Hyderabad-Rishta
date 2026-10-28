@@ -176,6 +176,20 @@ export default function AdminHome() {
         ) : null}
       </Section>
 
+      {s ? (
+        <Section title="Connections">
+          <View style={styles.grid}>
+            {metric('Interests sent', s.connections.interests)}
+            {metric('Accepted', `${s.connections.accepted} (${Math.round(s.connections.acceptanceRate * 100)}%)`)}
+            {metric('Numbers shared', `${s.connections.phoneShared} (${Math.round(s.connections.sharingRate * 100)}% of accepted)`)}
+            {metric('Median response', s.connections.medianResponseHours != null ? `${s.connections.medianResponseHours} h` : '—')}
+            {metric('Reminders → answered', `${s.connections.pokedThenAnswered}/${s.connections.pokes}`)}
+            {metric('Declined / expired / blocked', `${s.connections.declined} / ${s.connections.expired} / ${s.connections.blocked}`)}
+          </View>
+          <Text variant="caption">Phone numbers are never shown to admins or stored in analytics. Sharing actions are in the audit log.</Text>
+        </Section>
+      ) : null}
+
       <Section title="Manage">
         <View style={{ gap: space.sm }}>
           {NAV.map((n) => (

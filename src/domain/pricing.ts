@@ -8,6 +8,9 @@ export const DEFAULT_PRICING: PricingConfig = {
   boost: { bride: { mode: 'free', amount: 0 }, groom: { mode: 'paid', amount: 499 } },
   boostDays: 7,
   requireApproval: true,
+  requestExpiryDays: 14,
+  pokeWaitHours: 48,
+  pokeMaxPer7Days: 2,
   updatedAt: new Date(0).toISOString(),
 };
 
@@ -79,5 +82,8 @@ export function validatePricing(cfg: PricingConfig): string[] {
   check('Boost (bride)', cfg.boost.bride);
   check('Boost (groom)', cfg.boost.groom);
   if (!Number.isInteger(cfg.boostDays) || cfg.boostDays < 1 || cfg.boostDays > 90) errors.push('Boost duration must be 1–90 days');
+  if (!Number.isInteger(cfg.requestExpiryDays) || cfg.requestExpiryDays < 1 || cfg.requestExpiryDays > 90) errors.push('Request expiry must be 1–90 days');
+  if (!Number.isInteger(cfg.pokeWaitHours) || cfg.pokeWaitHours < 1 || cfg.pokeWaitHours > 336) errors.push('Reminder wait must be 1–336 hours');
+  if (!Number.isInteger(cfg.pokeMaxPer7Days) || cfg.pokeMaxPer7Days < 0 || cfg.pokeMaxPer7Days > 7) errors.push('Reminders per person per 7 days must be 0–7');
   return errors;
 }

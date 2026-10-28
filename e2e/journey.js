@@ -88,13 +88,15 @@ const step = async (name, fn) => {
     await page.reload();
     await page.getByText('Test Groom Kareem').waitFor();
   });
-  await step('send a contact request (button enabled, preview, send)', async () => {
+  await step('express interest (introduction only)', async () => {
     await page.goto(BASE + '/discover');
     await page.getByRole('button', { name: /^View profile/ }).first().click();
-    await page.getByTestId('send-request').click();
+    await page.getByTestId('express-interest').click();
+    await page.getByText('How would you like to connect?').waitFor();
+    await page.getByTestId('connect-intro').click();
     await page.getByTestId('preview-request').click();
     await page.getByTestId('confirm-send').click();
-    await page.getByText('Request pending').waitFor();
+    await page.getByText(/Your interest: Pending/).waitFor();
     await page.screenshot({ path: `${SHOTS}/25-request-sent.png` });
   });
   await step('bride finds groom via custom education keyword', async () => {

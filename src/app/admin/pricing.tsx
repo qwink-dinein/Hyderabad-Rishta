@@ -92,6 +92,21 @@ export default function AdminPricing() {
           </Field>
         </Card>
       </Section>
+      <Section title="Connections (interest requests)">
+        <Card style={{ gap: space.sm }}>
+          {(
+            [
+              ['requestExpiryDays', 'Pending interest expires after (days)', '1–90. Expired requests can no longer be accepted; the sender may send a new one.'],
+              ['pokeWaitHours', 'Gentle reminder available after (hours)', 'How long a request must stay unanswered before the sender can poke once.'],
+              ['pokeMaxPer7Days', 'Max reminders to the same person per 7 days', 'Across all requests to that person (0 disables reminders).'],
+            ] as const
+          ).map(([key, label, hint]) => (
+            <Field key={key} label={label} hint={hint}>
+              <TextField value={String(cfg[key] ?? '')} onChangeText={(v) => setCfg({ ...cfg, [key]: Number(v.replace(/\D/g, '')) || 0 })} keyboardType="number-pad" accessibilityLabel={label} />
+            </Field>
+          ))}
+        </Card>
+      </Section>
       <Section title="Publication workflow">
         <ToggleRow label="Require admin approval before publishing" value={cfg.requireApproval} onChange={(v) => setCfg({ ...cfg, requireApproval: v })} hint="Off: profiles go live as soon as they are submitted (and paid, if applicable)." />
       </Section>

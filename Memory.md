@@ -35,6 +35,9 @@ Reset everything: Settings → “Reset demo data”.
 | 2026-10-28 | Roles: `user` / `admin` (sub-admin) / `master` (exactly one) | Owner request; see Architecture §9. Demo: master 9000000000, sub-admin 9000000009. |
 | 2026-10-28 | Admin deletes are soft (Trash 30 days); audit + orders append-only | Mistakes must be recoverable; financial/legal records are never deletable. |
 | 2026-10-28 | Master recovery = code + OTP; backup phone instant, new phone 72 h time-lock | Single stolen code can't silently take over. Demo DB schema v5. |
+| 2026-10-28 | Phone numbers revealed ONLY via accepted PhoneOffers (not the consent toggle) | Feature PRD v1.0; consent toggle now covers photos/full biodata only. Demo DB schema v6. |
+| 2026-10-28 | 30-day cooldown before re-sending interest after a decline | Anti-harassment; not in the PRD — flagged for owner review. |
+| 2026-10-28 | Demo seed: r_1 (incoming + number offer), r_2 (accepted, number shared), r_3 (sent 3 days ago → Poke available) | So the owner can review every state with 9000000001 immediately. |
 | 2026-10-28 | Named the design doc `design.md` (owner wrote “design.ms”) | Renders on GitHub; mention if owner prefers otherwise. |
 
 ## Gotchas

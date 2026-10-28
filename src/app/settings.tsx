@@ -10,7 +10,8 @@ import { Card, Header, InfoRow, Row, Screen, Section } from '@/components/ui/lay
 import { Text } from '@/components/ui/Text';
 import { maskPhone, profileCode } from '@/domain/format';
 import { isAdminRole } from '@/domain/types';
-import { qk, useBlocked } from '@/hooks/queries';
+import { qk, useBlocked, useMyProfile } from '@/hooks/queries';
+import { ToggleRow } from '@/components/ui/forms';
 import { backend, backendInfo } from '@/services';
 import { DemoBackend } from '@/services/demo/demoBackend';
 import { useFilters } from '@/state/filters';
@@ -25,6 +26,7 @@ export default function Settings() {
   const errMsg = useErrorMessage();
   const { user, setUser } = useSession();
   const { data: blocked } = useBlocked();
+  const { data: myProfile } = useMyProfile();
   const demo = backend instanceof DemoBackend ? backend : null;
 
   const signOut = async () => {
@@ -62,6 +64,28 @@ export default function Settings() {
           </Card>
           {isAdminRole(user.role) ? <Button label={t('settings.admin')} onPress={() => router.push('/admin')} /> : null}
         </Section>
+      ) : null}
+
+      {user ? (
+        myProfile ? (
+          <Section title={t('requests.title')}>
+            <Card>
+              <ToggleRow
+                label={t('settings.allowReminders')}
+                hint={t('settings.allowRemindersHelp')}
+                value={myProfile.biodata.privacy.allowReminders !== false}
+                onChange={async (v) => {
+                  try {
+                    await backend.setAllowReminders(v);
+                    qc.invalidateQueries({ queryKey: qk.myProfile });
+                  } catch (e) {
+                    toast(errMsg(e), 'danger');
+                  }
+                }}
+              />
+            </Card>
+          </Section>
+        ) : null
       ) : null}
 
       {user ? (

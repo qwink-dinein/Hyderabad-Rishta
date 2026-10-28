@@ -59,7 +59,15 @@ do $$ declare j jsonb; begin
   assert j -> 'contact' is null, 'acceptance alone must not reveal phone';
 end $$;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000b', false);
+-- the generic consent toggle can no longer reveal a phone number …
 select set_consent(:'req', false, true, false);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false);
+do $$ begin assert get_profile('10000000-0000-0000-0000-00000000000b') -> 'contact' is null, 'consent toggle leaked phone'; end $$;
+-- … only an offer from b that a accepts does.
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000b', false);
+select id as offer from offer_phone(:'req', true, 'k-b-1') \gset
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false);
+select respond_phone_offer(:'offer', 'accepted') is not null as offer_accepted;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false);
 do $$ declare j jsonb; begin
   j := get_profile('10000000-0000-0000-0000-00000000000b');

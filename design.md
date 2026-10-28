@@ -50,6 +50,9 @@ Spacing 2·4·8·12·16·24·32·48. Radius sm 8 · md 12 · lg 18 (cards) · xl
 - **ProfileCard** — photo or emerald placeholder with gold initial ring and 8-point-star motifs; name + code; age · height · marital; city; education · profession; tags; heart.
 - **Banner** — info (sage), warning (wheat), success, danger; always with an icon.
 - **EmptyState** — motif + icon, title, one-line hint, optional action.
+- **PhotoPicker** — always three labelled 4:5 slots (Main photo / Photo 2 / Photo 3), gold dashed empty state with “Tap to add”, 0/3 counter. Never a lone “+”.
+- **Connect options** — two large radio cards (icon, title, one-line promise) followed by the consent checkbox card when sharing a number.
+- **ContactActions** — revealed number in plain sans (not the display face — digits must be unambiguous), Call · Copy · SMS, disclaimer.
 - **Toast** & **Confirm dialog** — cross-platform (Alert.alert doesn't support multi-button on web).
 
 ## 6. Imagery

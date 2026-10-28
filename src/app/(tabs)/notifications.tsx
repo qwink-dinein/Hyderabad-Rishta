@@ -18,6 +18,13 @@ import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
 
 const ICONS: Record<string, IconName> = {
   request_received: 'mail',
+  phone_offer_received: 'phone',
+  phone_offer_accepted: 'phone',
+  phone_offer_declined: 'phone',
+  phone_offer_withdrawn: 'phone',
+  poke: 'bell',
+  request_expired: 'mail',
+  security: 'shield',
   request_accepted: 'check',
   request_declined: 'close',
   contact_shared: 'phone',
@@ -54,7 +61,8 @@ export default function Notifications() {
 
   const text = (n: NotificationView) => {
     if (n.announcement) return { title: localized(n.announcement.title, lang), body: localized(n.announcement.body, lang) };
-    const key = n.type === 'payment' ? `notifications.t.payment_${n.params.status}` : `notifications.t.${n.type}`;
+    const key =
+      n.type === 'payment' ? `notifications.t.payment_${n.params.status}` : n.type === 'request_received' && n.params.offered ? 'notifications.t.request_received_offer' : `notifications.t.${n.type}`;
     return { title: t(key, { ...n.params, note: n.params.note || '—' }), body: n.type === 'boost_started' && n.params.until ? formatDate(n.params.until) : undefined };
   };
 

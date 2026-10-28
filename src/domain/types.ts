@@ -125,6 +125,8 @@ export interface PrivacySettings {
   incomeVisibility: Visibility;
   familyVisibility: Visibility;
   acceptContactRequests: boolean;
+  /** Gentle reminders (pokes) from people whose interest is pending. Undefined = allowed. */
+  allowReminders?: boolean;
 }
 
 export interface Biodata {
@@ -207,6 +209,10 @@ export interface PricingConfig {
   boost: Record<ProfileType, Fee>;
   boostDays: number;
   requireApproval: boolean;
+  /** Connection rules (admin-configurable). */
+  requestExpiryDays: number;
+  pokeWaitHours: number;
+  pokeMaxPer7Days: number;
   updatedAt: string;
   updatedBy?: string;
 }
@@ -228,7 +234,7 @@ export interface Order {
   createdAt: string;
 }
 
-export type RequestStatus = 'pending' | 'accepted' | 'declined' | 'withdrawn';
+export type RequestStatus = 'pending' | 'accepted' | 'declined' | 'withdrawn' | 'expired' | 'blocked';
 
 export interface ContactRequest {
   id: string;
@@ -240,6 +246,41 @@ export interface ContactRequest {
   status: RequestStatus;
   createdAt: string;
   respondedAt?: string;
+  expiresAt: string;
+  /** Timestamps of gentle reminders (max one per request). Never changes the status. */
+  pokes: string[];
+}
+
+/** Phone-number sharing has its own lifecycle, independent of the interest request. */
+export type PhoneOfferStatus = 'offered' | 'accepted' | 'declined' | 'withdrawn' | 'expired';
+
+export interface PhoneOffer {
+  id: string;
+  requestId: string;
+  fromUserId: string;
+  toUserId: string;
+  status: PhoneOfferStatus;
+  /** True when offered together with the initial interest (revealed when the interest is accepted). */
+  withInterest: boolean;
+  consentText: string;
+  consentAt: string;
+  createdAt: string;
+  respondedAt?: string;
+}
+
+export type PokeBlockReason = 'status' | 'wait' | 'used' | 'limit' | 'optout' | 'not_sender';
+export interface PokeEligibility {
+  canPoke: boolean;
+  reason?: PokeBlockReason;
+  availableAt?: string;
+}
+
+export interface AnalyticsEvent {
+  id: string;
+  name: string;
+  at: string;
+  userId?: string;
+  props?: Record<string, string | number | boolean>;
 }
 
 export interface ConsentRecord {
@@ -265,6 +306,12 @@ export type NotificationType =
   | 'payment'
   | 'safety'
   | 'security'
+  | 'phone_offer_received'
+  | 'phone_offer_accepted'
+  | 'phone_offer_declined'
+  | 'phone_offer_withdrawn'
+  | 'poke'
+  | 'request_expired'
   | 'announcement';
 
 export interface AppNotification {

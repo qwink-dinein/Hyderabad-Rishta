@@ -166,3 +166,23 @@ After any recovery: old master → member; all codes + backup phone cleared → 
 - **Break-glass** (phone + codes + backup all lost): `break_glass_set_master(cc, phone, ticket)` — not callable from the app; run in the Supabase SQL editor by the technical owner after out-of-band identity checks (two people, ticket logged). Audited.
 
 Tests: `__tests__/governance.test.ts` (20), `supabase/tests/20_governance.test.sql`, `e2e/admin.js`.
+
+## 10. Connections: interest, phone offers, poke
+
+```
+Express Interest ──► ContactRequest(pending, expiresAt = now + requestExpiryDays, pokes = [])
+      │                    └── optional PhoneOffer(withInterest, offered, consent text + time)
+      │
+Recipient ── Accept ──► request accepted ── withInterest offer still 'offered'? ──► offer accepted → number visible to recipient only
+         └─ Decline ──► request declined, offer expired, nothing revealed
+After acceptance: either side ── Share My Number ──► PhoneOffer(offered) ── other accepts ──► revealed (one direction only)
+Sender ── Withdraw offer (only while 'offered') / Withdraw interest (pending) / Poke (rules below)
+Block ──► every pending/accepted request between the pair → 'blocked'; open offers withdrawn; revealed numbers hidden again
+Job ──► pending past expiresAt → 'expired' (offers expire, sender notified)
+```
+- **Single source of truth for reveal:** `scopesFor().phone` (demo) / `consent_scopes().phone` (SQL) = an *accepted* offer from owner → viewer on an *accepted* request. The old consent toggle can no longer reveal a number.
+- **Races:** SQL uses `SELECT … FOR UPDATE` on the request/offer rows; the demo backend runs each call atomically. Whoever commits first wins; the loser gets `invalid_state`.
+- **Idempotency:** client sends a key per screen visit; `(user, key)` is unique; repeats return the original row.
+- **Poke rules:** `pokeEligibility()` — sender only · pending & unexpired · ≥ `pokeWaitHours` · one per request · ≤ `pokeMaxPer7Days` per recipient (rolling, across requests) · `allowReminders` opt-out. Pokes are anonymous and never change status.
+- **Privacy:** notifications carry names and an `offered` flag, never numbers; analytics carry ids/booleans only; admins see masked numbers; revealed numbers render only in `ContactActions`.
+- **Re-sending:** allowed after expiry or withdrawal; blocked for 30 days after a decline.

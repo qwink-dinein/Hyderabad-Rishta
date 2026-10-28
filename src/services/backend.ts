@@ -13,6 +13,8 @@ import type {
   DashboardMetrics,
   Lang,
   Order,
+  PhoneOffer,
+  PokeEligibility,
   PricingChange,
   PricingConfig,
   Profile,
@@ -39,7 +41,14 @@ export type ErrorCode =
   | 'invalid_state'
   | 'account_removed'
   | 'account_suspended'
-  | 'invalid_recovery_code';
+  | 'invalid_recovery_code'
+  | 'declined_recently'
+  | 'consent_required'
+  | 'poke_wait'
+  | 'poke_used'
+  | 'poke_limit'
+  | 'poke_optout'
+  | 'expired';
 
 /** All backend failures carry a stable code; the UI maps it to `err.<code>`. */
 export class AppError extends Error {
@@ -72,8 +81,42 @@ export interface RequestView {
   /** The other party's privacy-projected profile. */
   other: PublicProfile;
   direction: 'received' | 'sent';
-  /** What I have consented to share with the other party. */
+  /** What I have consented to share with the other party (photos / full biodata). */
   myConsent: ConsentScopes;
+  /** Phone-number offers in each direction (latest). Numbers themselves only appear in `other.contact`. */
+  myOffer?: PhoneOffer;
+  theirOffer?: PhoneOffer;
+  /** Gentle-reminder availability for the sender. */
+  poke: PokeEligibility;
+  /** My own number, masked (e.g. ••••••1234) — for the "offer my number" confirmation. */
+  myPhoneMasked: string;
+}
+
+export interface SendInterestInput {
+  message?: string;
+  /** Offer my phone number with the interest (revealed only if they accept). */
+  offerPhone: boolean;
+  /** Must be true when offerPhone is true: explicit consent checkbox. */
+  consent: boolean;
+  /** Client-generated; repeated submits (double taps, retries) return the same request. */
+  idempotencyKey: string;
+}
+
+export interface ConnectionMetrics {
+  interests: number;
+  accepted: number;
+  declined: number;
+  expired: number;
+  blocked: number;
+  phoneOffers: number;
+  phoneShared: number;
+  pokes: number;
+  pokedThenAnswered: number;
+  /** 0..1 */
+  acceptanceRate: number;
+  sharingRate: number;
+  pokeResponseRate: number;
+  medianResponseHours?: number;
 }
 
 export interface NotificationView extends AppNotification {
@@ -93,6 +136,7 @@ export interface AdminStats {
   acceptedRequests: number;
   trash: number;
   requireApproval: boolean;
+  connections: ConnectionMetrics;
 }
 
 export interface AdminRequestRow extends ContactRequest {
@@ -152,12 +196,19 @@ export interface Backend {
   toggleShortlist(profileId: string): Promise<boolean>;
 
   // requests & consent
-  sendRequest(toProfileId: string, message?: string): Promise<ContactRequest>;
+  sendRequest(toProfileId: string, input: SendInterestInput): Promise<ContactRequest>;
   getRequests(): Promise<RequestView[]>;
   respondToRequest(requestId: string, decision: 'accepted' | 'declined'): Promise<ContactRequest>;
   withdrawRequest(requestId: string): Promise<ContactRequest>;
   setConsent(requestId: string, scopes: ConsentScopes): Promise<void>;
   getRequestStatusWith(profileId: string): Promise<RequestView | null>;
+  /** After acceptance, either side may offer their number; the other must accept before it is revealed. */
+  offerPhone(requestId: string, consent: boolean, idempotencyKey: string): Promise<PhoneOffer>;
+  respondToPhoneOffer(offerId: string, decision: 'accepted' | 'declined'): Promise<PhoneOffer>;
+  /** Withdraw my offer before it is accepted. */
+  withdrawPhoneOffer(offerId: string): Promise<PhoneOffer>;
+  pokeRequest(requestId: string): Promise<void>;
+  setAllowReminders(allow: boolean): Promise<void>;
 
   // safety
   reportProfile(profileId: string, reason: string, details?: string): Promise<void>;

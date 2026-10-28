@@ -1,5 +1,6 @@
 import { DEFAULT_PRICING } from '@/domain/pricing';
-import type { Announcement, Biodata, ContactRequest, ConsentRecord, Profile, User, ViewEvent } from '@/domain/types';
+import { PHONE_CONSENT_TEXT } from '@/domain/connections';
+import type { PhoneOffer, Announcement, Biodata, ContactRequest, ConsentRecord, Profile, User, ViewEvent } from '@/domain/types';
 
 /**
  * Seed data: 32 CLEARLY FICTIONAL profiles. No real people, no real photos.
@@ -55,6 +56,7 @@ export interface SeedData {
   profiles: Profile[];
   requests: ContactRequest[];
   consents: ConsentRecord[];
+  phoneOffers: PhoneOffer[];
   views: ViewEvent[];
   announcements: Announcement[];
 }
@@ -170,13 +172,22 @@ export function buildSeed(now = new Date('2026-10-01T09:00:00Z')): SeedData {
     });
   }
 
-  // u_demo (p_1, a groom) has two incoming requests and one accepted conversation.
+  // u_demo (p_1, a groom):
+  //  r_1  incoming interest WITH a phone-number offer (pending) → try Accept to see the number revealed
+  //  r_2  accepted conversation where the other side already shared her number
+  //  r_3  outgoing interest sent 3 days ago, still unanswered → the Poke reminder is available
+  const exp = (createdDaysAgo: number) => new Date(now.getTime() + (14 - createdDaysAgo) * 86400000).toISOString();
   const requests: ContactRequest[] = [
-    { id: 'r_1', fromUserId: 'u_0', fromProfileId: 'p_0', toUserId: 'u_demo', toProfileId: 'p_1', message: '[Demo] Assalamu alaikum. Our family found your profile suitable. Happy to talk if you are comfortable.', status: 'pending', createdAt: iso(1) },
-    { id: 'r_2', fromUserId: 'u_4', fromProfileId: 'p_4', toUserId: 'u_demo', toProfileId: 'p_1', status: 'accepted', createdAt: iso(5), respondedAt: iso(4) },
+    { id: 'r_1', fromUserId: 'u_0', fromProfileId: 'p_0', toUserId: 'u_demo', toProfileId: 'p_1', message: '[Demo] Assalamu alaikum. Our family found your profile suitable. Happy to talk if you are comfortable.', status: 'pending', createdAt: iso(1), expiresAt: exp(1), pokes: [] },
+    { id: 'r_2', fromUserId: 'u_4', fromProfileId: 'p_4', toUserId: 'u_demo', toProfileId: 'p_1', status: 'accepted', createdAt: iso(5), respondedAt: iso(4), expiresAt: exp(5), pokes: [] },
+    { id: 'r_3', fromUserId: 'u_demo', fromProfileId: 'p_1', toUserId: 'u_6', toProfileId: 'p_6', message: '[Demo] Assalamu alaikum, I would be happy to connect if you are interested.', status: 'pending', createdAt: iso(3), expiresAt: exp(3), pokes: [] },
   ];
   const consents: ConsentRecord[] = [
-    { id: 'c_1', requestId: 'r_2', grantorUserId: 'u_4', grantorProfileId: 'p_4', granteeUserId: 'u_demo', scopes: { photos: true, phone: true, fullBiodata: true }, createdAt: iso(4), updatedAt: iso(4) },
+    { id: 'c_1', requestId: 'r_2', grantorUserId: 'u_4', grantorProfileId: 'p_4', granteeUserId: 'u_demo', scopes: { photos: true, phone: false, fullBiodata: true }, createdAt: iso(4), updatedAt: iso(4) },
+  ];
+  const phoneOffers: PhoneOffer[] = [
+    { id: 'po_1', requestId: 'r_1', fromUserId: 'u_0', toUserId: 'u_demo', status: 'offered', withInterest: true, consentText: PHONE_CONSENT_TEXT, consentAt: iso(1), createdAt: iso(1) },
+    { id: 'po_2', requestId: 'r_2', fromUserId: 'u_4', toUserId: 'u_demo', status: 'accepted', withInterest: false, consentText: PHONE_CONSENT_TEXT, consentAt: iso(4), createdAt: iso(4), respondedAt: iso(4) },
   ];
   const views: ViewEvent[] = ['u_0', 'u_2', 'u_4', 'u_6', 'u_0'].map((v, k) => ({ profileId: 'p_1', viewerUserId: v, at: iso(k) }));
   const announcements: Announcement[] = [
@@ -198,7 +209,7 @@ export function buildSeed(now = new Date('2026-10-01T09:00:00Z')): SeedData {
       updatedAt: iso(2),
     },
   ];
-  return { users, profiles, requests, consents, views, announcements };
+  return { users, profiles, requests, consents, phoneOffers, views, announcements };
 }
 
 /** Demo starts with approval OFF so a single tester can publish and send requests immediately; admins can turn it on. */
