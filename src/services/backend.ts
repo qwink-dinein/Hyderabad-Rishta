@@ -40,6 +40,11 @@ export type ErrorCode =
   | 'not_accepting'
   | 'incomplete_biodata'
   | 'profile_removed'
+  | 'invalid_pin'
+  | 'pin_locked'
+  | 'pin_not_set'
+  | 'device_not_trusted'
+  | 'otp_required'
   | 'invalid_state'
   | 'account_removed'
   | 'account_suspended'
@@ -223,8 +228,16 @@ export interface Backend {
 
   // auth
   requestOtp(countryCode: string, phone: string): Promise<OtpRequestResult>;
-  verifyOtp(countryCode: string, phone: string, code: string): Promise<{ user: User; isNew: boolean }>;
+  /** OTP: registration, a new phone, Forgot PIN, or first PIN for an older account. Trusts this phone. */
+  verifyOtp(countryCode: string, phone: string, code: string): Promise<{ user: User; isNew: boolean; needsPin: boolean }>;
+  /** Returning login on a phone that verified this number before. Never sends an OTP. */
+  pinLogin(countryCode: string, phone: string, pin: string): Promise<{ user: User }>;
+  /** Create/reset (right after an OTP) or change (with the current PIN). Other phones are signed out on reset/change. */
+  setPin(pin: string, currentPin?: string): Promise<User>;
+  /** Prefill for the login screen: last number used on this phone and whether PIN login is possible here. */
+  getLoginHint(): Promise<{ countryCode: string; phone: string; canUsePin: boolean } | null>;
   getSession(): Promise<User | null>;
+  /** Revokes this phone's session; keeps the device key so the PIN works next time. */
   logout(): Promise<void>;
   setLanguage(lang: Lang): Promise<void>;
   deactivateAccount(): Promise<void>;

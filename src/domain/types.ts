@@ -33,6 +33,8 @@ export interface User {
   deleteReason?: string;
   /** Set when the team removed this account's biodata: no new biodata on this number until the account is deleted. */
   profileRemovedAt?: string;
+  /** Whether a quick-login PIN is set (computed; the PIN itself never leaves the server). */
+  hasPin?: boolean;
   /** Phone-notification preferences (server-side so every device honours them). */
   pushPrefs?: PushPrefs;
 }

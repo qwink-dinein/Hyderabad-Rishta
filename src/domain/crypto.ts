@@ -71,3 +71,23 @@ export function recoveryCode(): string {
 }
 
 export const normaliseCode = (c: string) => c.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+/** Random hex string (default 256 bits) for session tokens, device keys and salts. */
+export function randomToken(bytes = 32): string {
+  const c = (globalThis as { crypto?: { getRandomValues?: (a: Uint8Array) => Uint8Array } }).crypto;
+  const out = new Uint8Array(bytes);
+  if (c?.getRandomValues) c.getRandomValues(out);
+  else for (let i = 0; i < bytes; i++) out[i] = Math.floor(Math.random() * 256);
+  return Array.from(out, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Salted, deliberately slow hash for PINs in the demo backend. A 4-digit PIN has only 10,000 values,
+ * so the real protection is the server-side attempt limit; the hash keeps a leaked store from
+ * showing PINs at a glance. Production uses pgcrypto bcrypt (supabase/migrations/*_pin_login.sql).
+ */
+export function slowHash(secret: string, salt: string, rounds = 2000): string {
+  let h = sha256Hex(`${salt}:${secret}`);
+  for (let i = 0; i < rounds; i++) h = sha256Hex(`${salt}:${h}:${secret}`);
+  return h;
+}

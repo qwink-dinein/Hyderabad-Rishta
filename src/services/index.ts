@@ -1,5 +1,6 @@
 import { DemoBackend } from './demo/demoBackend';
 import type { Backend } from './backend';
+import { secureKV } from './secureStorage';
 import { asyncStorageKV } from './storage';
 import { supabaseConfigured } from './supabase/config';
 
@@ -10,7 +11,7 @@ import { supabaseConfigured } from './supabase/config';
  *   (see Phases.md). Until it lands we stay on the demo backend even if env vars exist,
  *   and the UI says so — we never silently pretend to be production.
  */
-export const backend: Backend = new DemoBackend({ storage: asyncStorageKV, latencyMs: 120 });
+export const backend: Backend = new DemoBackend({ storage: asyncStorageKV, secure: secureKV, latencyMs: 120 });
 
 export const backendInfo = {
   kind: backend.kind,

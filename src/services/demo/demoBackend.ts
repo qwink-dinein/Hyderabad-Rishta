@@ -1,5 +1,6 @@
 import { buildSeed, DEMO_OTP, SEED_PRICING } from '@/data/seed';
-import { normaliseCode, recoveryCode, sha256Hex } from '@/domain/crypto';
+import { normaliseCode, randomToken, recoveryCode, sha256Hex, slowHash } from '@/domain/crypto';
+import { afterWrongPin, attemptsLeft, PIN_OTP_WINDOW_MS, pinProblem, SESSION_IDLE_MS, type PinAttemptState } from '@/domain/auth';
 import { DECLINE_COOLDOWN_DAYS, isActiveRequest, PHONE_CONSENT_TEXT, pokeEligibility, sanitizeMessage } from '@/domain/connections';
 import { maskPhone, uid } from '@/domain/format';
 import { announcementStats, audienceFor, dashboardMetrics, isAnnouncementLive } from '@/domain/metrics';
@@ -45,7 +46,7 @@ import { firstInvalidStep, otpSchema, requestMessageSchema } from '@/domain/vali
 import { REPORT_REASONS } from '@/domain/options';
 import { biodataProblem, normalizePhone, isHttpsUrl, isInternalLink, LANGS, MAX_IDEM_KEY, MAX_PUSH_TOKEN, MAX_REPORTS_PER_DAY, MAX_SEARCH_PAGE } from '@/domain/security';
 import { AppError, type AdminRequestRow, type AdminStats, type Backend, type MemberDetail, type MemberRow, type ConnectionMetrics, type SendInterestInput, type NotificationView, type Page, type RecipientRow, type RequestView, type TrashItem } from '../backend';
-import type { KV } from '../storage';
+import { memoryKV, type KV } from '../storage';
 
 /** JSON deep clone — responses never share references with the "server" state. */
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
@@ -58,9 +59,50 @@ interface OtpState {
 }
 
 /** Everything the demo "server" knows. Persisted as one JSON document. */
+/** A signed-in phone. Only the token's hash is stored; the token itself lives in the phone's secure storage. */
+export interface AuthSession {
+  id: string;
+  tokenHash: string;
+  userId: string;
+  deviceId?: string;
+  createdAt: string;
+  lastSeenAt: string;
+  /** Set when this session was created by an OTP just now: allows setting/resetting the PIN once. */
+  otpAt?: string;
+  revokedAt?: string;
+  revokeReason?: string;
+}
+/** A phone that proved the number by OTP. PIN login works only on these (device key + PIN). */
+export interface TrustedDevice {
+  id: string;
+  userId: string;
+  secretHash: string;
+  createdAt: string;
+  lastUsedAt: string;
+  revokedAt?: string;
+}
+export interface PinRecord {
+  userId: string;
+  salt: string;
+  hash: string;
+  setAt: string;
+  attempts: PinAttemptState;
+}
+/** What THIS phone keeps in secure storage (never in the shared demo "server" document). */
+interface LocalAuth {
+  token?: string;
+  device?: { id: string; secret: string };
+  /** Last number used here, to prefill the PIN login screen. */
+  last?: { countryCode: string; phone: string };
+}
+
 export interface DemoDb {
   schemaVersion: number;
+  /** @deprecated pre-PIN single session; migrated into `sessions` on load. */
   sessionUserId?: string;
+  sessions: AuthSession[];
+  devices: TrustedDevice[];
+  pins: PinRecord[];
   users: User[];
   profiles: Profile[];
   shortlists: Shortlist[];
@@ -96,6 +138,8 @@ export interface DemoDb {
 
 const SCHEMA_VERSION = 8;
 const STORAGE_KEY = 'hr.demo.db';
+const AUTH_KEY = 'hr.auth';
+const MAX_SESSIONS_PER_USER = 10;
 export const OTP_TTL_MS = 10 * 60 * 1000;
 export const RESEND_COOLDOWN_MS = 30 * 1000;
 export const MAX_RESENDS = 3;
@@ -142,11 +186,16 @@ export function freshDb(now = new Date()): DemoDb {
     pushOutbox: [],
     boostImpressions: [],
     shortlistNotified: [],
+    sessions: [],
+    devices: [],
+    pins: [],
   };
 }
 
 export interface DemoOptions {
   storage: KV;
+  /** This phone's secure storage (Keychain/Keystore). Defaults to memory (tests: one fresh phone). */
+  secure?: KV;
   /** Artificial latency so loading states are exercised (0 in tests). */
   latencyMs?: number;
   now?: () => Date;
@@ -162,11 +211,14 @@ export class DemoBackend implements Backend {
   private db: DemoDb | null = null;
   private loading: Promise<DemoDb> | null = null;
   private storage: KV;
+  private secure: KV;
+  private local: LocalAuth = {};
   private latency: number;
   private now: () => Date;
 
   constructor(opts: DemoOptions) {
     this.storage = opts.storage;
+    this.secure = opts.secure ?? memoryKV();
     this.latency = opts.latencyMs ?? 0;
     this.now = opts.now ?? (() => new Date());
   }
@@ -186,8 +238,24 @@ export class DemoBackend implements Backend {
             db = null; // corrupted storage → reseed
           }
         }
+        try {
+          this.local = JSON.parse((await this.secure.getItem(AUTH_KEY)) ?? '{}') as LocalAuth;
+        } catch {
+          this.local = {};
+        }
         this.db = db ?? freshDb(this.now());
-        if (!db) await this.persist();
+        // Existing accounts survive upgrades: add new collections in place (never a reseed), and turn a
+        // pre-PIN login into a real session so nobody is signed out by this update.
+        const d = this.db;
+        const upgraded = !d.sessions || !!d.sessionUserId;
+        d.sessions ??= [];
+        d.devices ??= [];
+        d.pins ??= [];
+        if (d.sessionUserId) {
+          if (!this.currentSession(d) && d.users.some((u) => u.id === d.sessionUserId)) this.startSession(d, d.sessionUserId, {});
+          d.sessionUserId = undefined;
+        }
+        if (!db || upgraded) await this.persist();
         return this.db;
       })();
     }
@@ -196,6 +264,7 @@ export class DemoBackend implements Backend {
 
   private async persist() {
     if (this.db) await this.storage.setItem(STORAGE_KEY, JSON.stringify(this.db));
+    await this.secure.setItem(AUTH_KEY, JSON.stringify(this.local));
   }
 
   /** Runs a read or write "request" against the db with simulated latency. */
@@ -203,12 +272,15 @@ export class DemoBackend implements Backend {
     const db = await this.load();
     if (this.latency) await new Promise((r) => setTimeout(r, this.latency));
     this.processScheduled(db);
-    const result = await fn(db);
-    if (write) {
-      this.prune(db);
-      await this.persist();
+    try {
+      return await fn(db);
+    } finally {
+      // Also on errors: a wrong OTP/PIN must be counted on "disk", not only in memory.
+      if (write) {
+        this.prune(db);
+        await this.persist();
+      }
     }
-    return result;
   }
 
   async reset(): Promise<void> {
@@ -221,8 +293,92 @@ export class DemoBackend implements Backend {
     return this.now().toISOString();
   }
 
+  /** This phone's live session, if any. Expired sessions are revoked on sight. */
+  private currentSession(db: DemoDb): AuthSession | undefined {
+    const token = this.local.token;
+    if (!token) return undefined;
+    const hash = sha256Hex(token);
+    const s = db.sessions.find((x) => x.tokenHash === hash);
+    if (!s || s.revokedAt) return undefined;
+    const now = this.now().getTime();
+    if (now - new Date(s.lastSeenAt).getTime() > SESSION_IDLE_MS) {
+      s.revokedAt = this.iso();
+      s.revokeReason = 'expired';
+      return undefined;
+    }
+    if (now - new Date(s.lastSeenAt).getTime() > 3600_000) s.lastSeenAt = this.iso();
+    return s;
+  }
+
+  /** Signs this phone in: a new random token (only its hash is kept server-side). */
+  private startSession(db: DemoDb, userId: string, opts: { otp?: boolean; deviceId?: string }) {
+    const prev = this.currentSession(db);
+    if (prev) this.revoke(prev, 'replaced');
+    const token = randomToken();
+    db.sessions.push({ id: uid('s_'), tokenHash: sha256Hex(token), userId, deviceId: opts.deviceId, createdAt: this.iso(), lastSeenAt: this.iso(), otpAt: opts.otp ? this.iso() : undefined });
+    const live = db.sessions.filter((x) => x.userId === userId && !x.revokedAt).sort((a, b) => b.lastSeenAt.localeCompare(a.lastSeenAt));
+    for (const old of live.slice(MAX_SESSIONS_PER_USER)) this.revoke(old, 'too_many');
+    this.local.token = token;
+  }
+
+  private revoke(s: AuthSession, reason: string) {
+    if (s.revokedAt) return;
+    s.revokedAt = this.iso();
+    s.revokeReason = reason;
+  }
+
+  /** Signs an account out everywhere (optionally except one session). */
+  private revokeSessions(db: DemoDb, userId: string, reason: string, except?: AuthSession) {
+    for (const s of db.sessions) if (s.userId === userId && s !== except) this.revoke(s, reason);
+  }
+
+  /** Marks this phone as verified for the account (OTP just proved the number here). */
+  private trustThisDevice(db: DemoDb, userId: string): string {
+    this.local.device ??= { id: uid('d_'), secret: randomToken() };
+    const { id, secret } = this.local.device;
+    const existing = db.devices.find((d) => d.id === id && d.userId === userId);
+    if (existing) {
+      existing.secretHash = sha256Hex(secret);
+      existing.revokedAt = undefined;
+      existing.lastUsedAt = this.iso();
+    } else db.devices.push({ id, userId, secretHash: sha256Hex(secret), createdAt: this.iso(), lastUsedAt: this.iso() });
+    return id;
+  }
+
+  private trustedDevice(db: DemoDb, userId: string) {
+    const d = this.local.device;
+    if (!d) return undefined;
+    const row = db.devices.find((x) => x.id === d.id && x.userId === userId && !x.revokedAt);
+    return row && row.secretHash === sha256Hex(d.secret) ? row : undefined;
+  }
+
+  private pinOf(db: DemoDb, userId: string) {
+    return db.pins.find((p) => p.userId === userId);
+  }
+
+  /** The user as the app sees it (no secrets), plus whether a PIN is set up. */
+  private publicUser(db: DemoDb, u: User): User {
+    return { ...u, hasPin: !!this.pinOf(db, u.id) };
+  }
+
+  /** Checks a PIN with the server-side lockout. Returns an error to throw AFTER the counters are saved. */
+  private checkPin(db: DemoDb, rec: PinRecord, pin: string): AppError | null {
+    const now = this.now().getTime();
+    if (rec.attempts.hardLocked) return new AppError('pin_locked', undefined, { reset: true });
+    if (rec.attempts.lockedUntil && now < rec.attempts.lockedUntil) return new AppError('pin_locked', undefined, { retryAt: new Date(rec.attempts.lockedUntil).toISOString() });
+    if (slowHash(pin, rec.salt) === rec.hash) {
+      rec.attempts = { streak: 0, recent: [] };
+      return null;
+    }
+    rec.attempts = afterWrongPin(rec.attempts, now);
+    this.audit(db, rec.userId, 'pin.failed', rec.userId, { streak: rec.attempts.streak });
+    if (rec.attempts.hardLocked) return new AppError('pin_locked', undefined, { reset: true });
+    if (rec.attempts.lockedUntil && now < rec.attempts.lockedUntil) return new AppError('pin_locked', undefined, { retryAt: new Date(rec.attempts.lockedUntil).toISOString() });
+    return new AppError('invalid_pin', undefined, { attemptsLeft: attemptsLeft(rec.attempts) });
+  }
+
   private me(db: DemoDb): User {
-    const u = db.users.find((x) => x.id === db.sessionUserId);
+    const u = db.users.find((x) => x.id === this.currentSession(db)?.userId);
     // Deleted/suspended accounts lose their session on the very next call.
     if (!u || u.deletedAt) throw new AppError('unauthenticated');
     if (u.deactivatedAt) throw new AppError('forbidden', 'Account deactivated');
@@ -418,6 +574,7 @@ export class DemoBackend implements Backend {
       });
     }
     db.idem = db.idem.filter((x) => now - new Date(x.at).getTime() < 86400000);
+    db.sessions = db.sessions.filter((x) => !x.revokedAt || now - new Date(x.revokedAt).getTime() < 30 * 86400000);
     db.otps = db.otps.filter((o) => now - o.issuedAt < OTP_TTL_MS || o.resends.some((t) => now - t < OTP_TTL_MS));
     if (db.analytics.length > MAX_ANALYTICS) db.analytics = db.analytics.slice(-MAX_ANALYTICS);
     const oldestDay = dayKey(new Date(now - IMPRESSION_RETENTION_MS));
@@ -468,7 +625,7 @@ export class DemoBackend implements Backend {
     target.deletedAt = undefined;
     // All recovery material is single-use per recovery: force a fresh setup.
     db.security = { recoveryCodes: [], salt: recoveryCode(), failedAttempts: [] };
-    if (db.sessionUserId === old?.id && old?.id !== target.id) db.sessionUserId = undefined;
+    if (old && old.id !== target.id) this.revokeSessions(db, old.id, 'master_recovered'); // old phone assumed lost
     this.audit(db, target.id, 'master.recovered', target.id, { method, previousMaster: old?.id });
     this.notifyAdmins(db, { event: 'master_recovered' });
   }
@@ -490,6 +647,9 @@ export class DemoBackend implements Backend {
   private purgeUser(db: DemoDb, userId: string) {
     for (const p of db.profiles.filter((x) => x.userId === userId)) this.purgeProfile(db, p.id);
     db.users = db.users.filter((x) => x.id !== userId);
+    db.sessions = db.sessions.filter((s) => s.userId !== userId);
+    db.devices = db.devices.filter((d) => d.userId !== userId);
+    db.pins = db.pins.filter((p) => p.userId !== userId);
     db.shortlists = db.shortlists.filter((s) => s.userId !== userId);
     db.requests = db.requests.filter((r) => r.fromUserId !== userId && r.toUserId !== userId);
     db.consents = db.consents.filter((c) => c.grantorUserId !== userId && c.granteeUserId !== userId);
@@ -567,29 +727,100 @@ export class DemoBackend implements Backend {
         user.deactivatedAt = undefined;
         user.deactivatedBy = undefined;
       }
-      db.sessionUserId = user.id;
+      // OTP proved the number on THIS phone: trust it for PIN login and start a session.
+      const deviceId = this.trustThisDevice(db, user.id);
+      this.startSession(db, user.id, { otp: true, deviceId });
+      this.local.last = { countryCode, phone };
       isNew = isNew || !this.myProfile(db, user.id);
-      return { user: { ...user }, isNew };
+      return { user: this.publicUser(db, user), isNew, needsPin: !this.pinOf(db, user.id) };
     }, true);
   }
 
   getSession() {
     return this.run((db) => {
-      const u = db.users.find((x) => x.id === db.sessionUserId);
-      return u && !u.deactivatedAt && !u.deletedAt ? { ...u } : null;
+      const s = this.currentSession(db);
+      const u = s && db.users.find((x) => x.id === s.userId);
+      return u && !u.deactivatedAt && !u.deletedAt ? this.publicUser(db, u) : null;
+    }, true);
+  }
+
+  /** What the login screen can offer on this phone without sending an OTP. */
+  getLoginHint() {
+    return this.run((db) => {
+      const last = this.local.last;
+      if (!last) return null;
+      const u = this.findUserByPhone(db, last.countryCode, last.phone);
+      const canUsePin = !!u && !u.deletedAt && !!this.pinOf(db, u.id) && !!this.trustedDevice(db, u.id);
+      return { countryCode: last.countryCode, phone: last.phone, canUsePin };
     });
+  }
+
+  /** Returning login: number + PIN on a phone that verified this number before. No OTP is sent. */
+  pinLogin(countryCode: string, phone: string, pin: string) {
+    return this.run((db) => {
+      ({ countryCode, phone } = this.normPhone(countryCode, phone));
+      if (!/^\d{4}$/.test(String(pin))) throw new AppError('validation', 'pin.mustBe4');
+      const u = this.findUserByPhone(db, countryCode, phone);
+      const device = u && this.trustedDevice(db, u.id);
+      // Unknown number, other phone, or forgotten device all look the same: verify by OTP once.
+      if (!u || !device) throw new AppError('device_not_trusted');
+      if (u.deletedAt) throw new AppError('account_removed');
+      if (u.deactivatedAt && u.deactivatedBy && u.deactivatedBy !== u.id) throw new AppError('account_suspended');
+      const rec = this.pinOf(db, u.id);
+      if (!rec) throw new AppError('pin_not_set');
+      const err = this.checkPin(db, rec, pin);
+      if (err) throw err; // counters are persisted by run() even when this throws
+      if (u.deactivatedAt) {
+        u.deactivatedAt = undefined; // self-deactivation is undone by logging in
+        u.deactivatedBy = undefined;
+      }
+      device.lastUsedAt = this.iso();
+      this.startSession(db, u.id, { deviceId: device.id });
+      this.local.last = { countryCode, phone };
+      this.audit(db, u.id, 'pin.login', u.id);
+      return { user: this.publicUser(db, u) };
+    }, true);
+  }
+
+  /**
+   * Create, reset or change the PIN. Allowed right after an OTP on this phone (registration, Forgot PIN,
+   * first PIN for an older account) or with the current PIN. Resetting/changing signs out every other phone.
+   */
+  setPin(pin: string, currentPin?: string) {
+    return this.run((db) => {
+      const u = this.me(db);
+      const s = this.currentSession(db)!;
+      const problem = pinProblem(String(pin));
+      if (problem) throw new AppError('validation', problem);
+      const rec = this.pinOf(db, u.id);
+      const freshOtp = !!s.otpAt && this.now().getTime() - new Date(s.otpAt).getTime() < PIN_OTP_WINDOW_MS;
+      if (!freshOtp) {
+        if (!rec || currentPin == null) throw new AppError('otp_required');
+        const err = this.checkPin(db, rec, String(currentPin));
+        if (err) throw err;
+      }
+      const salt = randomToken(16);
+      const next: PinRecord = { userId: u.id, salt, hash: slowHash(String(pin), salt), setAt: this.iso(), attempts: { streak: 0, recent: [] } };
+      db.pins = [...db.pins.filter((p) => p.userId !== u.id), next];
+      s.otpAt = undefined; // one PIN change per OTP
+      if (rec) this.revokeSessions(db, u.id, 'pin_reset', s);
+      this.audit(db, u.id, rec ? (freshOtp ? 'pin.reset' : 'pin.changed') : 'pin.created', u.id);
+      return this.publicUser(db, u);
+    }, true);
   }
 
   logout() {
     return this.run((db) => {
-      db.sessionUserId = undefined;
+      const s = this.currentSession(db);
+      if (s) this.revoke(s, 'logout');
+      this.local.token = undefined; // the device key and remembered number stay, for PIN login
     }, true);
   }
 
   setLanguage(lang: Lang) {
     return this.run((db) => {
       if (!LANGS.includes(lang)) throw new AppError('validation');
-      const u = db.users.find((x) => x.id === db.sessionUserId);
+      const u = db.users.find((x) => x.id === this.currentSession(db)?.userId);
       if (u) u.language = lang;
     }, true);
   }
@@ -602,7 +833,8 @@ export class DemoBackend implements Backend {
       u.deactivatedBy = u.id;
       const p = this.myProfile(db, u.id);
       if (p && p.status === 'published') p.status = 'paused';
-      db.sessionUserId = undefined;
+      this.revokeSessions(db, u.id, 'deactivated');
+      this.local.token = undefined;
     }, true);
   }
 
@@ -614,7 +846,8 @@ export class DemoBackend implements Backend {
       this.purgeUser(db, u.id); // user-initiated deletion is immediate and permanent (privacy right)
       this.alertAdmins(db, 'account_deleted', { code: code ?? '—' }, '/admin/audit');
       this.audit(db, u.id, 'account.deleted', u.id);
-      db.sessionUserId = undefined;
+      this.local.token = undefined;
+      this.local.last = undefined;
     }, true);
   }
 
@@ -1380,6 +1613,7 @@ export class DemoBackend implements Backend {
       u.deactivatedBy = deactivated ? a.id : undefined;
       const p = this.myProfile(db, u.id);
       if (deactivated && p?.status === 'published') p.status = 'paused';
+      if (deactivated) this.revokeSessions(db, u.id, 'suspended');
       this.audit(db, a.id, deactivated ? 'user.deactivated' : 'user.reactivated', u.id);
     }, true);
   }
@@ -1649,7 +1883,7 @@ export class DemoBackend implements Backend {
         p.deleteReason = 'Account deleted';
       }
       for (const r of db.requests) if (r.status === 'pending' && (r.fromUserId === u.id || r.toUserId === u.id)) r.status = 'withdrawn';
-      if (db.sessionUserId === u.id) db.sessionUserId = undefined;
+      this.revokeSessions(db, u.id, 'account_removed');
       this.audit(db, a.id, 'user.deleted', u.id, { reason: u.deleteReason });
     }, true);
   }
