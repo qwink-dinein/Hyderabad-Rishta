@@ -1,10 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { supabaseAnonKey, supabaseConfigured, supabaseUrl } from './config';
 
-const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-
-/** True only when BOTH public values are set. The service-role key must never be in the app. */
-export const supabaseConfigured = !!url && !!anonKey;
+export { supabaseConfigured };
 
 let client: SupabaseClient | null = null;
 
@@ -12,7 +9,7 @@ let client: SupabaseClient | null = null;
 export function getSupabase(): SupabaseClient {
   if (!supabaseConfigured) throw new Error('Supabase is not configured. See .env.example.');
   if (!client) {
-    client = createClient(url!, anonKey!, {
+    client = createClient(supabaseUrl!, supabaseAnonKey!, {
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
     });
   }

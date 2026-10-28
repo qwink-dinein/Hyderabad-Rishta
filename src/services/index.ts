@@ -1,7 +1,7 @@
 import { DemoBackend } from './demo/demoBackend';
 import type { Backend } from './backend';
 import { asyncStorageKV } from './storage';
-import { supabaseConfigured } from './supabase/client';
+import { supabaseConfigured } from './supabase/config';
 
 /**
  * Backend selection.
