@@ -43,7 +43,7 @@ Reset everything: Settings → “Reset demo data”.
 
 ## Environment limits observed (cloud session)
 - Network policy blocks `api.expo.dev`, `exp.host`, ngrok, `docs.expo.dev` → no Expo tunnel from the cloud; run locally to scan with Expo Go.
-- GitHub push from this session required re-linking the remote (scaffold overwrote `.git`) — needs owner OK.
+- ~~GitHub push required re-linking the remote (scaffold overwrote `.git`)~~ — fixed 2026-10-28 with owner approval; branch pushed.
 
 ## Next session — start here
 1. Check `Tasks.md` Phase 2; ask owner about Supabase project + SMS + Razorpay accounts.
