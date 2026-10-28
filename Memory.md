@@ -63,7 +63,7 @@ Reset everything: Settings → “Reset demo data”.
 - ~~GitHub push required re-linking the remote (scaffold overwrote `.git`)~~ — fixed 2026-10-28 with owner approval; branch pushed.
 
 ## Hosted web preview
-- Private Artifact: https://claude.ai/artifact/Vx3XTLdLJVSgcVY9hkmxuH (single self-contained HTML, demo backend).
+- Private Artifact (current): https://claude.ai/artifact/YK9mg5vQzR19CEfoaX4bSJ — earlier versions: https://claude.ai/artifact/Vx3XTLdLJVSgcVY9hkmxuH (single self-contained HTML, demo backend). Republish with `url` to keep the link.
 - Rebuild: `SINGLE_BUNDLE=1 EXPO_OFFLINE=1 npx expo export --platform web --output-dir dist-single && node scripts/pack-web.js dist-single <out>.html`, then republish to the same URL.
 - `app.config.js` turns off web route code-splitting only when `SINGLE_BUNDLE=1`; `+not-found` redirects unknown paths to `/`.
 
