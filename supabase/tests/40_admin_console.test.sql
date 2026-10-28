@@ -40,7 +40,7 @@ do $$ begin
   assert get_profile('30000000-0000-0000-0000-0000000000b1') #>> '{relation,status}' = 'declined', 'declined visible';
 end $$;
 -- B2 reports B1 → admin bell.
-insert into reports (reporter_user_id, profile_id, reason) values ('00000000-0000-0000-0000-0000000000b2', '30000000-0000-0000-0000-0000000000b1', 'fake_profile');
+insert into reports (reporter_user_id, profile_id, reason) values ('00000000-0000-0000-0000-0000000000b2', '30000000-0000-0000-0000-0000000000b1', 'fake');
 do $$ begin
   assert (select count(*) from notifications where type = 'admin_alert') = 0, 'member sees admin alerts';
 end $$;

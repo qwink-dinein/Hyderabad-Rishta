@@ -1,5 +1,4 @@
 \set ON_ERROR_STOP on
-grant select, insert, update, delete on all tables in schema public to authenticated;
 grant usage on all sequences in schema public to authenticated;
 -- re-apply column-level update restrictions after the broad grant (mirrors Supabase defaults + migration)
 revoke update on app_users, profiles, notifications from authenticated;
@@ -16,7 +15,7 @@ insert into profiles (id, user_id, biodata, status, published_at) values
  ('10000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000a',
   '{"basic":{"lookingFor":"bride","fullName":"Imran Siddiqui","dob":"1994-05-01","heightCm":175,"maritalStatus":"never_married","motherTongue":"urdu"},"photos":[],"location":{"country":"India","state":"Telangana","city":"Hyderabad"},"career":{"education":"bachelors","profession":"it","income":"20to35","employer":"Secret Co"},"religion":{},"family":{"familyType":"joint"},"preferences":{},"privacy":{"displayName":"first","photoVisibility":"onConsent","incomeVisibility":"hidden","familyVisibility":"onConsent","acceptContactRequests":true}}', 'published', now()),
  ('10000000-0000-0000-0000-00000000000b', '00000000-0000-0000-0000-00000000000b',
-  '{"basic":{"lookingFor":"groom","fullName":"Ayesha Khan","dob":"1998-02-10","heightCm":160,"maritalStatus":"never_married","motherTongue":"urdu"},"photos":[{"id":"x","uri":"secret-photo"}],"location":{"country":"India","state":"Telangana","city":"Hyderabad"},"career":{"education":"other","educationOther":"Hafiz-e-Quran","profession":"it","income":"10to20"},"religion":{},"family":{"familyType":"nuclear"},"preferences":{},"privacy":{"displayName":"initials","photoVisibility":"onConsent","incomeVisibility":"hidden","familyVisibility":"public","acceptContactRequests":true}}', 'published', now());
+  '{"basic":{"lookingFor":"groom","fullName":"Ayesha Khan","dob":"1998-02-10","heightCm":160,"maritalStatus":"never_married","motherTongue":"urdu"},"photos":[{"id":"x","uri":"00000000-0000-0000-0000-00000000000b/secret-photo.jpg"}],"location":{"country":"India","state":"Telangana","city":"Hyderabad"},"career":{"education":"other","educationOther":"Hafiz-e-Quran","profession":"it","income":"10to20"},"religion":{},"family":{"familyType":"nuclear"},"preferences":{},"privacy":{"displayName":"initials","photoVisibility":"onConsent","incomeVisibility":"hidden","familyVisibility":"public","acceptContactRequests":true}}', 'published', now());
 
 set role authenticated;
 -- As user A

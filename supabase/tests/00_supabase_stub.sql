@@ -11,3 +11,8 @@ create function storage.foldername(name text) returns text[] language sql as $$ 
 grant usage on schema public, auth, storage to anon, authenticated;
 grant execute on function auth.uid() to anon, authenticated;
 grant execute on function auth.jwt() to anon, authenticated;
+-- Mirror Supabase's real defaults: every new table/sequence/function in public is granted to
+-- anon + authenticated, and RLS policies + explicit revokes are the only protection.
+alter default privileges in schema public grant all on tables to anon, authenticated;
+alter default privileges in schema public grant all on sequences to anon, authenticated;
+alter default privileges in schema public grant all on functions to anon, authenticated;

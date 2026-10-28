@@ -40,7 +40,6 @@ end $$;
 update profiles set status = 'paused' where id = '40000000-0000-0000-0000-0000000000c2';
 
 -- Members can't buy-free: inserted boost/publication fields are wiped, ID comes from the sequence.
-grant select, insert on profiles to authenticated;
 set role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000d2', false);
 do $$ begin
