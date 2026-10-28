@@ -336,3 +336,34 @@ Normal returning login never sends one.
   - SQL: unique index `orders_one_open_boost` (one pending boost order per profile), `orders_boost_guard` (no boost order while active), and `apply_boost` raises `boost_active`; the payment webhook must refund in that case.
 - **Migrations:** `20261106000000_boost_tab.sql`, `20261107000000_one_boost_at_a_time.sql`.
 - **Screen transitions:** `src/navigation/transitions.tsx` (stack options per platform/RTL/Reduce Motion, tab shift, web `screenLayout` fade+rise).
+
+## 18. Production QA and security round 2 (2026-10-28, "become a tester … try to break the security")
+- **QA tooling (web build, Playwright):**
+  - `e2e/crawl.js` visits every screen as 5 roles (visitor, new member, member, master, sub-admin) × EN/UR × 360/320 px. It flags crashes, console errors, error screens, horizontal overflow, controls with no accessible name and touch targets under 24 px. Report: `e2e/screenshots/crawl/report.json`.
+  - `e2e/clickthrough.js` presses the remaining buttons like a member would (13 flows, one fresh browser each).
+  - `e2e/csp.js` runs the app under the production security headers and fails on any CSP violation, a missing header, framing or `unsafe-eval`.
+- **App-wide fixes from QA:**
+  - Selected/checked/disabled state uses `aria-*` props (react-native-web ignores `accessibilityState`).
+  - The admin console is always English + LTR (`UiLang` in `src/i18n/uiLang.tsx`). Text direction follows its own script (`strongDir` in `Text.tsx`). Dates are localized (`formatDate(iso, lang)`).
+  - Switches are one accessible control (`SwitchVisual`), so RTL doesn't detach the knob.
+  - A server-revoked session (suspended, removed, signed out elsewhere) ends cleanly: the query/mutation error handler plus a re-check on app foreground clear the cache and go to `/login`. A crash screen (`ErrorBoundary` in `src/app/_layout.tsx`) replaces the white screen.
+  - Filters → Discover always lands on Discover (`dismissTo`). The block list shows the real profile ID + name (`getBlockedProfiles`).
+- **Security round 2:**
+  - **OTP guessing across resends:** each new code used to reset the 5-guess counter. Now there is also a per-number cap of 10 wrong codes per hour that survives resends (`MAX_OTP_FAILS_PER_HOUR`). While the cap is hit, no new code is sent and even the right code is refused. In production, Supabase Auth's OTP rate limits apply in addition; `supabase/config.toml` sets `[auth.rate_limit]` (`sms_sent`, `token_verifications`, `sign_in_sign_ups`).
+  - **Invisible spoofing characters:** `UNSAFE_TEXT` / `unsafeText` / `stripUnsafe` in `src/domain/security.ts` cover bidi overrides/isolates, zero-width space, word joiner, BOM and control codes. ZWNJ/ZWJ and LRM/RLM stay allowed because Urdu and Telugu need them.
+    - Biodata fields are refused (`v.badChars`).
+    - Interest messages and report details are cleaned.
+    - Announcements are refused.
+    - SQL twin: `20261108000000_text_safety.sql` (`text_is_safe`, `biodata_text_safe` CHECK `not valid`, strip triggers on `contact_requests.message` and `reports.details`).
+  - **Web security headers:** `public/_headers` (copied to `dist/`; Netlify and Cloudflare Pages read it).
+    - CSP: `script-src 'self'`, no eval, `frame-ancestors 'none'`, `connect-src` limited to self and `*.supabase.co`.
+    - Also nosniff, `X-Frame-Options: DENY`, a strict referrer policy, a Permissions-Policy (camera/mic/geo off), COOP and HSTS.
+    - zod runs `jitless` so no runtime code generation is needed.
+    - For Vercel/nginx, copy the same header values. `e2e/serve.js` applies them in every browser test.
+  - **App permissions:** the photo picker no longer adds camera/microphone permissions (blocked in the Android manifest; the app only picks from the library). `android.allowBackup: false` keeps cached member data out of cloud backups. `ios.config.usesNonExemptEncryption: false` is set for App Store export compliance.
+  - **Redirect params:** `login?next=` is a closed set (`biodata` / `discover`); `pin?next=` goes through `safeDeepLink` (in-app paths only). No open redirects.
+  - **npm audit:** 16 findings (deepmerge in `@expo/config`, zod 3 in `@expo/cli`, jest). All are build-time tools, not in the shipped app. `npm audit fix --force` would downgrade Expo to SDK 51, so don't use it; take Expo patch updates (`npx expo install --fix`) instead.
+- **Tests:**
+  - Jest: `attacks.test.ts` gains the OTP-resend brute force, spoofing characters and announcement tests (218 total).
+  - SQL: `97_text_safety.test.sql` (12 suites).
+  - e2e: `crawl`, `clickthrough`, `csp`.

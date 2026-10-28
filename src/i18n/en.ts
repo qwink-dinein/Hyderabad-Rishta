@@ -352,6 +352,7 @@ const en = {
     required: 'This field is required',
     nameShort: 'Please enter the full name',
     tooLong: 'This is too long',
+    badChars: 'Remove hidden or special control characters',
     dob: 'Enter a valid date of birth',
     minAgeBride: 'Brides must be at least 18 years old',
     minAgeGroom: 'Grooms must be at least 21 years old',

@@ -8,7 +8,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hyderabadrishta.app"
+      "bundleIdentifier": "com.hyderabadrishta.app",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +21,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.hyderabadrishta.app"
+      "package": "com.hyderabadrishta.app",
+      "allowBackup": false
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -42,7 +46,9 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Hyderabad Rishta to access your photos so you can add them to your biodata."
+          "photosPermission": "Allow Hyderabad Rishta to access your photos so you can add them to your biodata.",
+          "cameraPermission": false,
+          "microphonePermission": false
         }
       ],
       [

@@ -1,13 +1,17 @@
 import { z } from 'zod';
 import { ageFromDob } from './format';
+import { unsafeText } from './security';
 import type { Biodata } from './types';
+
+// No runtime code generation: lets the web build run under a strict CSP (no 'unsafe-eval').
+z.config({ jitless: true });
 
 /**
  * Zod schemas per biodata step. Error messages are i18n keys (translated in the UI).
  * Minimum ages follow Indian law (bride 18, groom 21) — adjust per launch market.
  */
-const req = z.string().trim().min(1, 'v.required');
-const opt = z.string().trim().max(500, 'v.tooLong').optional().or(z.literal(''));
+const req = z.string().trim().min(1, 'v.required').refine((v) => !unsafeText(v), 'v.badChars');
+const opt = z.string().trim().max(500, 'v.tooLong').refine((v) => !unsafeText(v), 'v.badChars').optional().or(z.literal(''));
 
 export const MIN_AGE = { bride: 18, groom: 21 } as const;
 export const MAX_AGE = 80;

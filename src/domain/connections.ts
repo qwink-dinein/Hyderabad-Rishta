@@ -1,4 +1,5 @@
 import type { ContactRequest, PokeEligibility, PricingConfig, Relation } from './types';
+import { stripUnsafe } from './security';
 
 const DAY = 86400000;
 
@@ -40,8 +41,7 @@ export const PHONE_CONSENT_TEXT = 'I agree to share my phone number with this pe
 
 /** Light sanitising for free text: strip control chars and HTML-ish tags, collapse whitespace runs. */
 export function sanitizeMessage(s: string): string {
-  return s
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+  return stripUnsafe(s)
     .replace(/<[^>]*>/g, '')
     .replace(/[ \t]{3,}/g, '  ')
     .replace(/\n{3,}/g, '\n\n')

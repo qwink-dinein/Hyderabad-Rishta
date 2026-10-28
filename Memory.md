@@ -1,15 +1,15 @@
 # Memory — project context for future sessions
 
 > **Read this file first; it is written so you don't need to re-read the code or past chats.** Append decisions, gotchas and state; never delete history (strike through instead).
-> Last updated: 2026-10-28 (V3 checkpoint)
+> Last updated: 2026-10-28 (after V3: QA rounds 1–2 + security round 2 — Architecture §18; not a new checkpoint)
 
 ## Start here (V3 state in one screen)
 - **What:** Hyderabad Rishta, a Muslim matrimony app. Owner: mukarramjahmm.
-  - Specs: `PRD.md` (product), `design.md` (UI/motion), `Architecture.md` (§9 governance, §10 interests, §11–13 boost/push/UI, §14 security, §15 one-number rule, §16 PIN login), `Tasks.md` (T-numbers), `Phases.md`, `CHECKPOINTS.md`.
+  - Specs: `PRD.md` (product), `design.md` (UI/motion), `Architecture.md` (§9 governance, §10 interests, §11–13 boost/push/UI, §14 security, §15 one-number rule, §16 PIN login, §17 boost tab, §18 QA + security round 2), `Tasks.md` (T-numbers), `Phases.md`, `CHECKPOINTS.md`.
 - **Repo / branch:** `qwink-dinein/Hyderabad-Rishta` · `claude/sharp-bell-xxyxmj`. Commit and push there; never open a PR unless asked.
 - **Stack:** Expo SDK 58 · RN · TypeScript · Expo Router (`src/app/`) · TanStack Query · zustand · i18next (EN / UR RTL / TE) · zod.
   - The app runs on the offline **DemoBackend** (`src/services/demo/demoBackend.ts`, `SCHEMA_VERSION = 8`).
-  - Supabase SQL (13 migrations), Edge Functions (`push-dispatch`, `pin-login`) and tests are ready but **not connected**: the client adapter is Phase 2.
+  - Supabase SQL (14 migrations), Edge Functions (`push-dispatch`, `pin-login`) and tests are ready but **not connected**: the client adapter is Phase 2.
 - **Checkpoints (never move or delete):**
   - **V3 = LATEST = `dafa2120243b1bf067e78de03602e0c4fc4efd96`** ("Checkpoint V3: pin…"; code identical to `ae8776f`).
   - **V2** = `774ea9f34f3ebe0babe44520b297af610262c5fb`.
@@ -26,7 +26,8 @@
 | Motion | Native slide (Urdu mirrored), tab shift, web fade+rise, Reduce Motion fade | `src/navigation/transitions.tsx` |
 | Boost | Guaranteed Featured slot for everyone looking for that type. Centre tab + reminders (dot/halo, Home card with 3-day snooze, weekly `boost_reminder`). **One boost at a time** (no re-boost while active; ≤1 unpaid boost order; never extends) | `src/domain/featured.ts` (`boostNudge`, `boostReminderDue`), `src/components/BoostPanel.tsx`, `BoostReminder.tsx`, `src/app/(tabs)/boost.tsx`, SQL `…boost_tab.sql`, `…one_boost_at_a_time.sql` |
 | Push | Every profile action → in-app + phone; generic lock-screen text; categories; 12/h cap | `src/domain/push.ts` (→ generated `supabase/functions/_shared/push.ts`), `src/services/push.ts`, `PushBridge.tsx` |
-| Security | Deny-by-default RPCs, input caps, attack suites (73 SQL, 20 app), safe deep links | `src/domain/security.ts`, SQL `…security_hardening.sql`, `__tests__/attacks.test.ts`, `supabase/tests/60_attacks.test.sql` |
+| Security | Deny-by-default RPCs, input caps, attack suites (73 SQL, 26 app), safe deep links, OTP 10-wrong/hour cap across resends, spoofing-character filter (`unsafeText`), web CSP/headers (`public/_headers`), no camera/mic permissions, `allowBackup:false` | `src/domain/security.ts`, SQL `…security_hardening.sql`, `…text_safety.sql`, `__tests__/attacks.test.ts`, `supabase/tests/60_attacks.test.sql`, `97_text_safety.test.sql`, `e2e/csp.js` |
+| QA | Crawler (every screen × 5 roles × EN/UR × 360/320 px), click-through (13 flows), revoked-session handler + crash screen in `src/app/_layout.tsx`, admin forced EN/LTR (`src/i18n/uiLang.tsx`) | `e2e/crawl.js`, `e2e/clickthrough.js` |
 | Photos | Up to 5 MB originals → ≤1600 px JPEG on device (EXIF stripped); svg/gif/pdf refused | `src/services/photos.ts`, `src/components/PhotoPicker.tsx` |
 | Data size | Demo prune + SQL `run_retention()`; Supabase SDK out of demo bundle | `demoBackend.ts prune()`, SQL `…retention.sql` |
 | Admin | Master/sub-admins, Trash, recovery, member search/page, alerts bell, pricing, announcements, audit | `src/app/admin/*` |
@@ -40,15 +41,18 @@
 - Every new input gets a cap in `security.ts` plus an attack test. Every new RPC is added to an explicit grant (execute is deny-by-default).
 - **Never bump the demo `SCHEMA_VERSION`**: it reseeds and wipes accounts. Backfill new fields in `load()` instead.
 - UI-only requests must not change behaviour (owner rule from V1→V2).
+- Free text goes through `unsafeText` (refuse) or `stripUnsafe` (clean); keep ZWNJ/ZWJ allowed (Urdu/Telugu).
+- Selected/checked state: pass `aria-selected` / `aria-checked` / `aria-disabled` (react-native-web ignores `accessibilityState`).
+- The web build must run under `public/_headers` CSP with no eval (`e2e/csp.js`); zod is `jitless`.
 
 ### Commands (all must pass before declaring done)
 ```bash
 npx tsc --noEmit && npx tsc -p supabase/functions/tsconfig.json
 EXPO_OFFLINE=1 npx expo lint            # 0 errors; 2 known i18next warnings
-npx jest                                # 214 tests / 13 suites at V3
-pg_ctlcluster 16 main start; su postgres -c "cd /home/user/Hyderabad-Rishta && ./scripts/test-db.sh"   # 11 PASSED lines
+npx jest                                # 218 tests / 13 suites
+pg_ctlcluster 16 main start; su postgres -c "cd /home/user/Hyderabad-Rishta && ./scripts/test-db.sh"   # 12 PASSED lines
 EXPO_OFFLINE=1 npx expo export --platform web && node e2e/serve.js "$(pwd)/dist" 8081 &   # then:
-for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boosttab; do node e2e/$s.js; done   # 85 steps
+for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boosttab clickthrough csp crawl; do node e2e/$s.js; done   # 15 suites; crawl must report 0 high issues
 node scripts/sync-shared.js            # after editing src/domain/push.ts or src/domain/phone.ts
 ```
 - e2e suites sign in through `e2e/auth.js` (`loginWithOtp`), which also creates the test PIN **4827** when asked.
@@ -120,6 +124,8 @@ Reset everything: Settings → “Reset demo data”.
 | 2026-10-28 | Boost reminders: red dot + halo, Home card (3-day snooze), weekly notification (not within 2 days of publish or 7 days after a boost; promotional category) | Owner: "keep reminding if they haven't boosted". |
 | 2026-10-28 | One boost at a time; boosts no longer extend | Owner: "must not allow them to boost again if the current boost is in progress". |
 | 2026-10-28 | Checkpoint V3 pinned at the "Checkpoint V3" docs commit (code = `ae8776f`) | Owner: "checkpoint this as V3". |
+| 2026-10-28 | QA rounds 1–2 (crawler + click-through) and security round 2 (OTP cap, spoofing chars, CSP headers, permissions) | Owner: "become a tester … test every button … try to break the security and fix it". |
+| 2026-10-28 | npm audit findings left as-is (build-time Expo CLI/jest only); never `npm audit fix --force` (downgrades to SDK 51) | Not shipped in the app bundle. |
 
 ## Gotchas
 - Expo SDK 58: import `Tabs` from `expo-router/js-tabs` (root export is deprecated). Routes live in `src/app/`.
@@ -142,6 +148,9 @@ Reset everything: Settings → “Reset demo data”.
 - Report reasons are the closed set in `src/domain/options.ts` (`fake`, not `fake_profile`).
 - Owner rule: ONE number = ONE account = ONE biodata. Always pass phones through `normalizePhone()`; never create a profile if any profile row exists for the user or `profileRemovedAt` is set. Only Delete account frees a number (Architecture §15).
 - PIN login (Architecture §16): OTP only for registration / new phone / Forgot PIN / first PIN. Never bump the demo SCHEMA_VERSION (it reseeds = wipes accounts) — backfill in `load()` instead. e2e suites log in through `e2e/auth.js` (handles PIN screens; test PIN 4827). Demo login state lives in secure KV `hr.auth`, not the db.
+
+- Don't `pkill -f e2e/serve.js` inside a compound shell command: the pattern matches the shell itself and kills it (exit 144). Start the server with a separate background command.
+- Playwright: language/sort/tab controls are `role=radio`; "View all" is a link; use `waitForURL(..., { waitUntil: 'commit' })`.
 
 ## Environment limits observed (cloud session)
 - Network policy blocks `api.expo.dev`, `exp.host`, ngrok, `docs.expo.dev` → no Expo tunnel from the cloud; run locally to scan with Expo Go.

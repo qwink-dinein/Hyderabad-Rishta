@@ -19,6 +19,15 @@ export const MAX_SEARCH_PAGE = 50;
 export const MAX_REPORTS_PER_DAY = 10;
 export const LANGS: readonly Lang[] = ['en', 'ur', 'te'];
 
+/**
+ * Invisible characters that can spoof what a member reads: bidi overrides/isolates (make
+ * "evil.com" display as "moc.live"), zero-width space/joiners used to dodge filters, BOM and control
+ * codes. ZWNJ/ZWJ (U+200C/D) and LRM/RLM (U+200E/F) are allowed: Urdu and Telugu text needs them.
+ */
+export const UNSAFE_TEXT = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u200B\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF\uFFF9-\uFFFB]/;
+export const unsafeText = (s: string) => UNSAFE_TEXT.test(s);
+export const stripUnsafe = (s: string) => s.replace(new RegExp(UNSAFE_TEXT.source, 'g'), '');
+
 const INTERNAL_PATH = /^\/(?!\/)[A-Za-z0-9/_?=&.%-]*$/;
 const PHOTO_ID = /^[A-Za-z0-9_-]{1,64}$/;
 const DATA_IMAGE = /^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$/;
@@ -61,6 +70,7 @@ export function biodataProblem(b: Biodata): string | null {
     if (depth > 4) bad = 'v.invalid';
     else if (typeof v === 'string') {
       if (v.length > MAX_FIELD_CHARS) bad = 'v.tooLong';
+      else if (unsafeText(v)) bad = 'v.badChars';
     } else if (Array.isArray(v)) {
       if (v.length > MAX_ARRAY_ITEMS) bad = 'v.tooMany';
       else v.forEach((x) => walk(x, depth + 1));

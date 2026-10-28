@@ -1,8 +1,8 @@
 import { DEMO_ADMIN_PHONE, DEMO_OTP, DEMO_SUBADMIN_PHONE, DEMO_USER_PHONE } from '@/data/seed';
-import { MAX_PHOTO_BYTES, MAX_UPLOAD_BYTES, safeDeepLink, uploadProblem } from '@/domain/security';
+import { MAX_PHOTO_BYTES, MAX_UPLOAD_BYTES, safeDeepLink, stripUnsafe, unsafeText, uploadProblem } from '@/domain/security';
 import { EMPTY_FILTERS } from '@/domain/search';
 import { AppError } from '@/services/backend';
-import { DemoBackend, RESEND_COOLDOWN_MS } from '@/services/demo/demoBackend';
+import { DemoBackend, MAX_OTP_FAILS_PER_HOUR, RESEND_COOLDOWN_MS } from '@/services/demo/demoBackend';
 import { memoryKV } from '@/services/storage';
 
 /**
@@ -240,5 +240,66 @@ describe('Photo uploads (owner request: allow up to 5 MB)', () => {
     expect(uploadProblem({ mimeType: 'image/svg+xml', uri: 'file:///a.svg', fileSize: 10 })).toBe('v.photoType');
     expect(uploadProblem({ mimeType: 'application/pdf', uri: 'file:///a.pdf', fileSize: 10 })).toBe('v.photoType');
     expect(uploadProblem({ uri: 'file:///a.gif', fileSize: 10 })).toBe('v.photoType');
+  });
+});
+
+describe('Security round 2: OTP guessing across resends', () => {
+  it('a new code does not reset the hourly wrong-guess budget', async () => {
+    const b = make();
+    await b.logout();
+    const PHONE = '9812300555';
+    let wrong = 0;
+    // Attacker: guess until locked out, ask for a new code, repeat.
+    for (let round = 0; round < 4; round++) {
+      advance(RESEND_COOLDOWN_MS + 1);
+      const sent = await b.requestOtp('+91', PHONE).then(() => true, () => false);
+      if (!sent) break;
+      for (let i = 0; i < 5; i++) {
+        const e = await b.verifyOtp('+91', PHONE, '000000').then(() => null, (x: AppError) => x);
+        if (e?.code === 'invalid_otp') wrong++;
+      }
+    }
+    expect(wrong).toBe(MAX_OTP_FAILS_PER_HOUR);
+    // Even the right code is refused until the hour has passed — and no new code can be sent.
+    await code(b.verifyOtp('+91', PHONE, DEMO_OTP), 'rate_limited');
+    await code(b.requestOtp('+91', PHONE), 'rate_limited');
+    advance(3600_000 + 1);
+    await b.requestOtp('+91', PHONE);
+    await b.verifyOtp('+91', PHONE, DEMO_OTP);
+    expect((await b.getSession())?.phone).toBe(PHONE);
+  });
+});
+
+describe('Security round 2: invisible spoofing characters', () => {
+  const RLO = '‮';
+  it('detects bidi overrides, zero-width spaces and control codes but allows Urdu/Telugu joiners', () => {
+    expect(unsafeText(`Imran ${RLO}moc.live`)).toBe(true);
+    expect(unsafeText('call​me')).toBe(true);
+    expect(unsafeText('⁦x⁩')).toBe(true);
+    expect(unsafeText('bell\u0007')).toBe(true);
+    expect(unsafeText('﻿hi')).toBe(true);
+    expect(unsafeText('می‌ں')).toBe(false); // ZWNJ
+    expect(unsafeText('క్‍ష')).toBe(false); // ZWJ
+    expect(unsafeText('line one\nline two\ttab')).toBe(false);
+    expect(stripUnsafe(`a${RLO}b​c`)).toBe('abc');
+  });
+
+  it('a biodata with a spoofed name is refused; an interest message and report are cleaned', async () => {
+    const b = make();
+    await as(b, GROOM);
+    const mine = (await b.getMyProfile())!;
+    const spoof = { ...mine.biodata, basic: { ...mine.biodata.basic, fullName: `Imran ${RLO}moc.live` } };
+    await code(b.saveDraft(spoof, mine.lastStep), 'validation');
+    const req = await b.sendRequest('p_12', { message: `Salaam${RLO}⁦ hi​`, offerPhone: false, consent: false, idempotencyKey: 'k-bidi' });
+    expect(req.message).toBe('Salaam hi');
+    await b.reportProfile('p_6', 'fake', `${RLO}fake﻿`);
+    await as(b, DEMO_ADMIN_PHONE);
+    expect((await b.adminListReports()).find((r) => r.profileId === 'p_6')!.details).toBe('fake');
+  });
+
+  it('admins cannot publish an announcement with hidden characters', async () => {
+    const b = make();
+    await as(b, DEMO_ADMIN_PHONE);
+    await code(b.adminSaveAnnouncement({ title: { en: `Offer${RLO}` }, body: { en: 'x' }, segment: 'all' } as never), 'validation');
   });
 });

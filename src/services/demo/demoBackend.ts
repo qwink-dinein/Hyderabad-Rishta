@@ -44,7 +44,7 @@ import type {
 import { isAdminRole } from '@/domain/types';
 import { firstInvalidStep, otpSchema, requestMessageSchema } from '@/domain/validation';
 import { REPORT_REASONS } from '@/domain/options';
-import { biodataProblem, normalizePhone, isHttpsUrl, isInternalLink, LANGS, MAX_IDEM_KEY, MAX_PUSH_TOKEN, MAX_REPORTS_PER_DAY, MAX_SEARCH_PAGE } from '@/domain/security';
+import { biodataProblem, normalizePhone, isHttpsUrl, isInternalLink, LANGS, MAX_IDEM_KEY, MAX_PUSH_TOKEN, MAX_REPORTS_PER_DAY, MAX_SEARCH_PAGE, stripUnsafe, unsafeText } from '@/domain/security';
 import { AppError, type AdminRequestRow, type AdminStats, type Backend, type MemberDetail, type MemberRow, type ConnectionMetrics, type SendInterestInput, type NotificationView, type Page, type RecipientRow, type RequestView, type TrashItem } from '../backend';
 import { memoryKV, type KV } from '../storage';
 
@@ -56,6 +56,8 @@ interface OtpState {
   issuedAt: number;
   attempts: number;
   resends: number[];
+  /** Wrong codes in the last hour. Survives resends, so "resend, guess 5, resend…" can't brute-force. */
+  fails?: number[];
 }
 
 /** Everything the demo "server" knows. Persisted as one JSON document. */
@@ -144,6 +146,7 @@ export const OTP_TTL_MS = 10 * 60 * 1000;
 export const RESEND_COOLDOWN_MS = 30 * 1000;
 export const MAX_RESENDS = 3;
 export const MAX_OTP_ATTEMPTS = 5;
+export const MAX_OTP_FAILS_PER_HOUR = 10;
 const MAX_REQUESTS_PER_DAY = 20;
 const VIEW_DEDUPE_MS = 30 * 60 * 1000;
 export const RECOVERY_DELAY_MS = 72 * 3600 * 1000; // new-phone recovery waits 72 h so the real master can cancel
@@ -428,17 +431,27 @@ export class DemoBackend implements Backend {
     return { status: r.status, direction: r.fromUserId === viewerId ? 'sent' : 'received', at: r.respondedAt ?? r.createdAt };
   }
 
+  /** Wrong-code limits: 5 per code, and 10 per number per hour however many codes were sent. */
+  private checkOtpCode(st: OtpState, code: string) {
+    const now = this.now().getTime();
+    const fails = (st.fails ?? []).filter((t) => now - t < 3600_000);
+    st.fails = fails;
+    if (fails.length >= MAX_OTP_FAILS_PER_HOUR) throw new AppError('rate_limited', undefined, { retryAt: new Date(fails[0] + 3600_000).toISOString() });
+    if (st.attempts >= MAX_OTP_ATTEMPTS) throw new AppError('rate_limited');
+    if (code !== DEMO_OTP) {
+      st.attempts++;
+      fails.push(now);
+      throw new AppError('invalid_otp', undefined, { attemptsLeft: Math.max(0, Math.min(MAX_OTP_ATTEMPTS - st.attempts, MAX_OTP_FAILS_PER_HOUR - fails.length)) });
+    }
+  }
+
   /** Step-up verification: a fresh OTP for the actor's own phone (re-proves possession). */
   private consumeOtp(db: DemoDb, countryCode: string, phone: string, code: string) {
     if (!otpSchema.safeParse(code).success) throw new AppError('invalid_otp');
     const key = `${countryCode}${phone}`;
     const st = db.otps.find((o) => o.key === key);
     if (!st || this.now().getTime() - st.issuedAt > OTP_TTL_MS) throw new AppError('otp_expired');
-    if (st.attempts >= MAX_OTP_ATTEMPTS) throw new AppError('rate_limited');
-    if (code !== DEMO_OTP) {
-      st.attempts++;
-      throw new AppError('invalid_otp', undefined, { attemptsLeft: MAX_OTP_ATTEMPTS - st.attempts });
-    }
+    this.checkOtpCode(st, code);
     db.otps = db.otps.filter((o) => o.key !== key);
   }
 
@@ -696,6 +709,8 @@ export class DemoBackend implements Backend {
         const last = recent[recent.length - 1] ?? 0;
         if (now - last < RESEND_COOLDOWN_MS) throw new AppError('rate_limited', undefined, { retryAt: new Date(last + RESEND_COOLDOWN_MS).toISOString() });
         if (recent.length > MAX_RESENDS) throw new AppError('rate_limited', undefined, { retryAt: new Date(recent[0] + OTP_TTL_MS).toISOString() });
+        const fails = (st.fails ?? []).filter((t) => now - t < 3600_000);
+        if (fails.length >= MAX_OTP_FAILS_PER_HOUR) throw new AppError('rate_limited', undefined, { retryAt: new Date(fails[0] + 3600_000).toISOString() });
         st.resends = [...recent, now];
         st.issuedAt = now;
         st.attempts = 0;
@@ -715,11 +730,7 @@ export class DemoBackend implements Backend {
       const st = db.otps.find((o) => o.key === key);
       if (!st) throw new AppError('otp_expired');
       if (this.now().getTime() - st.issuedAt > OTP_TTL_MS) throw new AppError('otp_expired');
-      if (st.attempts >= MAX_OTP_ATTEMPTS) throw new AppError('rate_limited');
-      if (code !== DEMO_OTP) {
-        st.attempts++;
-        throw new AppError('invalid_otp', undefined, { attemptsLeft: MAX_OTP_ATTEMPTS - st.attempts });
-      }
+      this.checkOtpCode(st, code);
       db.otps = db.otps.filter((o) => o.key !== key);
       let user = this.findUserByPhone(db, countryCode, phone);
       let isNew = false;
@@ -1449,7 +1460,7 @@ export class DemoBackend implements Backend {
       if (db.reports.some((r) => r.reporterUserId === u.id && r.profileId === profileId && r.status === 'open')) throw new AppError('duplicate');
       const dayAgo = this.now().getTime() - 86400000;
       if (db.reports.filter((r) => r.reporterUserId === u.id && new Date(r.createdAt).getTime() > dayAgo).length >= MAX_REPORTS_PER_DAY) throw new AppError('rate_limited');
-      const note = typeof details === 'string' ? details.trim().slice(0, 1000) : undefined;
+      const note = typeof details === 'string' ? stripUnsafe(details).trim().slice(0, 1000) : undefined;
       db.reports.unshift({ id: uid('rp_'), reporterUserId: u.id, profileId, reason, details: note || undefined, status: 'open', createdAt: this.iso() });
       this.track(db, 'user_reported', u.id, { reason });
       this.alertAdmins(db, 'report', { code: this.codeOf(db, profileId), reason }, '/admin/reports');
@@ -1717,6 +1728,7 @@ export class DemoBackend implements Backend {
       if (!input.title?.en?.trim() || !input.body?.en?.trim()) throw new AppError('validation', 'English title and body are required');
       const tooLong = (l: Partial<Record<string, string>>, max: number) => Object.values(l).some((v) => typeof v === 'string' && v.length > max);
       if (tooLong(input.title, 200) || tooLong(input.body, 4000)) throw new AppError('validation', 'Title or message is too long');
+      if ([...Object.values(input.title), ...Object.values(input.body)].some((v) => typeof v === 'string' && unsafeText(v))) throw new AppError('validation', 'Remove hidden or special control characters');
       if (input.deepLink && !isInternalLink(input.deepLink)) throw new AppError('validation', 'Links must be an in-app path such as /biodata');
       if (input.imageUrl && !isHttpsUrl(input.imageUrl)) throw new AppError('validation', 'Images must use an https:// address');
       if (input.id) {

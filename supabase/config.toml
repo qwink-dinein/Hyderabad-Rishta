@@ -6,3 +6,10 @@ verify_jwt = false
 [functions.push-dispatch]
 # Called by pg_cron with PUSH_CRON_SECRET, checked inside the function.
 verify_jwt = false
+
+[auth.rate_limit]
+# OTP abuse limits (per IP; Supabase counts per 5 minutes / per hour as documented for each key).
+# The app adds its own per-number limits on top (Architecture §18). Push with `supabase config push`.
+sms_sent = 30
+token_verifications = 30
+sign_in_sign_ups = 30

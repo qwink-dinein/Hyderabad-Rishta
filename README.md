@@ -24,7 +24,7 @@ npm install
 | Typecheck | `npm run typecheck` |
 | Unit + integration tests | `npm test` |
 | Database tests (11 suites) | `PGHOST=… PGUSER=postgres ./scripts/test-db.sh` |
-| Browser e2e (12 suites) | `npx expo export --platform web && node e2e/serve.js "$(pwd)/dist" 8081`, then `node e2e/<suite>.js` (see `e2e/README.md`) |
+| Browser e2e (15 suites, incl. crawl, clickthrough, csp) | `npx expo export --platform web && node e2e/serve.js "$(pwd)/dist" 8081`, then `node e2e/<suite>.js` (see `e2e/README.md`) |
 
 ### Demo logins (no SMS is sent — code is always `123456`)
 | Account | Mobile |
@@ -62,6 +62,9 @@ All profiles are **fictional demo data**. Payments are **simulated** and clearly
 |---|---|---|
 | **Demo** (default) | localhost, Expo Go, web preview, tests | Offline, data stored on the device/browser. Enforces the same rules as the database. |
 | **Supabase** | staging/production (Phase 2) | Apply `supabase/migrations/*.sql`, then set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` in `.env` (see `.env.example`). **Never** put the service-role key in the app. |
+
+## Deploying the web build
+`npx expo export --platform web` copies `public/_headers` (CSP, no framing, nosniff, referrer and permissions policy, HSTS) into `dist/`. Netlify and Cloudflare Pages apply it automatically; on Vercel, nginx or S3/CloudFront, set the same headers yourself. `e2e/csp.js` checks that the app runs under them. Details: Architecture §18.
 
 ## Expo Go vs development build
 Everything in this MVP runs in Expo Go. A development build (`npx expo run:android|ios` or `eas build --profile development`) will be needed for: remote push notifications (Android), native payment SDKs, and SMS OTP auto-read.

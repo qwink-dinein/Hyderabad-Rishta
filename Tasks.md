@@ -76,6 +76,9 @@
 | T-069 | Boost as the raised centre tab with reminders (dot, halo, Home card, weekly notification); Shortlist moved to Discover heart + Home row; Profile tab keeps a boost summary | ✅ |
 | T-070 | One boost at a time: no re-boost while active (app, demo backend, SQL guard + one pending boost order per profile; apply_boost no longer extends) | ✅ |
 | T-071 | Checkpoint V3 (docs + Memory start-here brief; code = `ae8776f`) | ✅ |
+| T-072 | QA round 1: crawler over every screen × role × language × phone width; fixes (switches, admin LTR/English, script-direction text, localized dates, Urdu tab labels, carousel dots, wizard label, pricing notice) | ✅ |
+| T-073 | QA round 2: click-through of every remaining button/flow; fixes (aria state app-wide, Filters→Discover, block list names, revoked-session handling, crash screen) | ✅ |
+| T-074 | Security round 2: OTP hourly cap across resends, spoofing-character filter (app + SQL), web security headers + CSP test, camera/mic permissions removed, allowBackup off | ✅ |
 | T-033 | Bug: "Send contact request" greyed out — button now always tappable with clear guidance; edits keep a live profile live; demo starts with approval off | ✅ |
 
 ## Phase 2 (next)
