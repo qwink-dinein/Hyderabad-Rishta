@@ -46,8 +46,8 @@ export default function AdminTrash() {
                 <Badge label={t.kind === 'user' ? 'account' : 'profile'} tone="muted" />
               </Row>
               <Text variant="caption">
-                Deleted {formatDate(t.deletedAt)} by {t.deletedBy ?? '—'}
-                {t.reason ? ` · ${t.reason}` : ''} · erased on {formatDate(t.purgeAt)}
+                Deleted {formatDate(t.deletedAt, 'en')} by {t.deletedBy ?? '—'}
+                {t.reason ? ` · ${t.reason}` : ''} · erased on {formatDate(t.purgeAt, 'en')}
               </Text>
               {isMaster ? (
                 <Row gap={space.sm} style={{ marginTop: space.xs }}>

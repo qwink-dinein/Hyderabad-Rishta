@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Easing, Modal, Pressable, StyleSheet, View } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import { create } from 'zustand';
 import { AppError } from '@/services/backend';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -8,9 +7,10 @@ import { colors, maxContentWidth, motion, radius, shadow, space } from '@/theme/
 import { Button } from './Button';
 import { Icon, StarMotif, type IconName } from './Icon';
 import { Text } from './Text';
+import { useUiT } from '@/i18n/uiLang';
 
 export function Loading({ label }: { label?: string }) {
-  const { t } = useTranslation();
+  const t = useUiT();
   return (
     <View style={styles.center} accessibilityLiveRegion="polite" accessibilityLabel={label ?? t('common.loading')}>
       <ActivityIndicator color={colors.emerald} size="large" />
@@ -21,7 +21,7 @@ export function Loading({ label }: { label?: string }) {
 
 /** Translates an error into user copy. Never shows stack traces or raw server messages. */
 export function useErrorMessage() {
-  const { t } = useTranslation();
+  const t = useUiT();
   return (e: unknown) => {
     if (e instanceof AppError) {
       if (e.code === 'validation' && (e.message.startsWith('v.') || e.message.startsWith('pin.'))) return t(e.message);
@@ -32,7 +32,7 @@ export function useErrorMessage() {
 }
 
 export function ErrorView({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
-  const { t } = useTranslation();
+  const t = useUiT();
   const msg = useErrorMessage()(error);
   return (
     <View style={styles.center}>
@@ -157,7 +157,7 @@ export function confirm(opts: { title: string; body?: string; confirmLabel?: str
 }
 
 export function ConfirmHost() {
-  const { t } = useTranslation();
+  const t = useUiT();
   const s = useConfirmStore();
   const close = (ok: boolean) => {
     s.resolve?.(ok);

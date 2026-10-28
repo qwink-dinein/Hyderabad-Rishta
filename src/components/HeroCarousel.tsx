@@ -122,9 +122,10 @@ export const HeroCarousel = memo(function HeroCarousel() {
               accessibilityLabel={t('landing.goToSlide', { n: i + 1 })}
               accessibilityState={{ selected: i === index }}
               onPress={() => userGo(i)}
-              hitSlop={10}
-              style={[styles.dot, i === index && styles.dotOn]}
-            />
+              style={styles.dotHit}
+            >
+              <View style={[styles.dot, i === index && styles.dotOn]} />
+            </Pressable>
           ))}
         </View>
         {compact ? null : (
@@ -147,7 +148,9 @@ const styles = StyleSheet.create({
   copyCompact: { minHeight: 0, marginTop: space.md, gap: space.xs, paddingHorizontal: space.lg },
   controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.md, marginTop: space.md },
   ctrl: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(248,244,235,0.3)', alignItems: 'center', justifyContent: 'center' },
-  dots: { flexDirection: 'row', gap: space.sm, alignItems: 'center' },
+  dots: { flexDirection: 'row', alignItems: 'center' },
+  // 24×24 tap area around each small dot (web ignores hitSlop).
+  dotHit: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: 'rgba(248,244,235,0.35)' },
   dotOn: { width: 22, backgroundColor: colors.gold },
 });

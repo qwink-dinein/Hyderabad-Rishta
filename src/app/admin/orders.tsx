@@ -37,7 +37,7 @@ export default function AdminOrders() {
                 </Row>
               </Row>
               <Text variant="caption">
-                {formatDate(o.createdAt)} · profile {o.profileId} · pricing v{o.terms.pricingVersion}
+                {formatDate(o.createdAt, 'en')} · profile {o.profileId} · pricing v{o.terms.pricingVersion}
                 {o.terms.boostDays ? ` · ${o.terms.boostDays} days` : ''} · auto-renew: no
               </Text>
               {o.status === 'pending' ? (

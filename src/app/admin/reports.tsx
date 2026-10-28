@@ -42,7 +42,7 @@ export default function AdminReports() {
               </Row>
               <Text variant="label">Reason: {r.reason}</Text>
               {r.details ? <Text variant="body">{r.details}</Text> : null}
-              <Text variant="caption">Reported {formatDate(r.createdAt)}</Text>
+              <Text variant="caption">Reported {formatDate(r.createdAt, 'en')}</Text>
               {r.status === 'open' ? (
                 <Row gap={space.sm} wrap>
                   <Button label="Resolve & pause profile" size="sm" kind="danger" onPress={() => resolve(r.id, 'resolved', true)} />

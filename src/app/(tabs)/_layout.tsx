@@ -42,8 +42,9 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: colors.ivory },
         tabBarActiveTintColor: colors.emerald,
         tabBarInactiveTintColor: colors.muted,
-        tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.border, minHeight: 62 + insets.bottom, paddingTop: 6, overflow: 'visible' },
-        tabBarLabelStyle: { fontFamily: fontFamily(lang, 'medium'), fontSize: 11 },
+        tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.border, minHeight: (lang === 'ur' ? 70 : 62) + insets.bottom, paddingTop: 6, overflow: 'visible' },
+        // Urdu Nastaliq needs about twice the line height, or labels are clipped at the bottom.
+        tabBarLabelStyle: { fontFamily: fontFamily(lang, 'medium'), fontSize: 11, lineHeight: lang === 'ur' ? 22 : 15 },
       }}
     >
       <Tabs.Screen name="home" options={{ title: t('nav.home'), tabBarIcon: icon('home') }} />

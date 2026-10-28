@@ -56,7 +56,7 @@ export default function AdminAnnouncements() {
       if (publish) {
         const at = form.scheduleHours ? new Date(Date.now() + Number(form.scheduleHours) * 3600000).toISOString() : undefined;
         const p = await backend.adminPublishAnnouncement(a.id, at);
-        toast(p.status === 'scheduled' ? `Scheduled for ${formatDate(p.scheduledAt)}` : 'Published to in-app inboxes.');
+        toast(p.status === 'scheduled' ? `Scheduled for ${formatDate(p.scheduledAt, 'en')}` : 'Published to in-app inboxes.');
       } else toast('Draft saved.');
       setForm(blank);
       setEditingId(undefined);
@@ -133,8 +133,8 @@ export default function AdminAnnouncements() {
                 <Badge label={a.status} tone={a.status === 'published' ? 'success' : a.status === 'archived' ? 'muted' : 'gold'} />
               </Row>
               <Text variant="caption">
-                {SEGMENTS.find((s) => s.value === a.segment)?.label} · {a.priority} · {a.publishedAt ? `published ${formatDate(a.publishedAt)}` : a.scheduledAt ? `scheduled ${formatDate(a.scheduledAt)}` : 'draft'}
-                {a.expiresAt ? ` · expires ${formatDate(a.expiresAt)}` : ''}
+                {SEGMENTS.find((s) => s.value === a.segment)?.label} · {a.priority} · {a.publishedAt ? `published ${formatDate(a.publishedAt, 'en')}` : a.scheduledAt ? `scheduled ${formatDate(a.scheduledAt, 'en')}` : 'draft'}
+                {a.expiresAt ? ` · expires ${formatDate(a.expiresAt, 'en')}` : ''}
               </Text>
               {a.status !== 'draft' ? (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.md }}>
@@ -192,7 +192,7 @@ export default function AdminAnnouncements() {
                   <Text variant="caption">Access to this report is recorded in the audit log.</Text>
                   {report.rows.map((r) => (
                     <Text key={r.userId} variant="caption">
-                      {r.profileCode ?? 'No profile'} · {r.maskedPhone} · in-app {formatDate(r.delivery.inAppAt)} · push {r.delivery.pushStatus} · viewed {r.delivery.viewedAt ? formatDate(r.delivery.viewedAt) : '—'} · clicked {r.delivery.clickedAt ? formatDate(r.delivery.clickedAt) : '—'}
+                      {r.profileCode ?? 'No profile'} · {r.maskedPhone} · in-app {formatDate(r.delivery.inAppAt, 'en')} · push {r.delivery.pushStatus} · viewed {r.delivery.viewedAt ? formatDate(r.delivery.viewedAt, 'en') : '—'} · clicked {r.delivery.clickedAt ? formatDate(r.delivery.clickedAt, 'en') : '—'}
                     </Text>
                   ))}
                 </View>

@@ -2,9 +2,9 @@ import { memo, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { colors, radius, space } from '@/theme/tokens';
 import { isRTL } from '@/i18n';
-import { useSession } from '@/state/session';
 import { Icon } from './Icon';
 import { Text } from './Text';
+import { useUiLang } from '@/i18n/uiLang';
 
 type Kind = 'primary' | 'secondary' | 'ghost' | 'gold' | 'danger' | 'light';
 
@@ -35,7 +35,7 @@ const KIND: Record<Kind, { bg: string; fg: string; border: string }> = {
 
 export const Button = memo(function Button({ label, onPress, kind = 'primary', size = 'md', loading, disabled, icon, arrow, full, style, accessibilityHint, testID }: ButtonProps) {
   const k = KIND[kind];
-  const rtl = isRTL(useSession((s) => s.lang));
+  const rtl = isRTL(useUiLang());
   const inactive = disabled || loading;
   return (
     <Pressable

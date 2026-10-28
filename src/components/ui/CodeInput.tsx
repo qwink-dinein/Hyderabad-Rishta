@@ -73,5 +73,5 @@ const styles = StyleSheet.create({
   error: { borderColor: colors.danger },
   dot: { width: 14, height: 14, borderRadius: 7, backgroundColor: colors.emerald },
   // Transparent but focusable/clickable: keeps native paste, autofill and screen-reader input.
-  input: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.02, color: 'transparent', backgroundColor: 'transparent', borderWidth: 0, fontSize: 16 }, // 16 avoids iOS focus zoom
+  input: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.02, color: 'transparent', backgroundColor: 'transparent', borderWidth: 0, fontSize: 16, ...({ outlineStyle: 'none', outlineWidth: 0, boxShadow: 'none' } as object) }, // 16 avoids iOS focus zoom
 });

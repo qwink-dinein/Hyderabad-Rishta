@@ -132,7 +132,7 @@ export default function AdminPricing() {
           {history?.length ? (
             history.map((h) => (
               <Text key={h.id} variant="caption">
-                {formatDate(h.at)} · v{h.before.version} → v{h.after.version} by {h.adminId} · boost {h.before.boostDays}d → {h.after.boostDays}d · pub bride {feeLabel(h.before.publication.bride, 'INR')} → {feeLabel(h.after.publication.bride, 'INR')} · pub groom {feeLabel(h.before.publication.groom, 'INR')} → {feeLabel(h.after.publication.groom, 'INR')}
+                {formatDate(h.at, 'en')} · v{h.before.version} → v{h.after.version} by {h.adminId} · boost {h.before.boostDays}d → {h.after.boostDays}d · pub bride {feeLabel(h.before.publication.bride, 'INR')} → {feeLabel(h.after.publication.bride, 'INR')} · pub groom {feeLabel(h.before.publication.groom, 'INR')} → {feeLabel(h.after.publication.groom, 'INR')}
               </Text>
             ))
           ) : (

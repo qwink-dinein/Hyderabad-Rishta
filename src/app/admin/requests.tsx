@@ -27,7 +27,7 @@ export default function AdminRequests() {
           data.map((r) => (
             <Card key={r.id} style={{ gap: 4 }}>
               <Row style={{ justifyContent: 'space-between' }} wrap>
-                <Row gap={space.xs} wrap>
+                <Row gap={space.xs} wrap style={{ flex: 1, minWidth: 0 }}>
                   <CodeLink code={r.fromCode} userId={r.fromUserId} />
                   <Text variant="label">{r.fromName} →</Text>
                   <CodeLink code={r.toCode} userId={r.toUserId} />
@@ -36,7 +36,7 @@ export default function AdminRequests() {
                 <Badge label={r.status} tone={r.status === 'accepted' ? 'success' : r.status === 'pending' ? 'gold' : 'muted'} />
               </Row>
               {r.message ? <Text variant="body">“{r.message}”</Text> : null}
-              <Text variant="caption">Sent {formatDate(r.createdAt)}</Text>
+              <Text variant="caption">Sent {formatDate(r.createdAt, 'en')}</Text>
               <Button
                 label="Delete request"
                 size="sm"

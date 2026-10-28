@@ -1,4 +1,6 @@
+import { View } from 'react-native';
 import { Redirect, Stack } from 'expo-router';
+import { UiLang } from '@/i18n/uiLang';
 import { isAdminRole } from '@/domain/types';
 import { useStackTransitions, webScreenLayout } from '@/navigation/transitions';
 import { useSession } from '@/state/session';
@@ -14,5 +16,12 @@ export default function AdminLayout() {
   const transitions = useStackTransitions();
   if (!user) return <Redirect href="/login" />;
   if (!isAdminRole(user.role)) return <Redirect href="/discover" />;
-  return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.ivory }, ...transitions }} screenLayout={webScreenLayout} />;
+  // English-only console: always left-to-right with Latin fonts, whatever the admin's app language.
+  return (
+    <UiLang lang="en">
+      <View style={{ flex: 1, direction: 'ltr' }}>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.ivory }, ...transitions }} screenLayout={webScreenLayout} />
+      </View>
+    </UiLang>
+  );
 }

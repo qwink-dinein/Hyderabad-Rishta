@@ -10,6 +10,7 @@ import { Icon, type IconName } from '@/components/ui/Icon';
 import { Card, Row, Screen, Section } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { formatDate, formatMoney } from '@/domain/format';
+import { pricingCopy } from '@/domain/pricing';
 import { useDashboard, useInvalidateProfileState, useMyProfile, useOrders, usePricing } from '@/hooks/queries';
 import { backend } from '@/services';
 import { colors, radius, space } from '@/theme/tokens';
@@ -42,7 +43,21 @@ export default function Dashboard() {
           <Text variant="body">{t('dashboard.createBody')}</Text>
           <Button label={t('dashboard.createCta')} onPress={() => router.push('/biodata')} testID="create-biodata" />
         </Card>
-        {pricing ? <View style={{ marginTop: space.lg }}><PricingNotice config={pricing} type="bride" /></View> : null}
+        {pricing ? (
+          // No biodata yet, so we don't know their type: show brides' and grooms' prices if they differ.
+          <View style={{ marginTop: space.lg, gap: space.sm }}>
+            {JSON.stringify(pricingCopy(pricing, 'bride')) === JSON.stringify(pricingCopy(pricing, 'groom')) ? (
+              <PricingNotice config={pricing} type="bride" />
+            ) : (
+              <>
+                <Text variant="label">{t('pricing.forBrides')}</Text>
+                <PricingNotice config={pricing} type="bride" />
+                <Text variant="label">{t('pricing.forGrooms')}</Text>
+                <PricingNotice config={pricing} type="groom" />
+              </>
+            )}
+          </View>
+        ) : null}
       </Screen>
     );
   }

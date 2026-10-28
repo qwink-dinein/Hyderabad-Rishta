@@ -110,7 +110,7 @@ export default function Team() {
               Recovery requested for {sec.pendingRecovery.phoneMasked}
             </Text>
             <Text variant="caption" color={colors.danger}>
-              Started {formatDate(sec.pendingRecovery.startedAt)}. The master role moves to that phone on {formatDate(sec.pendingRecovery.completesAt)}. If this wasn’t you, cancel it now and generate new recovery codes.
+              Started {formatDate(sec.pendingRecovery.startedAt, 'en')}. The master role moves to that phone on {formatDate(sec.pendingRecovery.completesAt, 'en')}. If this wasn’t you, cancel it now and generate new recovery codes.
             </Text>
             {isMaster ? (
               <Button label="Cancel this recovery" kind="danger" size="sm" style={{ alignSelf: 'flex-start', marginTop: space.sm }} onPress={() => run(() => backend.masterCancelRecovery(), 'Recovery cancelled.')} testID="cancel-recovery" />
@@ -131,7 +131,7 @@ export default function Team() {
                     {m.phoneMasked}
                     {m.id === user?.id ? ' (you)' : ''}
                   </Text>
-                  <Text variant="caption">Since {formatDate(m.createdAt)}</Text>
+                  <Text variant="caption">Since {formatDate(m.createdAt, 'en')}</Text>
                 </View>
                 <Row gap={space.sm}>
                   <Badge label={m.role === 'master' ? 'master' : 'sub-admin'} tone={m.role === 'master' ? 'gold' : 'emerald'} />
@@ -191,7 +191,7 @@ export default function Team() {
                 <View>
                   <Text variant="h3">Recovery codes</Text>
                   <Text variant="caption">
-                    {sec?.codesRemaining ? `${sec.codesRemaining} unused · generated ${formatDate(sec.codesGeneratedAt)}` : 'Not set up'}
+                    {sec?.codesRemaining ? `${sec.codesRemaining} unused · generated ${formatDate(sec.codesGeneratedAt, 'en')}` : 'Not set up'}
                   </Text>
                 </View>
                 <Badge label={sec?.codesRemaining ? 'active' : 'missing'} tone={sec?.codesRemaining ? 'success' : 'danger'} />

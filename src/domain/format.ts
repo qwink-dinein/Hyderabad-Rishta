@@ -27,11 +27,24 @@ export function formatMoney(amount: number, currency = 'INR'): string {
   return `${symbol}${amount.toLocaleString('en-IN')}`;
 }
 
-export function formatDate(iso?: string): string {
+const DATE_LOCALES = { en: 'en-GB', ur: 'ur-PK', te: 'te-IN' } as const;
+let dateLang: keyof typeof DATE_LOCALES = 'en';
+/** Called when the app language changes, so dates read naturally inside Urdu/Telugu sentences. */
+export function setDateLanguage(lang: keyof typeof DATE_LOCALES) {
+  dateLang = lang;
+}
+
+/** "27 Oct 2026" / "27 اکتوبر، 2026" / "27, అక్టో 2026". Pass `lang` to pin it (the admin console uses 'en'). */
+export function formatDate(iso?: string, lang: keyof typeof DATE_LOCALES = dateLang): string {
   if (!iso) return '—';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  const opts = { day: 'numeric', month: 'short', year: 'numeric' } as const;
+  try {
+    return d.toLocaleDateString(DATE_LOCALES[lang], opts);
+  } catch {
+    return d.toLocaleDateString('en-GB', opts); // runtimes without that locale's data
+  }
 }
 
 export function displayNameFor(fullName: string, pref: 'full' | 'first' | 'initials'): string {

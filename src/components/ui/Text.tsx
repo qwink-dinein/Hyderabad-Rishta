@@ -1,9 +1,9 @@
 import { memo } from 'react';
 import { Text as RNText, type TextProps, type TextStyle } from 'react-native';
-import { useSession } from '@/state/session';
 import { colors } from '@/theme/tokens';
 import { fontFamily, lineHeightScale, type FontRole } from '@/theme/fonts';
 import { isRTL } from '@/i18n';
+import { useUiLang } from '@/i18n/uiLang';
 
 type Variant = 'display' | 'h1' | 'h2' | 'h3' | 'body' | 'bodyStrong' | 'label' | 'caption' | 'overline';
 
@@ -29,8 +29,25 @@ export interface AppTextProps extends TextProps {
  * Script-aware text: picks the font family and line height for the active language
  * (Nastaliq needs ~2× line height) and aligns to the reading direction.
  */
+const RTL_CHAR = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
+const LTR_CHAR = /[A-Za-z\u00C0-\u024F\u0900-\u0DFF]/;
+/**
+ * Direction of the first "strong" letter in plain-text children (what browsers do for dir="auto").
+ * English typed by a member (names, messages) inside the Urdu UI keeps its own word and punctuation
+ * order instead of having full stops and brackets jump to the wrong end.
+ */
+function strongDir(children: unknown): 'ltr' | 'rtl' | undefined {
+  const parts = Array.isArray(children) ? children : [children];
+  if (!parts.every((p) => typeof p === 'string' || typeof p === 'number')) return undefined;
+  for (const ch of parts.join('')) {
+    if (RTL_CHAR.test(ch)) return 'rtl';
+    if (LTR_CHAR.test(ch)) return 'ltr';
+  }
+  return undefined;
+}
+
 export const Text = memo(function Text({ variant = 'body', color, center, style, ...rest }: AppTextProps) {
-  const lang = useSession((s) => s.lang);
+  const lang = useUiLang();
   const v = VARIANTS[variant];
   // Latin display font only for English; other scripts use their own families.
   const size = lang === 'ur' && v.role !== 'display' ? v.size + 1 : v.size;
@@ -41,7 +58,7 @@ export const Text = memo(function Text({ variant = 'body', color, center, style,
     lineHeight: Math.round(size * (v.role === 'display' && lang === 'en' ? 1.24 : lineHeightScale[lang])),
     color: color ?? v.color,
     textAlign: center ? 'center' : isRTL(lang) ? 'right' : 'left',
-    writingDirection: isRTL(lang) ? 'rtl' : 'ltr',
+    writingDirection: strongDir(rest.children) ?? (isRTL(lang) ? 'rtl' : 'ltr'),
     ...(v.upper && lang === 'en' ? { textTransform: 'uppercase', letterSpacing: v.spacing } : null),
   };
   return <RNText {...rest} style={[base, style]} />;

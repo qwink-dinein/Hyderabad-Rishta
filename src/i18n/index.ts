@@ -8,6 +8,7 @@ import { ensureFonts } from '@/theme/fonts';
 import en from './en';
 import te from './te';
 import ur from './ur';
+import { setDateLanguage } from '@/domain/format';
 
 export const LANGS: Lang[] = ['en', 'ur', 'te'];
 export const RTL_LANGS: Lang[] = ['ur'];
@@ -35,6 +36,7 @@ export async function applyLanguage(lang: Lang): Promise<void> {
   // Load the script font first so text never flashes in the wrong typeface.
   await ensureFonts(lang);
   await i18n.changeLanguage(lang);
+  setDateLanguage(lang);
   if (Platform.OS === 'web' && typeof document !== 'undefined') {
     document.documentElement.lang = lang;
     document.documentElement.dir = isRTL(lang) ? 'rtl' : 'ltr';

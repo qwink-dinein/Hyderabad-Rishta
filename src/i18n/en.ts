@@ -198,6 +198,7 @@ const en = {
     masterRecovery: 'Master admin: lost your phone?',
   },
   wizard: {
+    saveReview: "Save & review",
     removedTitle: 'Biodata removed',
     removedBody: 'Our team removed the biodata for this mobile number. Each number can have only one biodata. If you think this is a mistake, contact support. To start again from scratch, delete this account in Settings and sign up again.',
     removedAction: 'Go to Settings',
@@ -465,6 +466,8 @@ const en = {
     },
   },
   pricing: {
+    forBrides: "For brides",
+    forGrooms: "For grooms",
     copy: {
       bothFree: 'Create your biodata, publish your profile, and browse matches for free. Your boost is also free for {{days}} days. No payment required and no automatic renewal.',
       pubFreeBoostPaid: 'Creating and publishing your biodata is free. Browse profiles for free and boost your profile for {{days}} days at {{boostPrice}}. No automatic renewal.',

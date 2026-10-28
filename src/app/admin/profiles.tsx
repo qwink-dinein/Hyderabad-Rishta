@@ -83,7 +83,7 @@ export default function AdminProfiles() {
                       <Text variant="h3">{p.biodata.basic.fullName}</Text>
                     </Row>
                     <Text variant="caption">
-                      {profileTypeOf(p)} · {p.biodata.location.city} · phone {p.phoneMasked} · updated {formatDate(p.updatedAt)}
+                      {profileTypeOf(p)} · {p.biodata.location.city} · phone {p.phoneMasked} · updated {formatDate(p.updatedAt, 'en')}
                     </Text>
                   </View>
                   <Badge label={p.status} tone={p.status === 'published' ? 'success' : p.status === 'rejected' ? 'danger' : 'gold'} />

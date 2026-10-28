@@ -64,7 +64,7 @@ export default function AdminMember() {
             <Text variant="overline">Profile ID {m.code ?? '— (no profile yet)'}</Text>
             <Text variant="h2">{m.name ?? 'No profile'}</Text>
             <Text variant="caption">
-              {[p ? profileTypeOf(p) : null, m.city, m.phoneMasked, `joined ${formatDate(u.createdAt)}`].filter(Boolean).join(' · ')}
+              {[p ? profileTypeOf(p) : null, m.city, m.phoneMasked, `joined ${formatDate(u.createdAt, 'en')}`].filter(Boolean).join(' · ')}
             </Text>
           </View>
           <Row gap={space.xs} wrap>
@@ -151,7 +151,7 @@ export default function AdminMember() {
                 <Badge label={r.status} tone={r.status === 'accepted' ? 'success' : r.status === 'pending' ? 'gold' : 'muted'} />
               </Row>
               <Text variant="caption">
-                {r.fromName} → {r.toName} · {formatDate(r.createdAt)}
+                {r.fromName} → {r.toName} · {formatDate(r.createdAt, 'en')}
               </Text>
               <Button
                 label="Delete request"
@@ -178,7 +178,7 @@ export default function AdminMember() {
                 <Badge label={r.status} tone={r.status === 'open' ? 'danger' : 'muted'} />
               </Row>
               {r.details ? <Text variant="body">{r.details}</Text> : null}
-              <Text variant="caption">Reported {formatDate(r.createdAt)}</Text>
+              <Text variant="caption">Reported {formatDate(r.createdAt, 'en')}</Text>
               {r.status === 'open' ? (
                 <Row gap={space.sm} wrap>
                   <Button label="Resolve & pause profile" size="sm" kind="danger" onPress={() => run(() => backend.adminResolveReport(r.id, 'resolved', true), 'Resolved — profile paused.')} />
@@ -205,7 +205,7 @@ export default function AdminMember() {
                 <Badge label={o.status} tone={o.status === 'paid' || o.status === 'free' ? 'success' : o.status === 'failed' ? 'danger' : 'muted'} />
               </Row>
               <Text variant="caption">
-                {formatDate(o.createdAt)}
+                {formatDate(o.createdAt, 'en')}
                 {o.simulated ? ' · simulated' : ''}
               </Text>
               {o.status === 'pending' ? <Button label="Cancel order" size="sm" kind="ghost" onPress={() => run(() => backend.adminCancelOrder(o.id), 'Order cancelled.')} style={{ alignSelf: 'flex-start' }} /> : null}

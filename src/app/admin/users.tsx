@@ -57,7 +57,7 @@ export default function AdminUsers() {
                   </Row>
                 </Row>
                 <Text variant="caption">
-                  Joined {formatDate(u.createdAt)} · language {u.language}
+                  Joined {formatDate(u.createdAt, 'en')} · language {u.language}
                 </Text>
                 {canManage ? (
                   <Row gap={space.sm} wrap style={{ marginTop: space.xs }}>

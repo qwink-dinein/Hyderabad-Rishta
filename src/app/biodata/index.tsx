@@ -444,7 +444,7 @@ export default function BiodataWizard() {
         <Row gap={space.sm}>
           {step > 0 ? <Button label={t('common.back')} kind="secondary" onPress={() => go(step - 1, false)} style={{ flex: 1 }} disabled={save.isPending} /> : null}
           <Button
-            label={step === 6 ? t('wizard.reviewPreview') : t('common.saveContinue')}
+            label={step === 6 ? (profile && profile.status !== 'draft' && profile.status !== 'rejected' ? t('wizard.saveReview') : t('wizard.reviewPreview')) : t('common.saveContinue')}
             onPress={() => go(step + 1, true)}
             loading={save.isPending}
             style={{ flex: 2 }}

@@ -1,10 +1,10 @@
-import { Pressable, StyleSheet, Switch, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Badge, Banner, confirm, ErrorView, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
-import { TextField } from '@/components/ui/forms';
+import { SwitchVisual, TextField } from '@/components/ui/forms';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { Card, Row, Screen, Section } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
@@ -144,7 +144,7 @@ export default function AdminHome() {
               Master recovery in progress
             </Text>
             <Text variant="caption" color={colors.danger}>
-              Someone used a recovery code for {sec.pendingRecovery.phoneMasked}. The master role moves to that phone on {formatDate(sec.pendingRecovery.completesAt)} unless the master cancels it.
+              Someone used a recovery code for {sec.pendingRecovery.phoneMasked}. The master role moves to that phone on {formatDate(sec.pendingRecovery.completesAt, 'en')} unless the master cancels it.
             </Text>
             <Button label="Review in Team & security" size="sm" kind="danger" onPress={() => router.push('/admin/team')} style={{ alignSelf: 'flex-start', marginTop: space.sm }} />
           </Banner>
@@ -181,15 +181,7 @@ export default function AdminHome() {
                   : 'OFF — profiles are published directly when members submit them.'}
               </Text>
             </View>
-            <Switch
-              value={!!s?.requireApproval}
-              onValueChange={toggleApproval}
-              trackColor={{ true: colors.emeraldSoft, false: colors.border }}
-              thumbColor={colors.white}
-              {...({ activeThumbColor: colors.white } as object)}
-              accessibilityElementsHidden
-              importantForAccessibility="no"
-            />
+            <SwitchVisual on={!!s?.requireApproval} />
           </Pressable>
           {s && s.profiles.pending > 0 ? (
             <Row style={{ justifyContent: 'space-between' }} wrap>
@@ -210,7 +202,7 @@ export default function AdminHome() {
           <ErrorView error={error} onRetry={refetch} />
         ) : s ? (
           <View style={styles.grid}>
-            {metric('Users (active)', `${s.users} (${s.activeUsers})`)}
+            {metric(`Users · ${s.activeUsers} active`, s.users)}
             {metric('Published', s.profiles.published)}
             {metric('Pending review', s.profiles.pending)}
             {metric('Paused', s.profiles.paused)}

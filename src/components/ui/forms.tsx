@@ -1,13 +1,12 @@
 import { memo, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Animated, Easing, FlatList, Modal, Pressable, StyleSheet, Switch, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
+import { Animated, Easing, FlatList, Modal, Pressable, StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { haptic } from '@/services/feedback';
 import { colors, maxContentWidth, motion, radius, space } from '@/theme/tokens';
 import { fontFamily } from '@/theme/fonts';
-import { useSession } from '@/state/session';
 import { isRTL } from '@/i18n';
+import { useUiLang, useUiT } from '@/i18n/uiLang';
 import { Button } from './Button';
 import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
@@ -19,7 +18,7 @@ export interface Option {
 
 /** Wraps a control with its label, optional marker, hint and inline error (announced to screen readers). */
 export function Field({ label, error, hint, optional, children, required }: { label: string; error?: string; hint?: string; optional?: boolean; required?: boolean; children: ReactNode }) {
-  const { t } = useTranslation();
+  const t = useUiT();
   return (
     <View style={{ gap: space.xs + 2, marginBottom: space.lg }}>
       <View style={{ flexDirection: 'row', gap: space.xs, alignItems: 'baseline' }}>
@@ -42,7 +41,7 @@ export function Field({ label, error, hint, optional, children, required }: { la
 }
 
 export const TextField = memo(function TextField({ error, multiline, style, ...props }: TextInputProps & { error?: boolean; ref?: React.Ref<React.ComponentRef<typeof TextInput>> }) {
-  const lang = useSession((s) => s.lang);
+  const lang = useUiLang();
   const [focused, setFocused] = useState(false);
   return (
     <TextInput
@@ -207,7 +206,7 @@ export function Select({ options, value, onChange, placeholder, multiple, allowC
   displayValue?: (values: string[]) => string;
   style?: StyleProp<ViewStyle>;
 }) {
-  const { t } = useTranslation();
+  const t = useUiT();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
   const insets = useSafeAreaInsets();
@@ -320,16 +319,37 @@ export function ToggleRow({ label, value, onChange, hint }: { label: string; val
         <Text variant="label">{label}</Text>
         {hint ? <Text variant="caption">{hint}</Text> : null}
       </View>
-      <Switch
-        value={value}
-        onValueChange={onChange}
-        trackColor={{ true: colors.emeraldSoft, false: colors.border }}
-        thumbColor={colors.white}
-        {...({ activeThumbColor: colors.white } as object) /* react-native-web otherwise uses its default teal */}
-        accessibilityElementsHidden
-        importantForAccessibility="no"
-      />
+      <SwitchVisual on={value} />
     </Pressable>
+  );
+}
+
+/**
+ * The switch drawing. Purely visual — the row around it is the one accessible switch (role, label,
+ * checked state), so screen readers and keyboards meet exactly one control. Drawn by us rather than
+ * the platform switch because react-native-web's switch (a) is a second, unlabelled control and
+ * (b) misplaces its knob in right-to-left layouts (Urdu). Always laid out left-to-right: "on" = knob right.
+ */
+export function SwitchVisual({ on }: { on: boolean }) {
+  const reduced = useReducedMotion();
+  const [x] = useState(() => new Animated.Value(on ? 1 : 0));
+  useEffect(() => {
+    if (reduced) x.setValue(on ? 1 : 0);
+    else Animated.timing(x, { toValue: on ? 1 : 0, duration: motion.press + 40, easing: Easing.out(Easing.quad), useNativeDriver: false }).start();
+  }, [on, reduced, x]);
+  return (
+    <Animated.View
+      pointerEvents="none"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      aria-hidden
+      style={[
+        styles.switchTrack,
+        { backgroundColor: x.interpolate({ inputRange: [0, 1], outputRange: [colors.border, colors.emeraldSoft] }) },
+      ]}
+    >
+      <Animated.View style={[styles.switchThumb, { transform: [{ translateX: x.interpolate({ inputRange: [0, 1], outputRange: [2, 22] }) }] }]} />
+    </Animated.View>
   );
 }
 
@@ -342,7 +362,7 @@ export function RangeSelect({ label, options, min, max, onChange, error }: {
   onChange: (min?: number, max?: number) => void;
   error?: string;
 }) {
-  const { t } = useTranslation();
+  const t = useUiT();
   const withAny: Option[] = [{ value: '', label: t('common.any') }, ...options];
   return (
     <Field label={label} error={error} optional>
@@ -416,4 +436,6 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 52, paddingVertical: space.xs },
+  switchTrack: { width: 50, height: 30, borderRadius: 15, justifyContent: 'center', direction: 'ltr', flexShrink: 0 },
+  switchThumb: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.white, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 2, shadowOffset: { width: 0, height: 1 }, elevation: 2 },
 });

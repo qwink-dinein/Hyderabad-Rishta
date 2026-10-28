@@ -2,13 +2,12 @@ import { memo, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, type ScrollViewProps, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useTranslation } from 'react-i18next';
 import { colors, maxContentWidth, radius, shadow, space } from '@/theme/tokens';
-import { useSession } from '@/state/session';
 import { isRTL } from '@/i18n';
 import { useGoHome } from '@/hooks/useGoHome';
 import { Icon } from './Icon';
 import { Text } from './Text';
+import { useUiLang, useUiT } from '@/i18n/uiLang';
 
 /** Page container: safe areas, ivory background, centred max-width column on web/tablet. */
 export function Screen({
@@ -57,8 +56,8 @@ export function Screen({
  * Pass `onHome` when leaving needs a guard (e.g. save a draft or confirm discarding a message).
  */
 export function Header({ title, right, onBack, back = true, home = true, onHome }: { title: string; right?: ReactNode; onBack?: () => void; back?: boolean; home?: boolean; onHome?: () => void }) {
-  const { t } = useTranslation();
-  const rtl = isRTL(useSession((s) => s.lang));
+  const t = useUiT();
+  const rtl = isRTL(useUiLang());
   const goHome = useGoHome();
   return (
     <View style={styles.header}>
