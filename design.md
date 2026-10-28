@@ -56,6 +56,7 @@ Scale (pt): display 34 (hero) · h1 27 (screen titles) · h2 20 (card titles 18�
 - **BrandMark** — 8-point star medallion with a rosette (art/Illustrations.tsx).
 - **HeroScene** — original arch-framed dusk scenes: Charminar, family doorway, jali + lock, crescent + rings. Hanging lanterns, floral sprigs and one shared grade. No photos of real people.
 - **HeroCarousel** — swipe (paging ScrollView), dots, prev/next, pause. ~6 s autoplay that stops on interaction, when the app is backgrounded, and entirely under Reduce Motion. No sound or video.
+- **Landing actions** — a three-level hierarchy: **Create your biodata** (filled emerald, primary) › **Find your match** (outlined) › **Already registered? Log in** (tertiary: a soft-gold pill with a person icon and an arrow, 48 pt tall). On phones shorter than 800 pt or narrower than 360 pt, the hero switches to compact mode (smaller art and headline, dots plus pause only), so all three stay in the first screen from 320 × 640 upwards.
 - **LanguageSwitcher** — full names, or `compact` (EN / اردو / తె) in headers. Accessibility labels always use full names.
 - **TabHeader / BellButton** — brand or title on the start side; bell (plus optional settings) on the end side.
 - **Button** — primary (emerald), secondary (outlined), ghost, gold, danger, light. Pill; 52 pt md / 38 pt sm; optional trailing `arrow` (mirrors in RTL); press scale 0.985.

@@ -21,7 +21,9 @@ const SLIDES: { key: 's1' | 's2' | 's3' | 's4'; art: HeroKind }[] = [
 
 export const HeroCarousel = memo(function HeroCarousel() {
   const { t } = useTranslation();
-  const { height: screenH } = useWindowDimensions();
+  const { height: screenH, width: screenW } = useWindowDimensions();
+  // Short or narrow phones: smaller art and headline so the sign-up and log-in actions stay in the first screen.
+  const compact = screenH < 800 || screenW < 360;
   const [width, setWidth] = useState(0);
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
@@ -71,7 +73,7 @@ export const HeroCarousel = memo(function HeroCarousel() {
   };
 
   // Scene ≈ 30% of the viewport; with the text block the hero fills ~45% (PRD §4.1-B).
-  const sceneH = Math.round(Math.max(190, Math.min(330, screenH * 0.3)));
+  const sceneH = compact ? Math.round(Math.max(130, screenH * 0.2)) : Math.round(Math.max(190, Math.min(330, screenH * 0.3)));
   const slide = SLIDES[index];
 
   return (
@@ -97,19 +99,21 @@ export const HeroCarousel = memo(function HeroCarousel() {
           : null}
       </ScrollView>
 
-      <View style={styles.copy} accessibilityLiveRegion={playing ? 'none' : 'polite'}>
-        <Text variant="display" color={colors.ivory} center accessibilityRole="header">
+      <View style={[styles.copy, compact && styles.copyCompact]} accessibilityLiveRegion={playing ? 'none' : 'polite'}>
+        <Text variant={compact ? 'h1' : 'display'} color={colors.ivory} center accessibilityRole="header">
           {t(`landing.slides.${slide.key}.title`)}
         </Text>
-        <Text variant="body" color={colors.sage} center style={{ maxWidth: 440, opacity: 0.92 }}>
+        <Text variant={compact ? 'caption' : 'body'} color={colors.sage} center style={{ maxWidth: 440, opacity: 0.92 }}>
           {t(`landing.slides.${slide.key}.sub`)}
         </Text>
       </View>
 
       <View style={styles.controls}>
-        <Pressable accessibilityRole="button" accessibilityLabel={t('landing.prevSlide')} onPress={() => userGo(index - 1)} style={styles.ctrl} hitSlop={8}>
-          <Icon name="chevronLeft" color={colors.ivory} size={16} />
-        </Pressable>
+        {compact ? null : (
+          <Pressable accessibilityRole="button" accessibilityLabel={t('landing.prevSlide')} onPress={() => userGo(index - 1)} style={styles.ctrl} hitSlop={8}>
+            <Icon name="chevronLeft" color={colors.ivory} size={16} />
+          </Pressable>
+        )}
         <View style={styles.dots}>
           {SLIDES.map((s, i) => (
             <Pressable
@@ -123,9 +127,11 @@ export const HeroCarousel = memo(function HeroCarousel() {
             />
           ))}
         </View>
-        <Pressable accessibilityRole="button" accessibilityLabel={t('landing.nextSlide')} onPress={() => userGo(index + 1)} style={styles.ctrl} hitSlop={8}>
-          <Icon name="chevronRight" color={colors.ivory} size={16} />
-        </Pressable>
+        {compact ? null : (
+          <Pressable accessibilityRole="button" accessibilityLabel={t('landing.nextSlide')} onPress={() => userGo(index + 1)} style={styles.ctrl} hitSlop={8}>
+            <Icon name="chevronRight" color={colors.ivory} size={16} />
+          </Pressable>
+        )}
         {!reduceMotion ? (
           <Pressable accessibilityRole="button" accessibilityLabel={playing ? t('landing.pause') : t('landing.play')} onPress={() => setPlaying((p) => !p)} style={styles.ctrl} hitSlop={8}>
             <Icon name={playing ? 'pause' : 'play'} color={colors.ivory} size={14} />
@@ -138,6 +144,7 @@ export const HeroCarousel = memo(function HeroCarousel() {
 
 const styles = StyleSheet.create({
   copy: { alignItems: 'center', gap: space.sm, paddingHorizontal: space.xl, marginTop: space.lg, minHeight: 150, justifyContent: 'flex-start' },
+  copyCompact: { minHeight: 0, marginTop: space.md, gap: space.xs, paddingHorizontal: space.lg },
   controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.md, marginTop: space.md },
   ctrl: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(248,244,235,0.3)', alignItems: 'center', justifyContent: 'center' },
   dots: { flexDirection: 'row', gap: space.sm, alignItems: 'center' },

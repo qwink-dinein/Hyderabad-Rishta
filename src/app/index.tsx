@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Redirect, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,7 +13,7 @@ import { Icon, type IconName } from '@/components/ui/Icon';
 import { Card, Row, Screen } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { isAdminRole } from '@/domain/types';
-import { hasChosenLanguage } from '@/i18n';
+import { hasChosenLanguage, isRTL } from '@/i18n';
 import { backendInfo } from '@/services';
 import { useSession } from '@/state/session';
 import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
@@ -26,6 +26,10 @@ export default function Landing() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const user = useSession((s) => s.user);
+  const lang = useSession((s) => s.lang);
+  const { width: screenW, height: screenH } = useWindowDimensions();
+  const narrow = screenW < 360;
+  const short = screenH < 800 || narrow;
   const [langChosen, setLangChosen] = useState(true);
   useEffect(() => {
     hasChosenLanguage().then(setLangChosen);
@@ -78,17 +82,30 @@ export default function Landing() {
 
       <View style={[styles.inner, styles.padded]}>
         {/* C: primary actions — stable position, never moves with the slides */}
-        <View style={styles.ctas}>
+        <View style={[styles.ctas, short && styles.ctasShort]}>
           <Button label={t('landing.createBiodata')} onPress={create} full arrow testID="cta-create" />
           <Button label={t('landing.findMatch')} kind="secondary" onPress={find} full testID="cta-find" />
-          <Row style={{ justifyContent: 'center' }} gap={space.xs}>
-            <Text variant="body" color={colors.muted}>
-              {t('landing.registered')}
+          {/* Tertiary action: clearly tappable (tinted pill, icon, arrow) but lighter than the two buttons above. */}
+          <Pressable
+            onPress={() => router.push('/login')}
+            accessibilityRole="button"
+            accessibilityLabel={`${t('landing.registered')} ${t('landing.logIn')}`}
+            style={({ pressed }) => [styles.login, pressed && styles.loginPressed]}
+            testID="cta-login"
+          >
+            {narrow ? null : (
+              <View style={styles.loginIcon}>
+                <Icon name="user" size={16} color={colors.emerald} />
+              </View>
+            )}
+            <Text variant="body" color={colors.muted} style={{ flexShrink: 1 }}>
+              {t('landing.registered')}{' '}
+              <Text variant="bodyStrong" color={colors.emerald} style={styles.link}>
+                {t('landing.logIn')}
+              </Text>
             </Text>
-            <Text variant="bodyStrong" color={colors.emerald} onPress={() => router.push('/login')} accessibilityRole="link" style={styles.link} testID="cta-login">
-              {t('landing.logIn')}
-            </Text>
-          </Row>
+            <Icon name={isRTL(lang) ? 'arrowLeft' : 'arrowRight'} size={16} color={colors.emerald} />
+          </Pressable>
         </View>
 
         {/* D: trust indicators — claims we can actually keep */}
@@ -219,7 +236,24 @@ const styles = StyleSheet.create({
   padded: { paddingHorizontal: space.xl },
   header: { justifyContent: 'space-between', paddingHorizontal: space.lg, paddingBottom: space.md, gap: space.sm },
   ctas: { gap: space.md, marginTop: space.xl },
-  link: { textDecorationLine: 'underline', paddingVertical: space.sm },
+  ctasShort: { gap: space.sm, marginTop: space.lg },
+  link: { textDecorationLine: 'underline' },
+  login: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    gap: space.sm,
+    minHeight: 48,
+    paddingHorizontal: space.lg,
+    paddingVertical: space.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.goldSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  loginPressed: { opacity: 0.85, transform: [{ scale: 0.985 }] },
+  loginIcon: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
   trust: { flexDirection: 'row', justifyContent: 'space-between', gap: space.sm, marginTop: space.xl, paddingVertical: space.lg, borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.border },
   trustItem: { flex: 1, alignItems: 'center', gap: space.sm },
   trustIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.goldSoft, alignItems: 'center', justifyContent: 'center' },
