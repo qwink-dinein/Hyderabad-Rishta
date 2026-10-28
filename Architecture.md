@@ -120,7 +120,7 @@ pg_cron 1/min ─► edge fn push-dispatch ─► claim_push_batch (FOR UPDATE S
 app ─► PushBridge: on sign-in re-bind token · taps → deep link + mark read · badge = unread · in-app arrival banner
 ```
 - **Featured:** `getFeatured()` / `get_featured()` decide eligibility with `isFeaturable()`, apply the type rule and blocks, and use a daily rotation (FNV-1a hash in the app, md5 in SQL). They write one `boost_impressions` row per viewer, profile and day. Dashboard reach = unique viewers since `boost_started_at`.
-- **Boost lifecycle:** `apply_boost(order)` (service only, idempotent per order, extensions keep the start date) and `run_boost_jobs()` (pg_cron) with `boost_notices` markers, so each notice is sent exactly once.
+- **Boost lifecycle:** `apply_boost(order)` (service only, idempotent per order; ~~extensions keep the start date~~ since V3 it **refuses while a boost is active**, see §17) and `run_boost_jobs()` (pg_cron) with `boost_notices` markers, so each notice is sent exactly once.
 - **Client:** `src/services/push.ts` (expo-notifications, Android channel "default" with PRIVATE lock-screen visibility, projectId from EAS). `src/components/PushBridge.tsx` and `src/components/PushSettings.tsx`.
 - **Limits:**
   - Expo Go on Android cannot receive remote push (SDK 53+), so it needs a development build. Web is in-app only.
@@ -143,6 +143,10 @@ app ─► PushBridge: on sign-in re-bind token · taps → deep link + mark rea
 | Backend contract | Jest + DemoBackend + fake clock | OTP limits/expiry, publish workflow, paid/failed/free orders, price-change immutability, boosts, requests/consent, blocking, admin authZ, announcements analytics & scheduling, deletion |
 | i18n | Jest | UR/TE key coverage + placeholder parity |
 | Database | psql + Postgres 16 | RLS isolation, column grants, projection privacy, consent flow, admin audit |
+| Security | Jest + psql | `__tests__/attacks.test.ts` (20 app-rule attacks), `supabase/tests/60_attacks.test.sql` (73 DB attacks), `dataSize.test.ts` (store stays bounded) |
+| Auth | Jest + psql + Playwright | `pinLogin.test.ts` (20), `pinLoginEdge.test.ts` (15), `oneBiodata.test.ts` (22), SQL `80_one_biodata` (17), `90_pin_login` (37), e2e `pin.js`, `onebiodata.js` |
+| Boost & motion | Jest + psql + Playwright | `boostTab.test.ts`, SQL `95_boost_tab`, `96_one_boost`, e2e `boosttab.js`, `transitions.js` (samples frames) |
+| Totals at V3 | | Jest 214 / 13 suites · SQL 11 suites (13 migrations) · e2e 12 suites / 85 steps. All e2e logins go through `e2e/auth.js` (handles PIN screens) |
 | E2E | Playwright (web export) | `console.js`: relation badges, report → admin bell → alerts deep link → search by ID → member page → pause, masked phone search; plus landing/lang/RTL, login, discover/filters/profile, requests/consent, dashboard, wizard → publish → approve → custom-value search, admin guard |
 
 ## 8. Environments
@@ -316,3 +320,19 @@ Normal returning login never sends one.
 - It calls the `pin-login` function for PIN login.
 - It stores the session with SecureStore.
 - Enable phone + password sign-in in Supabase Auth (needed for issuing sessions).
+
+## 17. Boost centre tab, reminders, one boost at a time (2026-10-28)
+- **Navigation:** `(tabs)` = home · discover · **boost** · requests · dashboard.
+  - The Boost tab uses a custom `tabBarButton` (`BoostTabButton`, a raised circle that reads `aria-selected` from React Navigation 7).
+  - `/shortlist` moved out of `(tabs)` to a stack screen (a hidden tab with `href:null` would break direct URLs).
+- **State:** `boostNudge(profile, boostDisabled)` → `no_profile | not_published | active | disabled | ready`. `ready` drives the tab dot and halo, the Home `BoostReminder` card (AsyncStorage snooze 3 days) and the Boost screen.
+- **Weekly reminder:** `boostReminderDue()` (demo `processScheduled`, SQL `run_boost_jobs`).
+  - Not within 2 days of publishing, nor within 7 days of a boost ending; never while boosting is disabled.
+  - Stored in `profiles.boost_reminded_at`. Push category `announcements`, so members can switch it off and the hourly cap applies.
+  - All boost notices deep-link to `/boost` (SQL trigger rewrites old `/dashboard` links).
+- **One boost at a time:**
+  - Demo `startBoost` throws `boost_active` while a boost is active and reuses the one pending boost order.
+  - `completePayment` cancels a stray second order before charging, and `applyBoost` never extends.
+  - SQL: unique index `orders_one_open_boost` (one pending boost order per profile), `orders_boost_guard` (no boost order while active), and `apply_boost` raises `boost_active`; the payment webhook must refund in that case.
+- **Migrations:** `20261106000000_boost_tab.sql`, `20261107000000_one_boost_at_a_time.sql`.
+- **Screen transitions:** `src/navigation/transitions.tsx` (stack options per platform/RTL/Reduce Motion, tab shift, web `screenLayout` fade+rise).

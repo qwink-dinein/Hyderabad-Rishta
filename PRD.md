@@ -240,6 +240,38 @@ Cards show your history with each person, so nobody re-sends blindly: **Connecte
 - At most 12 optional pushes per hour; the in-app inbox still receives everything.
 - A phone belongs to one account at a time: signing in elsewhere moves it, and logging out unbinds it. Dead phones are removed automatically.
 
+### 15.5 Security, photos and data limits (owner request, 2026-10-28: "break it and fix it")
+- Every input has a size limit, and every server action is denied unless explicitly allowed. 73 database attacks and 20 app-rule attacks are part of the tests and must keep failing.
+- Photos: members may pick originals up to **5 MB** (JPG/PNG/WEBP/HEIC). The app shrinks them on the phone and removes location data. SVG, GIF and PDF are refused.
+- Data nobody reads back is pruned (old notifications beyond 200 per member, expired codes, old analytics). Lifetime records (views, audit, orders, reports) are kept.
+
+### 15.6 One mobile number = one account = one biodata
+- Every way of typing a number counts as the same number (spaces, +091, a leading 0, a repeated 91).
+- If the team removes a member's biodata, that number cannot start a new biodata. A fresh start needs **Delete account**, then signing up again.
+
+### 15.7 OTP registration and 4-digit PIN login (Mini PRD, 2026-10-28)
+- **First time:** the member enters their number and an OTP, then creates and confirms a 4-digit PIN. The PIN screen says: "Create a 4-digit PIN for quick and easy login next time. You won't need an OTP every time."
+- **Returning:** the number is prefilled, the member enters the PIN, and there is no OTP. Members stay logged in across restarts until they log out.
+- **Forgot PIN:** OTP, then a new PIN; other phones are signed out.
+- **Limits:**
+  - A PIN works only on a phone that verified the number before; a new phone needs one OTP.
+  - 5 wrong PINs → 15-minute lock; 10 in a day → only Forgot PIN unlocks.
+  - Weak PINs are refused, and PINs are never stored in plain text.
+- **Existing accounts** keep working and set a PIN after their next OTP, or from Settings.
+
+### 15.8 Screen transitions
+- Every move to another screen animates: a native slide on phones (mirrored for Urdu), a short shift between tabs, and a soft fade on web.
+- Under Reduce Motion it is a quick fade only.
+
+### 15.9 Boost tab, reminders and one boost at a time
+- **Tabs:** Home · Discover · **Boost** (raised centre button) · Requests · Profile.
+- **Shortlist** is reached from the heart in Discover's header and from Home.
+- **Reminders** run while a member's live profile is not boosted:
+  - a dot and gentle glow on the Boost button
+  - a Home card (dismissible for 3 days)
+  - at most one reminder notification per week, which members can switch off with "announcements"
+- **One boost at a time:** while a boost runs, members can't boost again; the Boost screen shows when they can. A boost never extends or stacks.
+
 ### 15.3 Visual design
 The visual, motion and sound specification is **Design PRD v1.0** (owner, 2026-10-28), summarised and tracked in `design.md`, with the approved reference in `docs/design/reference-ui.jpg`. Design changes never alter the behaviour defined in this PRD.
 

@@ -17,16 +17,18 @@ Supabase schema with RLS (tested on Postgres 16) · 52 Jest tests · Playwright 
 
 **Design phase (after V1):** premium redesign per Design PRD v1.0. Phases 1–5 were done in one pass: tokens and type, landing, auth and navigation; biodata, cards and details; discovery and connection; notifications, settings and dashboard; motion, sound, a11y and regression. All existing tests still pass.
 
+**Since V2 (checkpoint V3):** security pass with attack suites; 5 MB photo uploads compressed on the phone; data-retention limits; one number = one account = one biodata; OTP registration plus 4-digit PIN login; smooth screen transitions; Boost as the raised centre tab with reminders; one boost at a time. Totals: 214 Jest tests, 11 SQL suites, 12 Playwright suites (85 steps), lint clean. See `CHECKPOINTS.md`.
+
 **Exit criteria met:** typecheck clean, all tests green, web export builds, E2E journeys pass with zero console errors.
 
 ## Phase 2 — Production backend (est. 2–3 weeks)
 1. Create Supabase staging + prod projects; apply migration; seed script for the 32 demo profiles (staging only).
-2. `SupabaseBackend` adapter implementing `Backend` (RPCs + RLS) and a toggle in `services/index.ts`.
+2. `SupabaseBackend` adapter implementing `Backend` (RPCs + RLS) and a toggle in `services/index.ts`. It includes PIN login: call `trust_device` after OTP, call the `pin-login` Edge Function for returning logins, keep the session in SecureStore, and enable phone + password sign-in in Supabase Auth (needed for issuing sessions).
 3. Phone OTP via Supabase Auth + **MSG91** (India DLT-registered template) or Twilio Verify; CAPTCHA (hCaptcha/Turnstile) on OTP request.
-4. Photos → private Storage bucket; edge function issues 10-min signed URLs only when `project_profile()` allows; client-side resize to ≤1080 px / WebP.
-5. Payments → **Razorpay** (UPI-first) order creation + webhook (signature-verified) in an Edge Function; order status from webhook only.
+4. Photos → private Storage bucket; edge function issues 10-min signed URLs only when `project_profile()` allows. Client-side resize is already done (≤1600 px JPEG, ≤1.5 MB, originals up to 5 MB).
+5. Payments → **Razorpay** (UPI-first) order creation + webhook (signature-verified) in an Edge Function; order status from the webhook only. If `apply_boost` refuses with `boost_active` (a second boost paid during an active one), the webhook refunds it.
 6. Push → Expo push tokens table + Edge Function fan-out + receipts → `announcement_deliveries.push_status` (development build required on Android).
-7. Scheduled announcements & boost expiry via `pg_cron`.
+7. `pg_cron`: `run_boost_jobs()` every 5 min (boost notices and weekly reminders), `run_retention()` daily, `push-dispatch` every minute, scheduled announcements.
 8. Sentry (crash + performance), structured logs in Edge Functions.
 9. Native-speaker review of Urdu & Telugu; lawyer review of privacy policy & terms (DPDP Act 2023).
 10. EAS: `development`, `preview`, `production` profiles; store listings.

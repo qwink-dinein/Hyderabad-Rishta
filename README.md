@@ -2,7 +2,7 @@
 
 A premium, privacy-first Muslim matrimony app for **iOS, Android and Web**, built with React Native + Expo (SDK 58), TypeScript and Supabase. Supports **English, اردو (RTL) and తెలుగు**.
 
-> 📄 Docs: [PRD](PRD.md) · [Architecture](Architecture.md) · [Tasks](Tasks.md) · [Phases](Phases.md) · [Design](design.md) · [Memory](Memory.md)
+> 📄 Docs: [PRD](PRD.md) · [Architecture](Architecture.md) · [Tasks](Tasks.md) · [Phases](Phases.md) · [Design](design.md) · [Memory](Memory.md) · [Checkpoints](CHECKPOINTS.md) (latest: **V3**)
 
 ## Quick start (localhost)
 
@@ -23,7 +23,8 @@ npm install
 | Single-file web preview (hosted) | `SINGLE_BUNDLE=1 npx expo export --platform web --output-dir dist-single && node scripts/pack-web.js dist-single preview.html` |
 | Typecheck | `npm run typecheck` |
 | Unit + integration tests | `npm test` |
-| Database RLS tests | `PGHOST=… PGUSER=postgres ./scripts/test-db.sh` |
+| Database tests (11 suites) | `PGHOST=… PGUSER=postgres ./scripts/test-db.sh` |
+| Browser e2e (12 suites) | `npx expo export --platform web && node e2e/serve.js "$(pwd)/dist" 8081`, then `node e2e/<suite>.js` (see `e2e/README.md`) |
 
 ### Demo logins (no SMS is sent — code is always `123456`)
 | Account | Mobile |
@@ -31,18 +32,26 @@ npm install
 | Member with a published profile & incoming requests | `9000000001` |
 | Master admin | `9000000000` |
 | Sub-admin | `9000000009` |
-| New user (goes straight to biodata) | any other number |
+| Bride with an active boost | `9000000102` |
+| Pending approval / draft biodata | `9000000130` / `9000000131` |
+| New user (goes straight to biodata) | any other valid mobile number |
+
+After the first OTP you create a **4-digit PIN** (simple ones like 1234 are refused). After logging out, the same number opens with just the PIN; *Forgot PIN?* sends a new OTP. The full list of test numbers is in `Memory.md`.
 
 All profiles are **fictional demo data**. Payments are **simulated** and clearly labelled. Reset any time from *Settings → Reset demo data*.
 
 ## What's inside
 - Landing page with accessible carousel and language selector
-- Mobile + OTP login (country codes, resend cooldown, attempt limits)
-- 7-step biodata wizard with optional photos (≤3), “Other → please specify”, save & continue, preview
+- Mobile + OTP registration, then **4-digit PIN login** (no OTP for returning users on the same phone; Forgot PIN via OTP; server-side lockout); stays signed in until logout
+- **One mobile number = one account = one biodata**
+- 7-step biodata wizard with optional photos (≤3, originals up to 5 MB, compressed on the phone), “Other → please specify”, save & continue, preview
 - Publication workflow (Draft → Pending → Published / Paused / Rejected) with admin approval
 - Admin-configurable pricing (free / paid / disabled per bride/groom), boosts, order summary, no auto-renew
 - Discovery with detailed filters, removable chips, live counts, infinite scroll, boosted label
-- Shortlist, contact requests with message preview, **separate consent** to share photos / phone / full biodata
+- Tabs: Home · Discover · **Boost** (raised centre, with gentle reminders; one boost at a time) · Requests · Profile. Shortlist via the heart on Discover and Home
+- Express Interest, consent-based phone-number offers, Poke; **separate consent** to share photos / full biodata
+- Smooth screen transitions (native slide, tab shift, web fade; respects Reduce Motion)
+- Phone notifications for every profile action (generic lock-screen text by default)
 - Report & block, deactivate & delete account
 - Dashboard with recorded metrics (views, unique viewers, shortlists, requests, boost)
 - Notification centre + admin announcements with honest readership analytics

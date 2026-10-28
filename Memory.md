@@ -1,17 +1,64 @@
 # Memory — project context for future sessions
 
-> Read this first when resuming work. Append decisions, gotchas and state; never delete history (strike through instead).
-> Last updated: 2026-10-28
+> **Read this file first; it is written so you don't need to re-read the code or past chats.** Append decisions, gotchas and state; never delete history (strike through instead).
+> Last updated: 2026-10-28 (V3 checkpoint)
 
-## Snapshot
-- **Latest (after V1):** premium UI redesign per Design PRD v1.0. UI only, no backend or logic changes. Reference image is in `docs/design/reference-ui.jpg`; the spec is summarised in `design.md`. To compare with V1: `git diff 4636968 -- src/`.
-- **CHECKPOINT V2 (LATEST) = commit `774ea9f34f3ebe0babe44520b297af610262c5fb`** (tag `v2` locally). Owner asked to be able to jump back to it anytime with all functionality intact. Full feature list, verification and restore commands are in `CHECKPOINTS.md`. Restore with `git diff v2` / `git checkout v2 -- <path>` / `git revert v2..HEAD`. Never move or delete it.
-- **CHECKPOINT V1 = commit `4636968089a30394f9c9ca594b1a06783c1c4775`** (tag `v1` locally; pushing tags is blocked here) (2026-10-28, owner asked to save it). Full feature list, verification results and revert commands are in `CHECKPOINTS.md`. If anything breaks, compare with `git diff v1` and restore from there. Never move or delete the tag.
-- **What:** Hyderabad Rishta — Muslim matrimony app (PRD v1.1 in `PRD.md`). Owner: mukarramjahmm.
-- **Repo:** `qwink-dinein/Hyderabad-Rishta`, working branch `claude/sharp-bell-xxyxmj`.
-- **State (latest):** admin console added: `HR-` profile IDs, member search and member page, alerts bell, relation badges on cards. Demo DB schema v7.
-- **State:** Phase 1 complete — full MVP on an offline **demo backend**; Supabase schema ready but not connected. See `Phases.md`.
-- **Run:** `npm install` → `npm run web` (browser) or `npm start` (scan QR with Expo Go). Details in `README.md`.
+## Start here (V3 state in one screen)
+- **What:** Hyderabad Rishta, a Muslim matrimony app. Owner: mukarramjahmm.
+  - Specs: `PRD.md` (product), `design.md` (UI/motion), `Architecture.md` (§9 governance, §10 interests, §11–13 boost/push/UI, §14 security, §15 one-number rule, §16 PIN login), `Tasks.md` (T-numbers), `Phases.md`, `CHECKPOINTS.md`.
+- **Repo / branch:** `qwink-dinein/Hyderabad-Rishta` · `claude/sharp-bell-xxyxmj`. Commit and push there; never open a PR unless asked.
+- **Stack:** Expo SDK 58 · RN · TypeScript · Expo Router (`src/app/`) · TanStack Query · zustand · i18next (EN / UR RTL / TE) · zod.
+  - The app runs on the offline **DemoBackend** (`src/services/demo/demoBackend.ts`, `SCHEMA_VERSION = 8`).
+  - Supabase SQL (13 migrations), Edge Functions (`push-dispatch`, `pin-login`) and tests are ready but **not connected**: the client adapter is Phase 2.
+- **Checkpoints (never move or delete):**
+  - **V3 = LATEST**: the commit titled "Checkpoint V3: …", whose full ID is in the "V3 commit ID" line of `CHECKPOINTS.md`. Code = `ae8776f`.
+  - **V2** = `774ea9f34f3ebe0babe44520b297af610262c5fb`.
+  - **V1** = `4636968089a30394f9c9ca594b1a06783c1c4775`.
+  - Tags can't be pushed (403); recreate locally (`git tag -a v3 <id> -m V3`). Restore commands are in `CHECKPOINTS.md`.
+- **Preview artifact:** https://claude.ai/artifact/YK9mg5vQzR19CEfoaX4bSJ (republish with `url` + `files {app.html}`; see "Hosted web preview" below).
+
+### Features at V3 (where they live)
+| Area | What | Key files |
+|---|---|---|
+| Auth | OTP for registration/new phone/Forgot PIN, then **4-digit PIN** login. Server sessions in secure storage (`hr.auth`); device key + PIN; lockout 5 → 15 min, 10/day → OTP reset only | `src/domain/auth.ts`, `src/app/login.tsx`, `src/app/pin.tsx`, `src/components/ui/CodeInput.tsx`, `src/services/secureStorage.ts`, SQL `20261105000000_pin_login.sql`, `supabase/functions/pin-login/` |
+| Identity | **One number = one account = one biodata**: `normalizePhone()`, unique E.164, `profileRemovedAt` mark; only Delete account frees a number | `src/domain/phone.ts`, SQL `20261104000000_one_biodata_per_number.sql` |
+| Navigation | Tabs: Home · Discover · **Boost** (raised centre) · Requests · Profile. Shortlist = `/shortlist` stack screen (heart on Discover header + Home row). Notifications = `/notifications` stack screen | `src/app/(tabs)/_layout.tsx`, `src/components/BoostTabButton.tsx`, `src/components/TabHeader.tsx` |
+| Motion | Native slide (Urdu mirrored), tab shift, web fade+rise, Reduce Motion fade | `src/navigation/transitions.tsx` |
+| Boost | Guaranteed Featured slot for everyone looking for that type. Centre tab + reminders (dot/halo, Home card with 3-day snooze, weekly `boost_reminder`). **One boost at a time** (no re-boost while active; ≤1 unpaid boost order; never extends) | `src/domain/featured.ts` (`boostNudge`, `boostReminderDue`), `src/components/BoostPanel.tsx`, `BoostReminder.tsx`, `src/app/(tabs)/boost.tsx`, SQL `…boost_tab.sql`, `…one_boost_at_a_time.sql` |
+| Push | Every profile action → in-app + phone; generic lock-screen text; categories; 12/h cap | `src/domain/push.ts` (→ generated `supabase/functions/_shared/push.ts`), `src/services/push.ts`, `PushBridge.tsx` |
+| Security | Deny-by-default RPCs, input caps, attack suites (73 SQL, 20 app), safe deep links | `src/domain/security.ts`, SQL `…security_hardening.sql`, `__tests__/attacks.test.ts`, `supabase/tests/60_attacks.test.sql` |
+| Photos | Up to 5 MB originals → ≤1600 px JPEG on device (EXIF stripped); svg/gif/pdf refused | `src/services/photos.ts`, `src/components/PhotoPicker.tsx` |
+| Data size | Demo prune + SQL `run_retention()`; Supabase SDK out of demo bundle | `demoBackend.ts prune()`, SQL `…retention.sql` |
+| Admin | Master/sub-admins, Trash, recovery, member search/page, alerts bell, pricing, announcements, audit | `src/app/admin/*` |
+
+### Rules that must keep holding (each has tests)
+- One number → one account → one biodata. Phones always go through `normalizePhone()`.
+- OTP is sent only for registration, a new phone, Forgot PIN, or a first PIN. A PIN never works without the device key.
+- PIN, session token and device key are stored only as hashes on the server. A wrong PIN must be **persisted even when the call throws**: `run()` persists in `finally`, and SQL `pin_attempt` never raises.
+- No boosting while a boost is active, and boosts never stack.
+- A notification/push link is only ever opened through `safeDeepLink()`.
+- Every new input gets a cap in `security.ts` plus an attack test. Every new RPC is added to an explicit grant (execute is deny-by-default).
+- **Never bump the demo `SCHEMA_VERSION`**: it reseeds and wipes accounts. Backfill new fields in `load()` instead.
+- UI-only requests must not change behaviour (owner rule from V1→V2).
+
+### Commands (all must pass before declaring done)
+```bash
+npx tsc --noEmit && npx tsc -p supabase/functions/tsconfig.json
+EXPO_OFFLINE=1 npx expo lint            # 0 errors; 2 known i18next warnings
+npx jest                                # 214 tests / 13 suites at V3
+pg_ctlcluster 16 main start; su postgres -c "cd /home/user/Hyderabad-Rishta && ./scripts/test-db.sh"   # 11 PASSED lines
+EXPO_OFFLINE=1 npx expo export --platform web && node e2e/serve.js "$(pwd)/dist" 8081 &   # then:
+for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boosttab; do node e2e/$s.js; done   # 85 steps
+node scripts/sync-shared.js            # after editing src/domain/push.ts or src/domain/phone.ts
+```
+- e2e suites sign in through `e2e/auth.js` (`loginWithOtp`), which also creates the test PIN **4827** when asked.
+- Run long e2e loops in the background: the owner rejected long foreground runs twice.
+
+### Older snapshot notes (history)
+- Premium UI redesign after V1: Design PRD v1.0, UI only. The reference image is in `docs/design/reference-ui.jpg`.
+- **CHECKPOINT V2 = commit `774ea9f34f3ebe0babe44520b297af610262c5fb`** (tag `v2` locally).
+- **CHECKPOINT V1 = commit `4636968089a30394f9c9ca594b1a06783c1c4775`** (tag `v1` locally).
+- Run: `npm install`, then `npm run web` (browser) or `npm start` (scan the QR with Expo Go). Details in `README.md`.
 
 ## Demo credentials (demo backend only)
 | Who | Phone | OTP |
@@ -19,7 +66,13 @@
 | Member with published groom profile (has incoming requests) | `+91 9000000001` | `123456` |
 | Admin | `+91 9000000000` | `123456` |
 | Seed brides/grooms | `+91 90000001NN` (NN = 00–31) | `123456` |
-| New user | any other number | `123456` |
+| Sub-admin | `+91 9000000009` | `123456` |
+| Bride with an active boost (Fatima, HR-10003) | `+91 9000000102` | `123456` |
+| Pending approval (HR-10031) / draft (HR-10032) | `+91 9000000130` / `+91 9000000131` | `123456` |
+| New user | any other valid Indian mobile (6–9…) | `123456` |
+- After the first OTP the app asks for a 4-digit PIN. Weak ones like 1234 or 0000 are refused; e2e uses **4827**. After logout, the same browser opens with PIN login.
+- 9000000001 (Imran): Ayesha r_1 (interest + number offer), Zainab r_2 (accepted, number shared), Mariam r_3 (sent 3 days ago, Poke available). Not boosted, so Boost reminders show.
+- Boost pricing in the demo: brides free, grooms ₹499 (simulated checkout).
 Reset everything: Settings → “Reset demo data”.
 
 ## Decisions log
@@ -57,6 +110,16 @@ Reset everything: Settings → “Reset demo data”.
 | 2026-10-28 | Account/safety/payment/boost pushes can't be muted in-app; others have category switches; 12/h cap | Anti-spam without hiding critical notices. |
 | 2026-10-28 | Demo backend schema v8 (push devices/outbox, impressions) | Old demo data resets once. |
 | 2026-10-28 | Named the design doc `design.md` (owner wrote “design.ms”) | Renders on GitHub; mention if owner prefers otherwise. |
+| 2026-10-28 | Security pass: deny-by-default RPC grants, input caps, attack suites | Owner: "break it and fix it". Architecture §14. |
+| 2026-10-28 | Photos: accept originals ≤5 MB, compress on device to ≤1600 px JPEG (≤1.5 MB stored) | Owner asked for 5 MB uploads; storage and bandwidth stay small; EXIF/GPS removed. |
+| 2026-10-28 | One number = one account = one biodata; an admin-removed biodata blocks new ones until account deletion | Owner: "airtight". After an admin deletes a whole account, the number frees after the 30-day Trash purge (asked owner whether to ban permanently; no answer yet). |
+| 2026-10-28 | PIN login needs a trusted device key + PIN; lockout 5/15 min, 10/day → OTP; sessions expire after 180 idle days; admins use PIN too | Mini PRD: cut OTP cost, stay signed in; a PIN alone is never enough. |
+| 2026-10-28 | Weak PINs refused (1234, 0000, sequences, repeats, years) | Prevent guessing; not explicitly in the PRD. |
+| 2026-10-28 | Screen transitions centralised in `src/navigation/transitions.tsx` | Owner: "smooth transitions whenever the app moves to the next screen". |
+| 2026-10-28 | Boost replaced the Shortlist tab (centre, raised); Shortlist moved to the Discover heart + Home row | Owner: "replace one with Boost in the middle … blend the replaced one smartly". |
+| 2026-10-28 | Boost reminders: red dot + halo, Home card (3-day snooze), weekly notification (not within 2 days of publish or 7 days after a boost; promotional category) | Owner: "keep reminding if they haven't boosted". |
+| 2026-10-28 | One boost at a time; boosts no longer extend | Owner: "must not allow them to boost again if the current boost is in progress". |
+| 2026-10-28 | Checkpoint V3 pinned at the "Checkpoint V3" docs commit (code = `ae8776f`) | Owner: "checkpoint this as V3". |
 
 ## Gotchas
 - Expo SDK 58: import `Tabs` from `expo-router/js-tabs` (root export is deprecated). Routes live in `src/app/`.
@@ -88,7 +151,22 @@ Reset everything: Settings → “Reset demo data”.
 - Private Artifact (current): https://claude.ai/artifact/YK9mg5vQzR19CEfoaX4bSJ — earlier versions: https://claude.ai/artifact/Vx3XTLdLJVSgcVY9hkmxuH (single self-contained HTML, demo backend). Republish with `url` to keep the link.
 - Rebuild: `SINGLE_BUNDLE=1 EXPO_OFFLINE=1 npx expo export --platform web --output-dir dist-single && node scripts/pack-web.js dist-single <out>.html`, then republish to the same URL.
 - `app.config.js` turns off web route code-splitting only when `SINGLE_BUNDLE=1`; `+not-found` redirects unknown paths to `/`.
+- **The preview is two files:** `index.html` (phone-frame shell: device picker, jump-to-screen, demo logins, PIN note) and `app.html` (the packed app, built with `--standalone`).
+  - The shell isn't in the repo. Get it back with Artifact `read` (url above) and save it as `index.html`.
+  - Rebuild `app.html` with `node scripts/pack-web.js dist-single <dir>/app.html --standalone`.
+  - Publish with `url` + `files: {"app.html": …}`. If the publish is refused, read `app.html` first (`read` with `path`).
+- A duplicate artifact https://claude.ai/artifact/Pyd1ttmH9LJ82zgYQwuLDD was created by mistake. Ask the owner before deleting it.
 
 ## Next session — start here
-1. Check `Tasks.md` Phase 2; ask owner about Supabase project + SMS + Razorpay accounts.
-2. Keep all six docs updated as you work.
+1. Read "Start here" above. Only open the files named in the features table for the area you're changing.
+2. Open questions for the owner:
+   - permanently ban numbers of admin-deleted accounts?
+   - flag duplicate people across numbers (T-067)?
+   - delete the duplicate preview artifact https://claude.ai/artifact/Pyd1ttmH9LJ82zgYQwuLDD?
+3. Phase 2 (`Tasks.md`, `Phases.md`) needs owner accounts:
+   - Supabase project, then the client adapter (incl. `trust_device` + `pin-login` + SecureStore session; enable phone+password auth)
+   - SMS provider for OTP
+   - Razorpay (webhook must refund when `apply_boost` refuses with `boost_active`)
+   - EAS projectId + FCM/APNs for push
+   - pg_cron: `run_boost_jobs` every 5 min, `run_retention` daily, `push-dispatch` every minute
+4. Keep all docs updated (PRD, design, Architecture, Tasks, Phases, README, CHECKPOINTS, Memory) with every change.

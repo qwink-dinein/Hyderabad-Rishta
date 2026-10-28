@@ -1,10 +1,108 @@
 # Checkpoints — Hyderabad Rishta
 
 > Known-good snapshots of the app. Each is pinned by a **commit ID on GitHub** (permanent; tags can't be pushed from the session that made them), so it survives this machine and any future session.
-> **Latest checkpoint: V2.**
+> **Latest checkpoint: V3.** (V2 and V1 remain restorable below.)
 > If something breaks later, compare against or roll back to a checkpoint (commands below).
 
-## V2 — commit `774ea9f` / tag `v2` (2026-10-28) ✅ owner-approved — LATEST
+## V3 — the commit "Checkpoint V3" / tag `v3` (2026-10-28) ✅ owner-approved — LATEST
+
+**Where:** branch `claude/sharp-bell-xxyxmj`, repo `qwink-dinein/Hyderabad-Rishta`.
+- **V3 is the commit titled "Checkpoint V3: …".** Its full ID is recorded in `Memory.md` and in the "V3 commit ID" line at the end of this section; find it any time with `git log --grep "Checkpoint V3" --format=%H -1`.
+- The app code is identical to **`ae8776f`** ("One boost at a time"); the V3 commit only adds documentation.
+- A local tag `v3` points at it. Pushing tags is blocked here; recreate it with `git tag -a v3 <V3 id> -m V3`.
+
+**Preview at V3:** https://claude.ai/artifact/YK9mg5vQzR19CEfoaX4bSJ (phone-frame preview; full screen on a phone).
+**Builds on V2:** everything listed under V2 and V1 still works, and is covered by the tests below.
+
+### Verified at V3
+| Check | Result |
+|---|---|
+| `npx tsc --noEmit` and `npx tsc -p supabase/functions/tsconfig.json` | clean |
+| `npx expo lint` | 0 errors (2 harmless i18next warnings) |
+| `npx jest` | **214 / 214** passing (13 suites) |
+| `./scripts/test-db.sh` (Postgres 16, **13 migrations**) | **11 suites PASSED**: RLS, governance, interest, admin console, boost & push, attacks (73 blocked), retention, one-biodata (17), PIN login (37), boost tab, one-boost |
+| Playwright `e2e/` | **12 suites, 85 steps**, zero console errors: smoke 14, journey 10, admin 9, interest 7, console 6, boostpush 4, home 6, photos 3, onebiodata 2, pin 12, transitions 5, boosttab 7 |
+
+### Added since V2
+**1. Security: "break it and fix it"** (Architecture §14)
+- **Database:** an attack suite of 73 attacks (`supabase/tests/60_attacks.test.sql`). 14 got through before the fixes.
+  - Server functions are deny-by-default, with an allow-list.
+  - Members can shortlist only profiles they can see.
+  - Biodata is capped at 32 KB; photos must be the owner's own storage paths.
+  - Reports: column-level insert, known reasons only, one open report per pair, 10 per day.
+  - Length caps on push tokens, idempotency keys, messages and push settings.
+  - Notification links must be in-app paths; announcement images must be https.
+- **App rules:** `__tests__/attacks.test.ts` (20 tests; 12 got through before the fixes), with shared rules in `src/domain/security.ts`.
+- **Links:** `safeDeepLink()` on every notification and push tap.
+
+**2. Photos up to 5 MB**
+- JPG, PNG, WEBP and HEIC are accepted; SVG, GIF and PDF are refused.
+- Photos are shrunk on the phone (`src/services/photos.ts`, expo-image-manipulator) to 1600 px or less, as a JPEG with location data removed, and stored at 1.5 MB or less.
+
+**3. Data size and performance**
+- The demo store prunes data nobody reads back: a flooded store went from 8.5 MB to about 0.4 MB.
+- SQL `run_retention()` does the same daily on the server.
+- The Supabase SDK is no longer bundled in the demo build (−276 KB JS).
+
+**4. One mobile number = one account = one biodata** (Architecture §15)
+- `normalizePhone()` (`src/domain/phone.ts`) treats every way of typing a number as the same number.
+- DB: a canonical phone check plus a unique full-number index; one biodata per account (trigger).
+- A biodata removed by an admin marks the account (`profile_removed_at`), so no fresh biodata can be started. Only **Delete account** frees the number.
+
+**5. OTP registration + 4-digit PIN login** (Architecture §16)
+- **When an OTP is sent:** only for registration, a new phone, Forgot PIN, and the first PIN on an older account.
+- **Sessions:** server-side, stored in the phone's secure storage, kept across restarts. Revoked by logout, a PIN reset, suspension, deletion, or 180 idle days.
+- **PIN login:** needs this phone's device key plus the PIN.
+  - Lockout: 5 wrong → 15 min; 10 in a day → only an OTP reset unlocks.
+  - Weak PINs are refused; the PIN is stored only as a hash.
+- **Screens:** PIN login, create and confirm, Forgot PIN, change PIN in Settings.
+- **Server:** SQL tables and RPCs plus the `pin-login` Edge Function.
+- **Migration:** existing accounts and logins are kept.
+
+**6. Smooth screen transitions** (`src/navigation/transitions.tsx`)
+- Native slide on phones (mirrored for Urdu) and a tab shift.
+- On web, a fade and rise; under Reduce Motion, a fade only.
+
+**7. Boost as the raised centre tab** (design.md §5b)
+- **Tabs:** Home · Discover · **Boost** · Requests · Profile.
+- **Reminders while not boosted:** a dot and a pulsing halo on the button, a Home card ("Not now" hides it for 3 days), and a weekly `boost_reminder` notification.
+- **Shortlist moved** to a heart with a count in Discover's header and a row on Home; `/shortlist` still works.
+- **One boost at a time:** no boosting again while a boost runs (app, backend and SQL). There is one unpaid boost order at most, and boosts never stack or extend.
+
+### Key commits V2 → V3
+| Commit | What |
+|---|---|
+| (V3) | Checkpoint V3: docs only; code = `ae8776f` |
+| `ae8776f` | One boost at a time |
+| `240d6a5` | Boost centre tab + reminders; Shortlist blended into Discover/Home |
+| `b3931b7` | Smooth screen transitions |
+| `9afc290` / `2108da5` / `17562ba` | PIN login: server side / UI / backend |
+| `455159b` | One number = one account = one biodata |
+| `10904de`, `ba56590` | Bundle trim; 5 MB photos, safe deep links, data retention |
+| `a8e565e`, `83a39a6` | Security: app-rule and DB attack suites + fixes |
+
+### How to get back to V3
+```bash
+git fetch origin claude/sharp-bell-xxyxmj
+V3=$(git log origin/claude/sharp-bell-xxyxmj --grep "Checkpoint V3" --format=%H -1)
+git tag -a v3 "$V3" -m V3 2>/dev/null || true   # recreate the tag locally if missing
+git diff v3 --stat                   # what changed since V3
+git checkout v3 -- <path>            # restore one file/folder to V3, then commit
+git revert --no-edit v3..HEAD        # undo everything after V3 as new commits (safe, keeps history)
+git checkout -b restore-v3 v3        # or inspect V3 on its own branch
+```
+Then verify:
+1. `npm install`
+2. `npx tsc --noEmit`
+3. `npx jest` (expect 214 passing)
+4. `su postgres -c ./scripts/test-db.sh` (expect 11 PASSED lines; start Postgres first with `pg_ctlcluster 16 main start`)
+5. `npx expo export --platform web`, then `node e2e/serve.js dist 8081` and the 12 e2e suites
+
+The demo database is still `SCHEMA_VERSION = 8`. New fields are filled in place on load, so existing demo accounts are never wiped.
+
+---
+
+## V2 — commit `774ea9f` / tag `v2` (2026-10-28) ✅ owner-approved (superseded by V3, still restorable)
 
 **Where:** commit **`774ea9f34f3ebe0babe44520b297af610262c5fb`** (short `774ea9f`) on branch `claude/sharp-bell-xxyxmj`, repo `qwink-dinein/Hyderabad-Rishta`. This commit ID is the permanent reference. The app code is identical to `0dc8d5f`; this commit only adds this record.
 A local git tag `v2` points at it. If a later session can't see the tag, recreate it with `git tag -a v2 774ea9f -m V2`.
