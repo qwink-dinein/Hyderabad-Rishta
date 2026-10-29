@@ -9,7 +9,7 @@ const standalone = flag === '--standalone';
 const html = fs.readFileSync(path.join(dir, 'index.html'), 'utf8');
 const src = html.match(/<script src="([^"]+)"/)[1];
 let js = fs.readFileSync(path.join(dir, src), 'utf8');
-const mime = { '.ttf': 'font/ttf', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.wav': 'audio/wav' };
+const mime = { '.ttf': 'font/ttf', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.wav': 'audio/wav', '.webp': 'image/webp' };
 let inlined = 0;
 js = js.replace(/"(\/assets\/[^"?]+)(\?[^"]*)?"/g, (m, p) => {
   const file = path.join(dir, p);

@@ -1,7 +1,7 @@
 // Static server with SPA fallback for the exported Expo web build.
 const http = require('http'), fs = require('fs'), path = require('path');
 const root = process.argv[2]; const port = Number(process.argv[3] || 8081);
-const types = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.ttf': 'font/ttf', '.png': 'image/png', '.ico': 'image/x-icon', '.json': 'application/json', '.svg': 'image/svg+xml' };
+const types = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.ttf': 'font/ttf', '.png': 'image/png', '.ico': 'image/x-icon', '.json': 'application/json', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.mp3': 'audio/mpeg', '.wav': 'audio/wav' };
 // Same security headers production sends (public/_headers → dist/_headers), minus HSTS/upgrade on plain http.
 const headers = {};
 try {

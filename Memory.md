@@ -124,7 +124,7 @@ Reset everything: Settings → “Reset demo data”.
 | 2026-10-28 | Boost reminders: red dot + halo, Home card (3-day snooze), weekly notification (not within 2 days of publish or 7 days after a boost; promotional category) | Owner: "keep reminding if they haven't boosted". |
 | 2026-10-28 | One boost at a time; boosts no longer extend | Owner: "must not allow them to boost again if the current boost is in progress". |
 | 2026-10-28 | Checkpoint V3 pinned at the "Checkpoint V3" docs commit (code = `ae8776f`) | Owner: "checkpoint this as V3". |
-| 2026-10-29 | No-photo profiles show a bride/groom illustration (`PersonaArt`, seeded by profile ID for varied faces/outfits), not the initial. First faceless version rejected by owner ("very bad … add face features") | Owner: "default show a bride illustration for bride profiles and groom illustration for grooms". |
+| 2026-10-29 | No-photo profiles show the owner's Hyderabadi bride/groom portraits (`assets/personas/*.webp`, in `ProfilePhoto`), by the profile's type. Two vector versions were rejected first ("very bad") — use the supplied artwork, don't redraw | Owner spec "Default Hyderabadi Bride & Groom Illustrations". |
 | 2026-10-28 | QA rounds 1–2 (crawler + click-through) and security round 2 (OTP cap, spoofing chars, CSP headers, permissions) | Owner: "become a tester … test every button … try to break the security and fix it". |
 | 2026-10-28 | npm audit findings left as-is (build-time Expo CLI/jest only); never `npm audit fix --force` (downgrades to SDK 51) | Not shipped in the app bundle. |
 
