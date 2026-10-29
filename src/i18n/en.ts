@@ -692,6 +692,7 @@ const en = {
     to: 'To: {{name}}',
   },
   connect: {
+    alreadySent: "You have already expressed interest in this profile.",
     leaveTitle: 'Leave without sending?',
     leaveBody: 'Your interest hasn’t been sent. What you typed here will be discarded.',
     leave: 'Leave',
@@ -793,6 +794,7 @@ const en = {
       phone_offer_withdrawn: '{{name}} withdrew their number offer',
       poke: 'Someone who expressed interest in your profile is waiting for your response. Review their request whenever convenient.',
       request_expired: 'Your interest request expired without a response. You can send a new one.',
+      request_accepted_number: "{{name}} accepted your interest. They can now see the number you shared.",
       request_accepted: '{{name}} accepted your request',
       request_declined: '{{name}} declined your request',
       contact_shared: '{{name}} shared details with you',

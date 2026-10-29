@@ -84,8 +84,9 @@ export function useToggleShortlist() {
   });
 }
 
+/** Also feeds the Requests tab badge, so it re-checks every 30 s and when the app returns to the front. */
 export function useRequests() {
-  return useQuery({ queryKey: qk.requests, queryFn: () => backend.getRequests(), enabled: useAuthed() });
+  return useQuery({ queryKey: qk.requests, queryFn: () => backend.getRequests(), enabled: useAuthed(), refetchInterval: 30_000 });
 }
 export function useRequestWith(profileId: string) {
   return useQuery({ queryKey: qk.requestWith(profileId), queryFn: () => backend.getRequestStatusWith(profileId), enabled: useAuthed() && !!profileId });
@@ -99,12 +100,28 @@ function useInvalidateRequests() {
     qc.invalidateQueries({ queryKey: ['profile'] });
     qc.invalidateQueries({ queryKey: qk.notifications });
     qc.invalidateQueries({ queryKey: qk.dashboard });
+    // Cards show the relation ("Interest sent", "Connected"…): keep them in step everywhere.
+    qc.invalidateQueries({ queryKey: ['search'] });
+    qc.invalidateQueries({ queryKey: qk.featured });
+    qc.invalidateQueries({ queryKey: qk.shortlist });
   };
 }
 
+/**
+ * Express interest. The profile's status is re-fetched BEFORE the call resolves, so going back shows
+ * "Interest sent" at once (never a stale "Express interest"), and every list with relation badges
+ * (Discover, Home, Featured, Shortlist) refreshes.
+ */
+export function refreshAfterInterest(qc: ReturnType<typeof useQueryClient>, to: string) {
+  for (const key of [qk.requests, qk.notifications, qk.dashboard, qk.featured, qk.shortlist, ['search']]) qc.invalidateQueries({ queryKey: key });
+  return Promise.all([qc.refetchQueries({ queryKey: qk.requestWith(to) }), qc.refetchQueries({ queryKey: qk.profile(to) })]);
+}
 export function useSendRequest() {
-  const inv = useInvalidateRequests();
-  return useMutation({ mutationFn: (v: { to: string; input: SendInterestInput }) => backend.sendRequest(v.to, v.input), onSuccess: inv });
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (v: { to: string; input: SendInterestInput }) => backend.sendRequest(v.to, v.input),
+    onSuccess: (_r, v) => refreshAfterInterest(qc, v.to),
+  });
 }
 export function useOfferPhone() {
   const inv = useInvalidateRequests();
@@ -136,7 +153,7 @@ export function useSetConsent() {
 }
 
 export function useNotifications() {
-  return useQuery({ queryKey: qk.notifications, queryFn: () => backend.getNotifications(), enabled: useAuthed(), refetchInterval: 60_000 });
+  return useQuery({ queryKey: qk.notifications, queryFn: () => backend.getNotifications(), enabled: useAuthed(), refetchInterval: 30_000 });
 }
 export function useUnreadCount() {
   const { data } = useNotifications();

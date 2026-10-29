@@ -45,7 +45,13 @@ export function useNotificationText() {
     (n: NotificationView) => {
       if (n.announcement) return { title: localized(n.announcement.title, lang), body: localized(n.announcement.body, lang) };
       const key =
-        n.type === 'payment' ? `notifications.t.payment_${n.params.status}` : n.type === 'request_received' && n.params.offered ? 'notifications.t.request_received_offer' : `notifications.t.${n.type}`;
+        n.type === 'payment'
+          ? `notifications.t.payment_${n.params.status}`
+          : n.type === 'request_received' && n.params.offered
+            ? 'notifications.t.request_received_offer'
+            : n.type === 'request_accepted' && n.params.numberShared
+              ? 'notifications.t.request_accepted_number'
+              : `notifications.t.${n.type}`;
       return { title: t(key, { ...n.params, note: n.params.note || '—' }), body: n.type === 'boost_started' && n.params.until ? formatDate(n.params.until) : undefined };
     },
     [t, lang],

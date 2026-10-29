@@ -1328,7 +1328,8 @@ export class DemoBackend implements Backend {
         if (withInterest) withInterest.status = 'expired';
         this.track(db, 'request_declined', u.id, {}, `decline:${r.id}`);
       }
-      this.notify(db, r.fromUserId, decision === 'accepted' ? 'request_accepted' : 'request_declined', { name: this.displayNameOf(db, u.id) }, '/requests');
+      const numberShared: Record<string, string> = decision === 'accepted' && withInterest ? { numberShared: '1' } : {};
+      this.notify(db, r.fromUserId, decision === 'accepted' ? 'request_accepted' : 'request_declined', { name: this.displayNameOf(db, u.id), ...numberShared }, '/requests');
       return { ...r };
     }, true);
   }

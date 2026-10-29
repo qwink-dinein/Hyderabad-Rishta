@@ -4,6 +4,8 @@ import { Tabs } from 'expo-router/js-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Icon, type IconName } from '@/components/ui/Icon';
+import { pendingReceivedCount } from '@/domain/connections';
+import { useRequests } from '@/hooks/queries';
 import { useTabTransitions } from '@/navigation/transitions';
 import { useSession } from '@/state/session';
 import { colors, radius } from '@/theme/tokens';
@@ -21,6 +23,9 @@ export default function TabsLayout() {
   const user = useSession((s) => s.user);
   const lang = useSession((s) => s.lang);
   const tabMotion = useTabTransitions();
+  // Requests badge: interests received and still waiting for this member's answer (1, 2, 3…).
+  const { data: requests } = useRequests();
+  const waiting = pendingReceivedCount(requests ?? []);
   if (!user) return <Redirect href="/login" />;
 
   const icon = (name: IconName, filled?: IconName) =>
@@ -49,7 +54,16 @@ export default function TabsLayout() {
       <Tabs.Screen name="home" options={{ title: t('nav.home'), tabBarIcon: icon('home') }} />
       <Tabs.Screen name="discover" options={{ title: t('nav.discover'), tabBarIcon: icon('search') }} />
       <Tabs.Screen name="shortlist" options={{ title: t('nav.shortlist'), tabBarIcon: icon('heart', 'heartFilled') }} />
-      <Tabs.Screen name="requests" options={{ title: t('nav.requests'), tabBarIcon: icon('mail') }} />
+      <Tabs.Screen
+        name="requests"
+        options={{
+          title: t('nav.requests'),
+          tabBarIcon: icon('mail'),
+          tabBarBadge: waiting ? (waiting > 99 ? '99+' : waiting) : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.danger, color: colors.white, fontSize: 11, minWidth: 18, height: 18, lineHeight: 18 },
+          tabBarAccessibilityLabel: waiting ? `${t('nav.requests')}, ${t('home.newInterests', { count: waiting })}` : t('nav.requests'),
+        }}
+      />
       <Tabs.Screen name="dashboard" options={{ title: t('nav.profile'), tabBarIcon: icon('user') }} />
     </Tabs>
   );

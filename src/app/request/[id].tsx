@@ -12,7 +12,9 @@ import { ProfilePhoto } from '@/components/ProfileCard';
 import { maskPhone, uid } from '@/domain/format';
 import { celebrate } from '@/services/feedback';
 import { useGoHome } from '@/hooks/useGoHome';
-import { useProfile, useSendRequest } from '@/hooks/queries';
+import { refreshAfterInterest, useProfile, useRequestWith, useSendRequest } from '@/hooks/queries';
+import { useQueryClient } from '@tanstack/react-query';
+import { AppError } from '@/services/backend';
 import { useSession } from '@/state/session';
 import { colors, radius, space } from '@/theme/tokens';
 
@@ -30,6 +32,8 @@ export default function Connect() {
   const { t } = useTranslation();
   const user = useSession((s) => s.user);
   const { data: profile, isLoading } = useProfile(id);
+  const { data: existing, isLoading: existingLoading } = useRequestWith(id);
+  const qc = useQueryClient();
   const send = useSendRequest();
   const toast = useToast((s) => s.show);
   const errMsg = useErrorMessage();
@@ -40,7 +44,22 @@ export default function Connect() {
   const idempotencyKey = useMemo(() => uid('int_'), []);
   const goHome = useGoHome();
 
-  if (isLoading || !profile || !user) return <Loading />;
+  if (isLoading || existingLoading || !profile || !user) return <Loading />;
+  // Opened again (back button, old link, second tab) after the interest went out: never offer a duplicate.
+  const st = existing?.request.status;
+  if (existing && (st === 'pending' || st === 'accepted' || st === 'blocked')) {
+    return (
+      <Screen header={<Header title={t('connect.title')} />}>
+        <Card style={{ gap: space.sm, marginTop: space.lg, alignItems: 'flex-start' }}>
+          <Text variant="h3" testID="connect-already">
+            {existing.direction === 'sent' ? t('connect.alreadySent') : t('profile.theirInterest')}
+          </Text>
+          <Text variant="body">{t('profile.interestStatus', { status: t(`requests.status.${st}`) })}</Text>
+          <Button label={t('profile.openRequest')} size="sm" onPress={() => router.replace('/requests')} />
+        </Card>
+      </Screen>
+    );
+  }
   const masked = maskPhone(user.phone);
   const hasContact = CONTACT_PATTERN.test(message);
   const canContinue = mode === 'intro' || (mode === 'offer' && consent);
@@ -52,6 +71,13 @@ export default function Connect() {
       toast(t('connect.sent'));
       router.back();
     } catch (e) {
+      if (e instanceof AppError && e.code === 'duplicate') {
+        // Already sent (another device, a retry that got through): show it as sent, not as an error.
+        await refreshAfterInterest(qc, profile.id).catch(() => undefined);
+        toast(t('connect.alreadySent'), 'info');
+        router.back();
+        return;
+      }
       toast(errMsg(e), 'danger');
     }
   };

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Modal, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -88,7 +88,9 @@ export default function ProfileScreen() {
 
   // They said no recently: don't offer a re-send, explain instead (server enforces the same cool-down).
   const theyDeclined = !isOwn && !active && declinedRecently(profile.relation);
-  const canExpress = !isOwn && !active && !theyDeclined;
+  // Until the pair's status is known, offer nothing (no flash of "Express interest" after sending).
+  const canExpress = !isOwn && !reqLoading && !active && !theyDeclined;
+  const sentState = !isOwn && active ? (status === 'accepted' ? 'connected' : req!.direction === 'sent' ? 'sent' : 'received') : null;
   // Why the viewer can't send yet (null = they can). Shown as guidance; the button stays tappable.
   const blocker: { msg: string; cta?: { label: string; go: () => void } } | null = !me
     ? { msg: t('profile.sendNeedsBiodata'), cta: { label: t('dashboard.createCta'), go: () => router.push('/biodata') } }
@@ -142,6 +144,20 @@ export default function ProfileScreen() {
                 style={{ flex: 1 }}
                 testID="shortlist-toggle"
               />
+              {sentState ? (
+                <Pressable
+                  onPress={() => router.push('/requests')}
+                  accessibilityRole="button"
+                  accessibilityLabel={sentState === 'sent' ? t('card.rel.sent') : sentState === 'connected' ? t('card.rel.connected') : t('card.rel.received')}
+                  style={styles.sentPill}
+                  testID="interest-sent"
+                >
+                  <Icon name={sentState === 'received' ? 'mail' : 'check'} size={18} color={colors.success} />
+                  <Text variant="bodyStrong" color={colors.success}>
+                    {sentState === 'sent' ? t('card.rel.sent') : sentState === 'connected' ? t('card.rel.connected') : t('card.rel.received')}
+                  </Text>
+                </Pressable>
+              ) : null}
               {canExpress ? (
                 <Button
                   label={profile.acceptsRequests ? t('profile.expressInterest') : t('profile.notAccepting')}
@@ -233,6 +249,7 @@ function ReportSheet({ open, profileId, onClose }: { open: boolean; profileId: s
 }
 
 const styles = StyleSheet.create({
+  sentPill: { flex: 1.3, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.sm, minHeight: 50, borderRadius: radius.pill, backgroundColor: colors.sage, borderWidth: 1, borderColor: colors.success },
   backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
   sheet: { backgroundColor: colors.ivory, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: space.xl, gap: space.sm, width: '100%', maxWidth: maxContentWidth, alignSelf: 'center' },
 });

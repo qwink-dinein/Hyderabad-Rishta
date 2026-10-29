@@ -5,11 +5,11 @@
 
 ## Start here (V3 state in one screen)
 - **What:** Hyderabad Rishta, a Muslim matrimony app. Owner: mukarramjahmm.
-  - Specs: `PRD.md` (product), `design.md` (UI/motion), `Architecture.md` (§9 governance, §10 interests, §11–13 boost/push/UI, §14 security, §15 one-number rule, §16 PIN login, §17 boost tab, §18 QA + security round 2, §19 boost options + Home/Profile redesign), `Tasks.md` (T-numbers), `Phases.md`, `CHECKPOINTS.md`.
+  - Specs: `PRD.md` (product), `design.md` (UI/motion), `Architecture.md` (§9 governance, §10 interests, §11–13 boost/push/UI, §14 security, §15 one-number rule, §16 PIN login, §17 boost tab, §18 QA + security round 2, §19 boost options + Home/Profile redesign, §20 live interest state + badge), `Tasks.md` (T-numbers), `Phases.md`, `CHECKPOINTS.md`.
 - **Repo / branch:** `qwink-dinein/Hyderabad-Rishta` · `claude/sharp-bell-xxyxmj`. Commit and push there; never open a PR unless asked.
 - **Stack:** Expo SDK 58 · RN · TypeScript · Expo Router (`src/app/`) · TanStack Query · zustand · i18next (EN / UR RTL / TE) · zod.
   - The app runs on the offline **DemoBackend** (`src/services/demo/demoBackend.ts`, `SCHEMA_VERSION = 8`).
-  - Supabase SQL (15 migrations), Edge Functions (`push-dispatch`, `pin-login`) and tests are ready but **not connected**: the client adapter is Phase 2.
+  - Supabase SQL (16 migrations), Edge Functions (`push-dispatch`, `pin-login`) and tests are ready but **not connected**: the client adapter is Phase 2.
 - **Checkpoints (never move or delete):**
   - **V3 = LATEST = `dafa2120243b1bf067e78de03602e0c4fc4efd96`** ("Checkpoint V3: pin…"; code identical to `ae8776f`).
   - **V2** = `774ea9f34f3ebe0babe44520b297af610262c5fb`.
@@ -50,10 +50,10 @@
 ```bash
 npx tsc --noEmit && npx tsc -p supabase/functions/tsconfig.json
 EXPO_OFFLINE=1 npx expo lint            # 0 errors; 2 known i18next warnings
-npx jest                                # 228 tests / 14 suites
-pg_ctlcluster 16 main start; su postgres -c "cd /home/user/Hyderabad-Rishta && ./scripts/test-db.sh"   # 14 PASSED lines
+npx jest                                # 232 tests / 15 suites
+pg_ctlcluster 16 main start; su postgres -c "cd /home/user/Hyderabad-Rishta && ./scripts/test-db.sh"   # 15 PASSED lines
 EXPO_OFFLINE=1 npx expo export --platform web && node e2e/serve.js "$(pwd)/dist" 8081 &   # then:
-for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boost personas clickthrough csp crawl; do node e2e/$s.js; done   # 16 suites; crawl must report 0 high issues
+for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boost personas livestate clickthrough csp crawl; do node e2e/$s.js; done   # 17 suites; crawl must report 0 high issues
 node scripts/sync-shared.js            # after editing src/domain/push.ts or src/domain/phone.ts
 ```
 - e2e suites sign in through `e2e/auth.js` (`loginWithOtp`), which also creates the test PIN **4827** when asked.
@@ -125,6 +125,7 @@ Reset everything: Settings → “Reset demo data”.
 | 2026-10-28 | Boost reminders: red dot + halo, Home card (3-day snooze), weekly notification (not within 2 days of publish or 7 days after a boost; promotional category) | Owner: "keep reminding if they haven't boosted". |
 | 2026-10-28 | One boost at a time; boosts no longer extend | Owner: "must not allow them to boost again if the current boost is in progress". |
 | 2026-10-28 | Checkpoint V3 pinned at the "Checkpoint V3" docs commit (code = `ae8776f`) | Owner: "checkpoint this as V3". |
+| 2026-10-29 | Interest state airtight + Requests tab badge + queued banners + "number now visible" notice (Architecture §20) | Owner: "make this functionality airtight", "request option in tab should show 1,2,3". |
 | 2026-10-29 | Mini PRD: boost options 7/14/30 priced by admin (initial ₹100/200/350; bride 7-day free), My Boost, Home completion/activity/Boost cards, Profile list, tabs Home·Discover·Shortlist·Requests·Profile | Owner: "Give admin the configurable price options" + Mini PRD. Never promise views/matches; no fake stats. |
 | 2026-10-29 | No-photo profiles show the owner's Hyderabadi bride/groom portraits (`assets/personas/*.webp`, in `ProfilePhoto`), by the profile's type. Two vector versions were rejected first ("very bad") — use the supplied artwork, don't redraw | Owner spec "Default Hyderabadi Bride & Groom Illustrations". |
 | 2026-10-28 | QA rounds 1–2 (crawler + click-through) and security round 2 (OTP cap, spoofing chars, CSP headers, permissions) | Owner: "become a tester … test every button … try to break the security and fix it". |

@@ -76,3 +76,8 @@ export function relationBadge(rel?: Relation): { key: RelationBadgeKey; tone: 's
 export function declinedRecently(rel: Relation | undefined, now = new Date()) {
   return !!rel && rel.status === 'declined' && rel.direction === 'sent' && now.getTime() - new Date(rel.at).getTime() < DECLINE_COOLDOWN_DAYS * 86400000;
 }
+
+/** Interests received that still wait for an answer (not expired) — the Requests tab badge. */
+export function pendingReceivedCount(views: { direction: 'sent' | 'received'; request: Pick<ContactRequest, 'status' | 'expiresAt'> }[], now = new Date()): number {
+  return views.filter((v) => v.direction === 'received' && v.request.status === 'pending' && new Date(v.request.expiresAt).getTime() > now.getTime()).length;
+}

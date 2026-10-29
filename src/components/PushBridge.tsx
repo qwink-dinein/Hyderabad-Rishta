@@ -54,7 +54,10 @@ function ArrivalBanner() {
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
   const seen = useRef<Set<string> | null>(null);
-  const [current, setCurrent] = useState<NotificationView | null>(null);
+  // Several can arrive at once (payment confirmed + boost active): show each in turn, oldest first.
+  const [queue, setQueue] = useState<NotificationView[]>([]);
+  const current = queue[0] ?? null;
+  const next = () => setQueue((q) => q.slice(1));
   const [y] = useState(() => new Animated.Value(0));
   const unread = data?.filter((n) => !n.readAt).length ?? 0;
 
@@ -68,19 +71,24 @@ function ArrivalBanner() {
       seen.current = new Set(data.map((n) => n.id)); // don't replay the backlog on launch
       return;
     }
-    const fresh = data.find((n) => !n.readAt && !seen.current!.has(n.id));
+    const fresh = data.filter((n) => !n.readAt && !seen.current!.has(n.id)).reverse();
     for (const n of data) seen.current.add(n.id);
-    if (!fresh) return;
-    setCurrent(fresh);
+    if (!fresh.length) return;
+    setQueue((q) => [...q, ...fresh].slice(0, 5)); // a burst never turns into a long parade
+  }, [data]);
+
+  // Slide each banner in as it reaches the front of the queue.
+  useEffect(() => {
+    if (!current) return;
     haptic('light');
     y.setValue(reduced ? 1 : 0);
     if (!reduced) Animated.timing(y, { toValue: 1, duration: motion.sheet, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
-  }, [data, reduced, y]);
+  }, [current, reduced, y]);
 
   // The timer belongs to the banner, not to data refreshes (a refetch must not keep it on screen).
   useEffect(() => {
     if (!current) return;
-    const id = setTimeout(() => setCurrent(null), 4500);
+    const id = setTimeout(next, 4500);
     return () => clearTimeout(id);
   }, [current]);
 
@@ -92,7 +100,7 @@ function ArrivalBanner() {
         <Pressable
           onPress={() => {
             backend.markNotificationRead(current.id).catch(() => undefined);
-            setCurrent(null);
+            setQueue([]);
             router.push(safeDeepLink(current.deepLink) as Href);
           }}
           accessibilityRole="button"

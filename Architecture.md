@@ -392,3 +392,14 @@ Normal returning login never sends one.
   - Jest: `boostPlans.test.ts` (options, prices, switching, free, upgrades, honest comparison).
   - SQL: `98_boost_plans` (seed, server price, forged orders refused, price changes, nonsense configs).
   - e2e: `boost.js` (tabs, completion updates after saving, activity, options + checkout, My Boost, Profile rows, admin price change, free boost, ended boost, unpublished).
+
+## 20. Live interest state, Requests badge, notification banners (2026-10-29)
+- **Interest sent is shown at once:** `useSendRequest` re-fetches `requestWith(id)` and `profile(id)` before resolving (`refreshAfterInterest` in `src/hooks/queries.ts`). It also invalidates search, featured, shortlist, requests, notifications and dashboard, so every card's relation badge updates.
+  - The profile footer shows an "Interest sent" / "Connected" / "Sent you interest" pill (`testID interest-sent`) instead of the button.
+  - Nothing is offered while the pair's status is still loading.
+  - `/request/[id]` shows "already expressed interest" when an active request exists, and a `duplicate` error from the server is treated as "already sent", never as a failure.
+  - The server rules are unchanged: one active request per pair, idempotency key, SQL `send_request`.
+- **Requests tab badge:** `pendingReceivedCount(requests)` (`src/domain/connections.ts`) counts received interests that are pending and not expired. It feeds `tabBarBadge` (red, 99+ cap) and an accessible label ("Requests, N new interests"). `useRequests` and `useNotifications` refresh every 30 s and on app focus.
+- **Banners:** the in-app banner (`PushBridge`) queues up to 5 new notifications and shows them one after another (4.5 s each), so a paid boost shows "Payment confirmed" then "Your boost is active".
+  - `request_accepted` carries `numberShared: '1'` when the accepted interest included the sender's number → "…accepted your interest. They can now see the number you shared." (demo `respondToRequest`; SQL trigger `notifications_accept_detail` in `20261110000000_notification_details.sql`).
+- **Tests:** Jest `notifyDetails.test.ts`; SQL `99_notification_details`; e2e `livestate.js`.
