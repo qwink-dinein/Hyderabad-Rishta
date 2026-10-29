@@ -90,7 +90,11 @@ export default function Dashboard() {
     boost.nudge === 'active'
       ? t('me.boostHintActive', { date: formatDate(boost.until) })
       : boost.nudge === 'not_published'
-        ? t('me.boostHintNotLive')
+        ? boost.status === 'paused'
+          ? t('myBoost.hintPaused')
+          : boost.status === 'pending'
+            ? t('myBoost.hintPending')
+            : t('me.boostHintNotLive')
         : boost.nudge === 'disabled'
           ? t('me.boostHintOff')
           : boost.free

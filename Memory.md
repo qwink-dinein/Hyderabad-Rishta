@@ -53,7 +53,7 @@ EXPO_OFFLINE=1 npx expo lint            # 0 errors; 2 known i18next warnings
 npx jest                                # 232 tests / 15 suites
 pg_ctlcluster 16 main start; su postgres -c "cd /home/user/Hyderabad-Rishta && ./scripts/test-db.sh"   # 15 PASSED lines
 EXPO_OFFLINE=1 npx expo export --platform web && node e2e/serve.js "$(pwd)/dist" 8081 &   # then:
-for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boost personas livestate clickthrough csp crawl; do node e2e/$s.js; done   # 17 suites; crawl must report 0 high issues
+for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boost personas livestate explore clickthrough csp crawl; do node e2e/$s.js; done   # 18 suites; crawl must report 0 high issues
 node scripts/sync-shared.js            # after editing src/domain/push.ts or src/domain/phone.ts
 ```
 - e2e suites sign in through `e2e/auth.js` (`loginWithOtp`), which also creates the test PIN **4827** when asked.
@@ -153,6 +153,8 @@ Reset everything: Settings → “Reset demo data”.
 - Owner rule: ONE number = ONE account = ONE biodata. Always pass phones through `normalizePhone()`; never create a profile if any profile row exists for the user or `profileRemovedAt` is set. Only Delete account frees a number (Architecture §15).
 - PIN login (Architecture §16): OTP only for registration / new phone / Forgot PIN / first PIN. Never bump the demo SCHEMA_VERSION (it reseeds = wipes accounts) — backfill in `load()` instead. e2e suites log in through `e2e/auth.js` (handles PIN screens; test PIN 4827). Demo login state lives in secure KV `hr.auth`, not the db.
 
+- Any LTR fragment (price, phone) interpolated into a translated sentence goes through `bidiIsolate()` (`src/domain/format.ts`), or Urdu shows "100₹".
+- No Prettier config in the repo: never run `prettier --write` (it reformats whole files to 80 columns).
 - Don't `pkill -f e2e/serve.js` inside a compound shell command: the pattern matches the shell itself and kills it (exit 144). Start the server with a separate background command.
 - Playwright: language/sort/tab controls are `role=radio`; "View all" is a link; use `waitForURL(..., { waitUntil: 'commit' })`.
 

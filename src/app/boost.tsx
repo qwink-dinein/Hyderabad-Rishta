@@ -10,7 +10,7 @@ import { Banner, Loading, useErrorMessage, useToast } from '@/components/ui/feed
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { Card, Header, Row, Screen } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
-import { formatDate } from '@/domain/format';
+import { bidiIsolate, formatDate } from '@/domain/format';
 import type { DashboardMetrics, Order } from '@/domain/types';
 import { useDashboard, useInvalidateProfileState, useMyProfile } from '@/hooks/queries';
 import { useBoostStatus } from '@/hooks/useBoostStatus';
@@ -59,9 +59,21 @@ export default function BoostScreen() {
     }
   };
 
+  const resume = async () => {
+    setBusy(true);
+    try {
+      await backend.setPaused(false);
+      invalidate();
+    } catch (e) {
+      toast(errMsg(e), 'danger');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const footer = canBuy ? (
     <Button
-      label={plan.fee.mode === 'free' ? t('myBoost.activateFree') : t('myBoost.continuePrice', { price: plan.label })}
+      label={plan.fee.mode === 'free' ? t('myBoost.activateFree') : t('myBoost.continuePrice', { price: bidiIsolate(plan.label) })}
       kind="gold"
       onPress={start}
       loading={busy}
@@ -84,11 +96,26 @@ export default function BoostScreen() {
         <View style={{ gap: space.lg, paddingTop: space.lg }}>
           {active || s.expired ? <BoostStatusCard m={m} active={active} fetchedAt={dataUpdatedAt} /> : <Hero />}
           {s.nudge === 'not_published' ? (
-            <Card style={styles.notice}>
-              <Text variant="h3">{t('boost.notPublishedTitle')}</Text>
-              <Text variant="body">{t('boost.notPublishedBody')}</Text>
-              <Button label={t('boost.notPublishedCta')} onPress={() => router.push(profile && profile.lastStep >= 7 ? '/biodata/preview' : '/dashboard')} testID="boost-publish" />
-            </Card>
+            s.status === 'paused' ? (
+              <Card style={styles.notice}>
+                <Text variant="h3">{t('myBoost.pausedTitle')}</Text>
+                <Text variant="body">{t('myBoost.pausedBody')}</Text>
+                <Button label={t('dashboard.resume')} onPress={resume} loading={busy} testID="boost-resume" />
+              </Card>
+            ) : s.status === 'pending' ? (
+              <Card style={styles.notice}>
+                <Text variant="h3" testID="boost-pending">
+                  {t('myBoost.pendingTitle')}
+                </Text>
+                <Text variant="body">{t('myBoost.pendingBody')}</Text>
+              </Card>
+            ) : (
+              <Card style={styles.notice}>
+                <Text variant="h3">{t('boost.notPublishedTitle')}</Text>
+                <Text variant="body">{t('boost.notPublishedBody')}</Text>
+                <Button label={t('boost.notPublishedCta')} onPress={() => router.push(profile && profile.lastStep >= 7 ? '/biodata/preview' : '/biodata')} testID="boost-publish" />
+              </Card>
+            )
           ) : null}
           {s.nudge === 'disabled' ? <Banner icon="info">{t('boost.disabled')}</Banner> : null}
           {active ? (
@@ -195,7 +222,7 @@ function Hero() {
 /** "My Boost": status, dates, length, and before/during views only when the comparison is fair. */
 function BoostStatusCard({ m, active, fetchedAt }: { m?: DashboardMetrics; active: boolean; fetchedAt: number }) {
   const { t } = useTranslation();
-  if (!m?.boostStartedAt) return null;
+  if (!m?.boostUntil) return null;
   // Measured from when this status was fetched; a 1 h tolerance keeps a new 7-day boost at "7 days left".
   const daysLeft = m.boostUntil ? Math.max(1, Math.ceil((new Date(m.boostUntil).getTime() - fetchedAt - 3600000) / 86400000)) : 0;
   const benefit = (icon: IconName, text: string, testID?: string) => (
@@ -228,10 +255,13 @@ function BoostStatusCard({ m, active, fetchedAt }: { m?: DashboardMetrics; activ
             </Text>
           </View>
         </Row>
-        <Text variant="caption">
-          {t('myBoost.started', { date: formatDate(m.boostStartedAt) })}
-          {m.boostDays ? ` · ${t('myBoost.duration', { count: m.boostDays })}` : ''}
-        </Text>
+        {m.boostStartedAt ? (
+          // Older boosts may not have a recorded start: then only the expiry is shown.
+          <Text variant="caption">
+            {t('myBoost.started', { date: formatDate(m.boostStartedAt) })}
+            {m.boostDays ? ` · ${t('myBoost.duration', { count: m.boostDays })}` : ''}
+          </Text>
+        ) : null}
         {active ? (
           m.boostVisible ? (
             <Text variant="caption" color={colors.success}>
@@ -252,36 +282,38 @@ function BoostStatusCard({ m, active, fetchedAt }: { m?: DashboardMetrics; activ
           {benefit('clock', t('myBoost.benefitNoRenew'))}
         </Card>
       ) : null}
-      <Card style={{ gap: space.md }}>
-        <Text variant="h3">{t('myBoost.viewsTitle')}</Text>
-        {before != null && m.previousWindow && m.boostWindow ? (
-          <View style={styles.chart} testID="boost-chart">
-            {(
-              [
-                [t('myBoost.viewsBefore'), before, m.previousWindow, colors.goldMuted],
-                [t('myBoost.viewsDuring'), during, m.boostWindow, colors.emerald],
-              ] as const
-            ).map(([label, value, w, color]) => (
-              <View key={label} style={styles.barCol} accessible accessibilityLabel={`${label}: ${value}`}>
-                <Text variant="h3">{value}</Text>
-                <View style={[styles.bar, { height: 12 + (100 * value) / max, backgroundColor: color }]} />
-                <Text variant="label">{label}</Text>
-                <Text variant="caption" center>
-                  {t('myBoost.viewsRange', { from: formatDate(w.from), to: formatDate(w.to) })}
-                </Text>
-              </View>
-            ))}
-          </View>
-        ) : (
-          <>
-            <Text variant="bodyStrong" testID="boost-views-only">
-              {t('myBoost.viewsOnly', { count: during })}
-            </Text>
-            <Text variant="caption">{t('myBoost.viewsNoCompare')}</Text>
-          </>
-        )}
-        <Text variant="caption">{t('myBoost.viewsNote')}</Text>
-      </Card>
+      {m.boostStartedAt ? (
+        <Card style={{ gap: space.md }}>
+          <Text variant="h3">{t('myBoost.viewsTitle')}</Text>
+          {before != null && m.previousWindow && m.boostWindow ? (
+            <View style={styles.chart} testID="boost-chart">
+              {(
+                [
+                  [t('myBoost.viewsBefore'), before, m.previousWindow, colors.goldMuted],
+                  [t('myBoost.viewsDuring'), during, m.boostWindow, colors.emerald],
+                ] as const
+              ).map(([label, value, w, color]) => (
+                <View key={label} style={styles.barCol} accessible accessibilityLabel={`${label}: ${value}`}>
+                  <Text variant="h3">{value}</Text>
+                  <View style={[styles.bar, { height: 12 + (100 * value) / max, backgroundColor: color }]} />
+                  <Text variant="label">{label}</Text>
+                  <Text variant="caption" center>
+                    {t('myBoost.viewsRange', { from: formatDate(w.from), to: formatDate(w.to) })}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <>
+              <Text variant="bodyStrong" testID="boost-views-only">
+                {t('myBoost.viewsOnly', { count: during })}
+              </Text>
+              <Text variant="caption">{t('myBoost.viewsNoCompare')}</Text>
+            </>
+          )}
+          <Text variant="caption">{t('myBoost.viewsNote')}</Text>
+        </Card>
+      ) : null}
     </View>
   );
 }

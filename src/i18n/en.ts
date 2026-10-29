@@ -425,6 +425,12 @@ const en = {
     note: "Counts views by other members only. Who shortlisted you stays private.",
   },
   myBoost: {
+    pausedTitle: "Your profile is paused",
+    pausedBody: "Boosts only work while your profile is visible. Resume it to boost.",
+    pendingTitle: "Waiting for approval",
+    pendingBody: "You can boost as soon as your biodata is approved and live.",
+    hintPaused: "Resume your profile first",
+    hintPending: "Waiting for approval",
     titleMy: "My Boost",
     titleGet: "Boost your profile",
     heroTitle: "Get more visibility",
@@ -564,6 +570,8 @@ const en = {
     },
   },
   pricing: {
+    orderStatus: { pending: "Awaiting payment", paid: "Paid", failed: "Failed", free: "Free", cancelled: "Cancelled" },
+    simulated: "simulated",
     forBrides: "For brides",
     forGrooms: "For grooms",
     copy: {

@@ -166,6 +166,7 @@ function RequestCard({ view }: { view: RequestView }) {
                 onPress={async () => {
                   if (await confirm({ title: t('requests.withdraw'), body: t('requests.withdrawConfirm'), confirmLabel: t('requests.withdraw'), danger: true })) run(() => withdraw.mutateAsync(r.id));
                 }}
+                testID={`withdraw-${r.id}`}
               />
             </Row>
           </>

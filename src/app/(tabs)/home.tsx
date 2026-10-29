@@ -10,14 +10,14 @@ import { ActivityStats, BoostPromoCard, CompletionCard } from '@/components/Home
 import { PushPrompt } from '@/components/PushSettings';
 import { TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
-import { Banner, EmptyState } from '@/components/ui/feedback';
+import { Banner, EmptyState, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { Icon } from '@/components/ui/Icon';
 import { Row } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { EMPTY_FILTERS } from '@/domain/search';
 import { isRTL } from '@/i18n';
-import { useFeatured, useMyProfile, useRequests, useSearch, useShortlistIds, useToggleShortlist } from '@/hooks/queries';
-import { backendInfo } from '@/services';
+import { useFeatured, useInvalidateProfileState, useMyProfile, useRequests, useSearch, useShortlistIds, useToggleShortlist } from '@/hooks/queries';
+import { backend, backendInfo } from '@/services';
 import { useFilters } from '@/state/filters';
 import { useSession } from '@/state/session';
 import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
@@ -34,6 +34,9 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   const lang = useSession((s) => s.lang);
   const { data: me } = useMyProfile();
+  const invalidate = useInvalidateProfileState();
+  const toast = useToast((s) => s.show);
+  const errMsg = useErrorMessage();
   const { data: requests } = useRequests();
   const featured = useFeatured();
   const recent = useSearch(RECENT);
@@ -61,9 +64,12 @@ export default function Home() {
     ? { title: t('home.startTitle'), body: t('home.startBody'), cta: t('dashboard.createCta'), go: () => router.push('/biodata') }
     : status === 'draft' || status === 'rejected'
       ? { title: t('home.finishTitle'), body: t(`preview.statusHelp.${status}`), cta: t('dashboard.continueCta'), go: () => router.push(me.lastStep >= 7 ? '/biodata/preview' : '/biodata') }
-      : status === 'pending' || status === 'paused'
-        ? { title: t(`opt.status.${status}`), body: t(`preview.statusHelp.${status}`), cta: t('nav.profile'), go: () => router.push('/dashboard') }
-        : null;
+      : status === 'paused'
+        ? // One tap brings the profile back (was a vague "Profile" link).
+          { title: t('opt.status.paused'), body: t('preview.statusHelp.paused'), cta: t('dashboard.resume'), go: () => backend.setPaused(false).then(invalidate, (e) => toast(errMsg(e), 'danger')) }
+        : status === 'pending'
+          ? { title: t('opt.status.pending'), body: t('preview.statusHelp.pending'), cta: t('nav.profile'), go: () => router.push('/dashboard') }
+          : null;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>

@@ -6,8 +6,8 @@ import { colors } from '@/theme/tokens';
 import { Text } from './ui/Text';
 
 /** Circular progress with the percentage in the middle; fills smoothly (instantly under Reduce Motion). */
-export function ProgressRing({ percent, size = 64, stroke = 6, label }: { percent: number; size?: number; stroke?: number; label: string }) {
-  const reduced = useReducedMotion();
+export function ProgressRing({ percent, size = 64, stroke = 6, label, animate = true }: { percent: number; size?: number; stroke?: number; label: string; animate?: boolean }) {
+  const reduced = useReducedMotion() || !animate;
   const target = Math.max(0, Math.min(100, Math.round(percent)));
   const [animated, setShown] = useState(0);
   const shown = reduced ? target : animated;

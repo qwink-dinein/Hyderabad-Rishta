@@ -66,3 +66,9 @@ export function uid(prefix = ''): string {
   const t = Date.now().toString(36);
   return `${prefix}${t}${rnd}`;
 }
+
+/**
+ * Wraps a left-to-right fragment (a price, a phone number) for use inside a translated sentence, so a
+ * right-to-left language keeps "₹100" in order (Unicode first-strong isolate, invisible on screen).
+ */
+export const bidiIsolate = (s: string) => `\u2068${s}\u2069`;

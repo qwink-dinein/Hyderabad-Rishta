@@ -24,7 +24,7 @@ export function CompletionCard() {
   if (c.complete) {
     return (
       <View style={[styles.card, styles.row]} testID="completion-done">
-        <ProgressRing percent={100} size={52} label={t('completion.a11y', { percent: 100 })} />
+        <ProgressRing percent={100} size={52} animate={false} label={t('completion.a11y', { percent: 100 })} />
         <View style={{ flex: 1, gap: 2 }}>
           <Text variant="bodyStrong">{t('completion.doneTitle')}</Text>
           <Text variant="caption">{t('completion.doneBody')}</Text>
@@ -125,6 +125,7 @@ export function BoostPromoCard() {
       </Pressable>
     );
   }
+  if (s.nudge === 'not_published' && (s.status === 'paused' || s.status === 'pending')) return null; // the status card above already explains
   if (s.nudge === 'not_published') {
     return (
       <View style={styles.boost} testID="boost-publish-card">

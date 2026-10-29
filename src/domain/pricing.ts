@@ -1,4 +1,4 @@
-import { formatMoney } from './format';
+import { bidiIsolate, formatMoney } from './format';
 import type { BoostPlan, Fee, PricingConfig, ProfileType } from './types';
 
 /**
@@ -94,8 +94,8 @@ export function pricingCopy(cfg: PricingConfig, type: ProfileType): { key: Prici
   const r = resolvePricing(cfg, type);
   const params = {
     days: String(r.boostDays),
-    publicationPrice: r.publication.mode === 'paid' ? formatMoney(r.publication.amount, r.currency) : '',
-    boostPrice: r.boost.mode === 'paid' ? formatMoney(r.boost.amount, r.currency) : '',
+    publicationPrice: r.publication.mode === 'paid' ? bidiIsolate(formatMoney(r.publication.amount, r.currency)) : '',
+    boostPrice: r.boost.mode === 'paid' ? bidiIsolate(formatMoney(r.boost.amount, r.currency)) : '',
   };
   const pubPaid = r.publication.mode === 'paid';
   if (r.boost.mode === 'disabled') return { key: pubPaid ? 'pricing.copy.pubPaidBoostOff' : 'pricing.copy.pubFreeBoostOff', params };

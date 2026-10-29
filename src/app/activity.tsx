@@ -67,11 +67,11 @@ export default function Activity() {
                   </Text>
                   <Text variant="caption">
                     {formatDate(o.createdAt)}
-                    {o.simulated ? ' · simulated' : ''}
+                    {o.simulated ? ` · ${t('pricing.simulated')}` : ''}
                   </Text>
                 </View>
                 <Text variant="label">{o.amount ? formatMoney(o.amount, o.currency) : t('pricing.free')}</Text>
-                <Badge label={o.status} tone={o.status === 'paid' || o.status === 'free' ? 'success' : o.status === 'failed' || o.status === 'cancelled' ? 'danger' : 'gold'} />
+                <Badge label={t(`pricing.orderStatus.${o.status}`)} tone={o.status === 'paid' || o.status === 'free' ? 'success' : o.status === 'failed' || o.status === 'cancelled' ? 'danger' : 'gold'} />
               </Row>
             ))
           ) : (

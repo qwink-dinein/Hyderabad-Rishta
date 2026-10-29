@@ -166,7 +166,9 @@ export function buildSeed(now = new Date('2026-10-01T09:00:00Z')): SeedData {
       biodata,
       status,
       publishedAt: status === 'published' ? iso(i) : undefined,
-      boostUntil: i % 7 === 2 ? new Date(now.getTime() + 5 * 86400000).toISOString() : undefined,
+      // Seeded boosts: a 7-day boost that started 2 days ago (live profiles only).
+      boostUntil: i % 7 === 2 && status === 'published' ? new Date(now.getTime() + 5 * 86400000).toISOString() : undefined,
+      boostStartedAt: i % 7 === 2 && status === 'published' ? new Date(now.getTime() - 2 * 86400000).toISOString() : undefined,
       createdAt: iso(60 - i),
       updatedAt: iso(i),
       lastStep: 7,

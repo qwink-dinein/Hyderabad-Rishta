@@ -400,6 +400,12 @@ const ur: DeepPartial<Translation> = {
     note: "صرف دوسرے ممبران کے ویوز گنے جاتے ہیں۔ کس نے شارٹ لسٹ کیا یہ نجی رہتا ہے۔",
   },
   myBoost: {
+    pausedTitle: "آپ کا پروفائل موقوف ہے",
+    pausedBody: "بوسٹ صرف تب کام کرتا ہے جب آپ کا پروفائل نظر آ رہا ہو۔ بوسٹ کے لیے اسے دوبارہ شروع کریں۔",
+    pendingTitle: "منظوری کا انتظار",
+    pendingBody: "آپ کا بایوڈیٹا منظور ہو کر شائع ہوتے ہی آپ بوسٹ کر سکیں گے۔",
+    hintPaused: "پہلے اپنا پروفائل دوبارہ شروع کریں",
+    hintPending: "منظوری کا انتظار",
     titleMy: "میرا بوسٹ",
     titleGet: "اپنا پروفائل بوسٹ کریں",
     heroTitle: "زیادہ نمایاں ہوں",
@@ -537,6 +543,8 @@ const ur: DeepPartial<Translation> = {
     },
   },
   pricing: {
+    orderStatus: { pending: "ادائیگی باقی", paid: "ادا شدہ", failed: "ناکام", free: "مفت", cancelled: "منسوخ" },
+    simulated: "نمونہ",
     forBrides: "دلہن کے لیے",
     forGrooms: "دولہا کے لیے",
     copy: {

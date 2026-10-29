@@ -1,4 +1,5 @@
-import { formatMoney } from '@/domain/format';
+import { bidiIsolate, formatMoney } from '@/domain/format';
+import type { ProfileStatus } from '@/domain/types';
 import { resolvePricing, type ResolvedPlan } from '@/domain/pricing';
 import { profileTypeOf } from '@/domain/privacy';
 import { useBoostNudge } from './useBoostNudge';
@@ -15,6 +16,8 @@ export interface BoostStatus {
   /** "₹100" — the cheapest paid option, for "From …" labels. */
   fromPrice?: string;
   until?: string;
+  /** The member's profile status (to tell "paused" and "waiting for approval" from "not published"). */
+  status?: ProfileStatus;
 }
 
 /** One place that turns profile + live admin pricing + dashboard into what Home, Profile and Boost show. */
@@ -31,7 +34,9 @@ export function useBoostStatus(): BoostStatus {
     expired: nudge !== 'active' && m?.boostState === 'expired',
     plans,
     free: plans[0]?.fee.mode === 'free',
-    fromPrice: cheapest != null && pricing ? formatMoney(cheapest, pricing.currency) : undefined,
+    // Isolated so "₹100" keeps its order inside Urdu (right-to-left) sentences.
+    fromPrice: cheapest != null && pricing ? bidiIsolate(formatMoney(cheapest, pricing.currency)) : undefined,
+    status: profile?.status,
     until: m?.boostUntil,
   };
 }
