@@ -33,8 +33,9 @@ export function CompletionCard() {
     );
   }
   return (
-    <Pressable onPress={open} accessibilityRole="button" accessibilityLabel={`${t('completion.title')}. ${t('completion.a11y', { percent: c.percent })}`} style={styles.card} testID="completion-card">
-      <Row gap={space.md} style={{ alignItems: 'center' }}>
+    // Two separate tap targets (summary row + button), never a button nested inside a button.
+    <View style={styles.card} testID="completion-card">
+      <Pressable onPress={open} accessibilityRole="button" accessibilityLabel={`${t('completion.title')}. ${t('completion.a11y', { percent: c.percent })}`} style={styles.row}>
         <ProgressRing percent={c.percent} label={t('completion.a11y', { percent: c.percent })} />
         <View style={{ flex: 1, gap: 2 }}>
           <Text variant="bodyStrong">{t('completion.title')}</Text>
@@ -46,9 +47,9 @@ export function CompletionCard() {
           ) : null}
         </View>
         <Icon name="chevronRight" size={18} color={colors.muted} />
-      </Row>
+      </Pressable>
       <Button label={t('completion.cta')} size="sm" onPress={open} style={{ alignSelf: 'flex-start' }} testID="completion-cta" />
-    </Pressable>
+    </View>
   );
 }
 

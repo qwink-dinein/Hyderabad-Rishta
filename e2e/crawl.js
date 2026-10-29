@@ -33,7 +33,7 @@ async function audit(page) {
       const st = getComputedStyle(el);
       return r.width > 0 && r.height > 0 && st.visibility !== 'hidden' && st.display !== 'none' && el.offsetParent !== null;
     };
-    const out = { overflow: 0, unnamed: [], small: [], errorScreen: false };
+    const out = { overflow: 0, unnamed: [], small: [], nested: [], errorScreen: false };
     out.overflow = document.documentElement.scrollWidth - window.innerWidth;
     out.errorScreen = /Something went wrong|This screen doesn't exist/i.test(document.body.innerText);
     const ctrls = [...document.querySelectorAll('[role=button],[role=link],[role=tab],[role=switch],[role=checkbox],[role=radio],button,a[href],input,textarea,select')].filter(vis);
@@ -45,6 +45,9 @@ async function audit(page) {
       // Inline text links inside a paragraph are exempt (WCAG 2.5.8 inline exception).
       const inline = getComputedStyle(el).display === 'inline' || (el.getAttribute('role') === 'link' && el.closest('[dir]') && el.parentElement && el.parentElement.innerText.length > (el.innerText || '').length + 5);
       if (!inline && (r.width < 24 || r.height < 24) && el.tagName !== 'INPUT') out.small.push(`${tag} "${name.slice(0, 30)}" ${Math.round(r.width)}×${Math.round(r.height)}`);
+      // A button inside a button: screen readers can't reach the inner one, and taps may fire twice.
+      const outer = el.parentElement && el.parentElement.closest('[role=button],[role=link],button,a[href]');
+      if (outer && ['button', 'link'].includes(el.getAttribute('role') || el.tagName.toLowerCase())) out.nested.push(`${tag} "${name.slice(0, 30)}" inside "${(outer.getAttribute('aria-label') || outer.innerText || '').trim().slice(0, 30)}"`);
     }
     return out;
   });
@@ -89,6 +92,7 @@ async function audit(page) {
           if (a.overflow > 1) add('high', role.name, lang, w, route, 'overflow', `${a.overflow}px wider than the screen`);
           for (const u of a.unnamed) add('med', role.name, lang, w, route, 'unnamed-control', u);
           for (const s of a.small) add('low', role.name, lang, w, route, 'small-target', s);
+          for (const n of a.nested) add('med', role.name, lang, w, route, 'nested-control', n);
           if (w === 360) await page.screenshot({ path: path.join(SHOTS, `${role.name}-${lang}${route.replace(/[/?&=]/g, '_')}.png`), fullPage: true });
         }
       }
