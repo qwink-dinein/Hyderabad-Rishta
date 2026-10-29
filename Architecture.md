@@ -180,7 +180,7 @@ Everything in the MVP runs in **Expo Go** (no custom native modules). A **develo
 Role is re-checked on **every** request, so demotion/suspension/deletion takes effect on the next call.
 
 ### Invariants (enforced in both DemoBackend and Postgres)
-1. **Exactly one master** — unique partial index `one_master`; transfer and recovery swap roles atomically.
+1. **At most two masters** (owner decision 2026-10-29) — trigger `app_users_max_two_masters` (advisory lock; replaced the unique index `one_master`). Masters cannot manage each other; transfer swaps the caller with a sub-admin; recovery demotes every other master (`20261116000000_two_masters`).
 2. Nobody can act on themselves or on the master; only the master acts on sub-admins (`assert_can_manage`).
 3. Admin deletes are **soft** (Trash, 30-day window, then auto-erased). Member self-deletion is immediate (privacy right).
 4. `audit_events` cannot be updated/deleted; `orders` cannot be deleted (erased members' orders are detached, not removed).

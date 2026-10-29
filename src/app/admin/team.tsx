@@ -99,7 +99,7 @@ export default function Team() {
     <Screen header={<Header title="Team & security" />}>
       {!isMaster ? (
         <View style={{ marginTop: space.lg }}>
-          <Banner icon="lock">You are a sub-admin: you can moderate everything, but only the master admin can change the team or recovery settings.</Banner>
+          <Banner icon="lock">You are a sub-admin: you can moderate everything, but only a master admin can change the team or recovery settings.</Banner>
         </View>
       ) : null}
 
@@ -283,7 +283,7 @@ export default function Team() {
                       size="sm"
                       kind="secondary"
                       onPress={async () => {
-                        if (await confirm({ title: 'Transfer the master role?', body: `${m.phoneMasked} becomes the only master. You become a sub-admin. Your recovery codes and backup phone are cleared so the new master sets their own.`, confirmLabel: 'Continue', danger: true }))
+                        if (await confirm({ title: 'Transfer the master role?', body: `${m.phoneMasked} becomes a master in your place. You become a sub-admin. Your recovery codes and backup phone are cleared so the new master sets their own.`, confirmLabel: 'Continue', danger: true }))
                           startStepUp({ transferTo: m.id });
                       }}
                     />

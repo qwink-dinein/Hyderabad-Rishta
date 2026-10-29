@@ -20,13 +20,12 @@
 - **Edge Functions deployed:** `send-whatsapp-otp` (no JWT; hook signature), `pin-login` (no JWT; device
   key + PIN), `admin-create-member` (JWT + is_admin). Smoke-tested live: unsigned/invalid calls refused.
   `tmp-migrate` is a retired one-off setup function that now only returns 410 — delete it in the dashboard.
-- **Admins:** `ensure_account(country_code)` (migration `20261115000000_account_bootstrap`) creates the
-  member's account from the OTP-proved number on first sign-in and applies `admin_invites`. Live invites
-  (data only, not in this repo): 1 master + 2 sub-admins, as given by the owner on 2026-10-29. There is only
-  ever one master (unique index); a second "master" invite becomes a sub-admin. PINs are never pre-set:
-  each admin creates their own on first login (stored only as a hash).
-- **To do after the master's first login:** set the second admin number as the master's backup recovery
-  phone (time-locked takeover if the master's phone is lost).
+- **Admins:** `ensure_account(country_code)` creates the member's account from the OTP-proved number on
+  first sign-in and applies `admin_invites`. Live invites (data only, not in this repo): **2 masters + 1
+  sub-admin**, as given by the owner on 2026-10-29 (one number corrected the same day). Up to **two**
+  masters may exist (`20261116000000_two_masters`: trigger cap, masters cannot manage each other, recovery
+  replaces the master team after the 72-hour delay and either master can cancel it). PINs are never
+  pre-set: each admin creates their own on first login (stored only as a hash).
 - **Not yet deployed:** `push-dispatch` (needs FCM/APNs keys + pg_cron schedule).
 - **App:** still runs on the demo backend until the Supabase adapter (Phase 2) lands.
 

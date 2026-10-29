@@ -680,22 +680,26 @@ export class DemoBackend implements Backend {
     for (const u of [...db.users]) if (u.deletedAt && now - new Date(u.deletedAt).getTime() > TRASH_RETENTION_MS) this.purgeUser(db, u.id);
   }
 
-  /** Moves the master role to the account that owns (countryCode, phone), creating it if needed. */
+  /**
+   * Moves the master role to the account that owns (countryCode, phone), creating it if needed. Up to two
+   * masters may exist (owner decision 2026-10-29); recovery replaces the whole master team, because it
+   * means master access was lost or compromised.
+   */
   private completeRecovery(db: DemoDb, countryCode: string, phone: string, method: string) {
-    const old = db.users.find((u) => u.role === 'master');
     let target = this.findUserByPhone(db, countryCode, phone);
     if (!target) {
       target = { id: uid('u_'), countryCode, phone, role: 'user', language: 'en', createdAt: this.iso() };
       db.users.push(target);
     }
-    if (old && old.id !== target.id) old.role = 'user'; // old device is assumed compromised/lost
+    const olds = db.users.filter((u) => u.role === 'master' && u.id !== target!.id);
+    for (const old of olds) old.role = 'user'; // old devices are assumed compromised/lost
     target.role = 'master';
     target.deactivatedAt = undefined;
     target.deletedAt = undefined;
     // All recovery material is single-use per recovery: force a fresh setup.
     db.security = { recoveryCodes: [], salt: recoveryCode(), failedAttempts: [] };
-    if (old && old.id !== target.id) this.revokeSessions(db, old.id, 'master_recovered'); // old phone assumed lost
-    this.audit(db, target.id, 'master.recovered', target.id, { method, previousMaster: old?.id });
+    for (const old of olds) this.revokeSessions(db, old.id, 'master_recovered'); // old phones assumed lost
+    this.audit(db, target.id, 'master.recovered', target.id, { method, previousMasters: olds.map((o) => o.id).join(',') });
     this.notifyAdmins(db, { event: 'master_recovered' });
   }
 
@@ -2240,8 +2244,7 @@ export class DemoBackend implements Backend {
         this.audit(db, 'anonymous', 'master.recovery_failed', `${countryCode}${maskPhone(phone)}`);
         throw new AppError('invalid_recovery_code');
       }
-      const master = db.users.find((u) => u.role === 'master');
-      if (master && master.countryCode === countryCode && master.phone === phone) throw new AppError('invalid_state', 'This is already the master phone — just log in');
+      if (db.users.some((u) => u.role === 'master' && u.countryCode === countryCode && u.phone === phone)) throw new AppError('invalid_state', 'This is already a master phone — just log in');
       match.usedAt = this.iso();
       const bp = sec.backupPhone;
       if (bp && bp.countryCode === countryCode && bp.phone === phone) {

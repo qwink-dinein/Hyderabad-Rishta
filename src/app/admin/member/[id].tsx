@@ -141,7 +141,7 @@ export default function AdminMember() {
                 />
               </Row>
             ) : (
-              <Text variant="caption">{u.id === me?.id ? 'This is your own account.' : u.role === 'master' ? 'The master account cannot be managed here.' : 'Only the master admin can manage sub-admin accounts.'}</Text>
+              <Text variant="caption">{u.id === me?.id ? 'This is your own account.' : u.role === 'master' ? 'Master accounts cannot be managed here.' : 'Only a master admin can manage sub-admin accounts.'}</Text>
             )}
           </Card>
         </Section>

@@ -32,7 +32,7 @@ export default function AdminTrash() {
         <Banner icon="shield">
           {isMaster
             ? 'Deleted items are kept for 30 days, then erased automatically. Restore puts them back exactly as they were.'
-            : 'Deleted items are kept for 30 days. Only the master admin can restore or permanently erase them.'}
+            : 'Deleted items are kept for 30 days. Only a master admin can restore or permanently erase them.'}
         </Banner>
         {isLoading ? (
           <Loading />

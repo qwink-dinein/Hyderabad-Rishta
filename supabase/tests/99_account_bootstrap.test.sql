@@ -6,10 +6,11 @@ insert into auth.users (id, phone) values
  ('00000000-0000-0000-0000-00000000bb02', '919700000002'),   -- invited sub-admin
  ('00000000-0000-0000-0000-00000000bb03', '919700000003'),   -- ordinary member
  ('00000000-0000-0000-0000-00000000bb04', '919700000004'),   -- a second "master" invite
- ('00000000-0000-0000-0000-00000000bb05', '12');             -- junk number
+ ('00000000-0000-0000-0000-00000000bb05', '12'),             -- junk number
+ ('00000000-0000-0000-0000-00000000bb06', '919700000006');   -- a third "master" invite
 -- Any master from earlier test files is demoted so this file controls the bootstrap.
 update app_users set role = 'admin' where role = 'master';
-insert into admin_invites (country_code, phone, role) values ('+91', '9700000001', 'master'), ('+91', '9700000002', 'admin'), ('+91', '9700000004', 'master');
+insert into admin_invites (country_code, phone, role) values ('+91', '9700000001', 'master'), ('+91', '9700000002', 'admin'), ('+91', '9700000004', 'master'), ('+91', '9700000006', 'master');
 
 set role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000bb01', false);
@@ -31,7 +32,19 @@ do $$ begin
 end $$;
 
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000bb04', false);
-do $$ begin assert ensure_account('+91')->>'role' = 'admin', 'a second master invite only gives admin (one master)'; end $$;
+do $$ begin assert ensure_account('+91')->>'role' = 'master', 'a second master invite gives the second master'; end $$;
+
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000bb06', false);
+do $$ begin assert ensure_account('+91')->>'role' = 'admin', 'a third master invite only gives admin (two masters max)'; end $$;
+
+-- Masters cannot demote each other.
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000bb01', false);
+do $$ begin
+  begin perform admin_delete_user('00000000-0000-0000-0000-00000000bb04', 'x'); assert false, 'a master removed the other master';
+  exception when insufficient_privilege then null; end;
+  begin perform admin_set_user_deactivated('00000000-0000-0000-0000-00000000bb04', true); assert false, 'a master suspended the other master';
+  exception when insufficient_privilege then null; end;
+end $$;
 
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000bb05', false);
 do $$ begin
@@ -53,8 +66,15 @@ end $$;
 
 reset role;
 do $$ begin
-  assert (select count(*) from app_users where role = 'master') = 1, 'exactly one master';
-  assert (select count(*) from admin_invites where phone in ('9700000001', '9700000002', '9700000004')) = 0, 'invites used up';
+  assert (select count(*) from app_users where role = 'master') = 2, 'exactly two masters';
+  assert (select count(*) from admin_invites where phone in ('9700000001', '9700000002', '9700000004', '9700000006')) = 0, 'invites used up';
   assert (select phone from app_users where id = '00000000-0000-0000-0000-00000000bb03') = '9700000003', 'number taken from Auth';
+end $$;
+-- Recovery replaces the master team: with two masters, both are demoted and the recovering account is the only master.
+select complete_master_recovery('+91', '9700000003', 'test');
+do $$ begin
+  assert (select count(*) from app_users where role = 'master') = 1, 'recovery leaves exactly one master';
+  assert (select role from app_users where id = '00000000-0000-0000-0000-00000000bb03') = 'master', 'recovering account is master';
+  assert (select count(*) from app_users where id in ('00000000-0000-0000-0000-00000000bb01', '00000000-0000-0000-0000-00000000bb04') and role = 'user') = 2, 'both previous masters demoted';
 end $$;
 select 'ALL ACCOUNT-BOOTSTRAP TESTS PASSED' as result;

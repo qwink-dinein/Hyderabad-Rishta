@@ -78,7 +78,7 @@ const step = async (name, fn) => {
     await page.getByText('You are a sub-admin').waitFor();
     if (await page.getByTestId('add-subadmin').count()) throw new Error('sub-admin sees add button');
     await page.goto(BASE + '/admin/trash');
-    await page.getByText('Only the master admin can restore').waitFor();
+    await page.getByText('Only a master admin can restore').waitFor();
   });
   await step('lost phone: recover master from backup phone via login screen', async () => {
     await logoutAdmin();

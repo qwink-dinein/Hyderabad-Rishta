@@ -11,10 +11,12 @@ insert into app_users (id, country_code, phone, role) values
 -- grants for new tables (Supabase default privileges do this for real projects)
 grant select on master_security, admin_invites to authenticated;
 
--- single-master invariant is enforced by the database itself
+-- at most two masters, enforced by the database itself (owner decision 2026-10-29: two master admins)
 do $$ begin
-  begin update app_users set role = 'master' where id = '00000000-0000-0000-0000-00000000000d'; assert false, 'second master allowed';
-  exception when unique_violation then null; end;
+  update app_users set role = 'master' where id = '00000000-0000-0000-0000-00000000000d'; -- a second master is fine
+  begin update app_users set role = 'master' where id = '00000000-0000-0000-0000-00000000000e'; assert false, 'third master allowed';
+  exception when check_violation then null; end;
+  update app_users set role = 'admin' where id = '00000000-0000-0000-0000-00000000000d';
 end $$;
 
 set role authenticated;

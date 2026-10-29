@@ -77,7 +77,7 @@ export default function AdminUsers() {
                       onPress={async () => {
                         const ok = await confirm({
                           title: 'Delete this account?',
-                          body: 'The member is signed out and their profile disappears immediately. It moves to Trash; the master admin can restore it within 30 days, after which it is erased.',
+                          body: 'The member is signed out and their profile disappears immediately. It moves to Trash; a master admin can restore it within 30 days, after which it is erased.',
                           confirmLabel: 'Delete',
                           danger: true,
                         });
