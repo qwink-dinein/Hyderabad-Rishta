@@ -54,7 +54,7 @@ npx tsc --noEmit && npx tsc -p supabase/functions/tsconfig.json
 EXPO_OFFLINE=1 npx expo lint            # 0 errors; 2 known i18next warnings
 npx jest                                # all suites incl. simulation (400 steps × 2 seeds) and scale
 SIM_STEPS=3000 SIM_SEEDS=5 SIM_REPORT=1 npx jest simulation   # long expert-team hunt (background); prints timings and refusals
-pg_ctlcluster 16 main start; su postgres -c "cd /home/user/Hyderabad-Rishta && ./scripts/test-db.sh"   # 15 PASSED lines (one per test file)
+pg_ctlcluster 16 main start; su postgres -c "cd /home/user/Hyderabad-Rishta && ./scripts/test-db.sh"   # 16 PASSED lines (one per test file)
 EXPO_OFFLINE=1 npx expo export --platform web && node e2e/serve.js "$(pwd)/dist" 8081 &   # then:
 for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boost personas livestate explore teammember badgecount clickthrough csp crawl; do node e2e/$s.js; done   # 20 suites; crawl must report 0 high issues
 node scripts/sync-shared.js            # after editing src/domain/push.ts or src/domain/phone.ts
@@ -128,6 +128,7 @@ Reset everything: Settings → “Reset demo data”.
 | 2026-10-28 | Boost reminders: red dot + halo, Home card (3-day snooze), weekly notification (not within 2 days of publish or 7 days after a boost; promotional category) | Owner: "keep reminding if they haven't boosted". |
 | 2026-10-28 | One boost at a time; boosts no longer extend | Owner: "must not allow them to boost again if the current boost is in progress". |
 | 2026-10-28 | Checkpoint V3 pinned at the "Checkpoint V3" docs commit (code = `ae8776f`) | Owner: "checkpoint this as V3". |
+| 2026-10-29 | Owner's admin numbers are live `admin_invites` rows only (1 master + 2 sub-admins); never commit real numbers or PINs. Second "master" became a sub-admin (one master by design) and is to be the master's backup recovery phone | Owner gave 3 numbers with the same PIN; PINs are never stored — each admin sets their own (advised to choose different ones). |
 | 2026-10-29 | Live Supabase project `hlthzrznuztapfsloxkm` (hyderabad-rishta, ap-south-1, Free) — see `docs/supabase-project.md`. Migrations went through a retired one-off function (DB port + api.supabase.com are blocked from the cloud session; `*.supabase.co` is allowed); later migrations via the Supabase connector's apply_migration, then fix the recorded version to the file's timestamp | Owner: "is ok to proceed now?" after allowing *.supabase.co. |
 | 2026-10-29 | Login codes only on WhatsApp via Waplify (Supabase Send SMS hook → `send-whatsapp-otp`); resend after 60 s; no SMS fallback; reviewer test number 919000000001/123456 | Owner: "I have waplify to authenticate WhatsApp via otp… whoever doesn't have WhatsApp, we cannot send". Guide: `docs/whatsapp-otp-setup.md`. |
 | 2026-10-29 | Expert-team pass: a simulated community runs on one shared server with rule checks after every action; demo hot paths made linear; SQL hot-path indexes | Owner: "build an expert team … admin, multiple users … find the issues and fix … improve performance". Orders outliving erased members is intended (financial record; SQL `on delete set null`). |
