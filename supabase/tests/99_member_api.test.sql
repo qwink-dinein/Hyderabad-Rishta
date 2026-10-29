@@ -131,11 +131,38 @@ do $$ begin
   begin perform reactivate_self(); assert false, 'suspension undone by the member'; exception when raise_exception then assert sqlerrm = 'account_suspended', sqlerrm; end;
 end $$;
 
+-- 8. Photos: signed only when the privacy projection shows them to the caller.
+reset role;
+update app_users set deactivated_at = null, deactivated_by = null where id = '00000000-0000-0000-0000-00000000cc04';
+update profiles set biodata = jsonb_set(jsonb_set(biodata, '{photos}', '[{"id":"p1","uri":"00000000-0000-0000-0000-00000000cc01/p1.jpg"}]'), '{privacy,photoVisibility}', '"onConsent"')
+ where user_id = '00000000-0000-0000-0000-00000000cc01';
+insert into announcements (title, body, segment, status, published_at) values ('{"en":"Eid Mubarak"}', '{"en":"Greetings"}', 'all', 'published', now()) returning id \gset ann_
+insert into notifications (user_id, type, announcement_id) values ('00000000-0000-0000-0000-00000000cc02', 'announcement', :'ann_id');
+set role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000cc02', false);
+do $$ begin
+  assert (select count(*) from photo_paths_for(array['00000000-0000-0000-0000-00000000cc01/p1.jpg'])) = 0, 'onConsent photo hidden without consent';
+  assert (select count(*) from photo_paths_for(array['00000000-0000-0000-0000-00000000cc02/mine.jpg'])) = 1, 'own photos always';
+  assert (select count(*) from photo_paths_for(array['../etc/passwd', 'x/y.jpg', null])) = 0, 'junk paths refused';
+  assert (select x #>> '{announcement,title,en}' from get_notifications(50) x where x ->> 'type' = 'announcement') = 'Eid Mubarak', 'announcement text included';
+end $$;
+reset role;
+update profiles set biodata = jsonb_set(biodata, '{privacy,photoVisibility}', '"public"') where user_id = '00000000-0000-0000-0000-00000000cc01';
+set role authenticated;
+do $$ begin
+  assert (select count(*) from photo_paths_for(array['00000000-0000-0000-0000-00000000cc01/p1.jpg', '00000000-0000-0000-0000-00000000cc01/other.jpg'])) = 1, 'public photo visible; unknown file is not';
+end $$;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000cc03', false);
+do $$ begin
+  assert (select count(*) from photo_paths_for(array['00000000-0000-0000-0000-00000000cc01/p1.jpg'])) = 0, 'blocked: no photos';
+end $$;
+
 -- 7. Signed-out callers get nothing.
 set role anon;
 do $$ begin
   begin perform submit_for_publication(); assert false, 'anon published'; exception when insufficient_privilege then null; end;
   begin perform get_requests(null); assert false, 'anon read requests'; exception when insufficient_privilege then null; end;
+  begin perform photo_paths_for(array['x']); assert false, 'anon checked photos'; exception when insufficient_privilege then null; end;
 end $$;
 reset role;
 select 'ALL MEMBER-API TESTS PASSED' as result;
