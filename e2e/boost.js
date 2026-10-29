@@ -77,20 +77,20 @@ const setDb = (page, fn) => page.evaluate((src) => {
 
   await step('Home Boost card shows the configured price; options 7/14/30 with 7 days pre-selected', '9000000001', async (page) => {
     await page.getByTestId('boost-reminder').waitFor();
-    await page.getByTestId('boost-price').getByText('From ₹100').waitFor();
+    await page.getByTestId('boost-price').getByText(/From\W*₹100/).waitFor();
     await page.getByTestId('boost-reminder-cta').click();
     await page.waitForURL((u) => u.pathname === '/boost', { waitUntil: 'commit' });
     for (const [id, price] of [['d7', '₹100'], ['d14', '₹200'], ['d30', '₹350']]) await page.getByTestId(`plan-price-${id}`).getByText(price).waitFor();
     if ((await page.getByTestId('plan-d7').getAttribute('aria-checked')) !== 'true') throw new Error('7 days not pre-selected');
     await page.getByText('Popular').waitFor();
-    await page.getByRole('button', { name: 'Continue · ₹100' }).waitFor();
+    await page.getByRole('button', { name: /^Continue · \W*₹100\W*$/ }).waitFor();
     await page.screenshot({ path: `${SHOTS}/p2-boost-options.png`, fullPage: true });
   });
 
   await step('choose 14 days → checkout shows ₹200 → pay → My Boost (14 days left, no re-buy); Home + Profile follow', '9000000001', async (page) => {
     await page.goto(BASE + '/boost');
     await page.getByTestId('plan-d14').click();
-    await page.getByRole('button', { name: 'Continue · ₹200' }).click();
+    await page.getByRole('button', { name: /^Continue · \W*₹200\W*$/ }).click();
     await page.getByText('₹200').last().waitFor();
     await page.getByRole('button', { name: 'Simulate successful payment' }).click();
     await page.getByTestId('boost-status').waitFor({ timeout: 8000 });
