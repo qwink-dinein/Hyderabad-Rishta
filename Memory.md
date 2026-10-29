@@ -52,7 +52,7 @@ EXPO_OFFLINE=1 npx expo lint            # 0 errors; 2 known i18next warnings
 npx jest                                # 218 tests / 13 suites
 pg_ctlcluster 16 main start; su postgres -c "cd /home/user/Hyderabad-Rishta && ./scripts/test-db.sh"   # 12 PASSED lines
 EXPO_OFFLINE=1 npx expo export --platform web && node e2e/serve.js "$(pwd)/dist" 8081 &   # then:
-for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boosttab clickthrough csp crawl; do node e2e/$s.js; done   # 15 suites; crawl must report 0 high issues
+for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boosttab personas clickthrough csp crawl; do node e2e/$s.js; done   # 16 suites; crawl must report 0 high issues
 node scripts/sync-shared.js            # after editing src/domain/push.ts or src/domain/phone.ts
 ```
 - e2e suites sign in through `e2e/auth.js` (`loginWithOtp`), which also creates the test PIN **4827** when asked.
@@ -124,6 +124,7 @@ Reset everything: Settings → “Reset demo data”.
 | 2026-10-28 | Boost reminders: red dot + halo, Home card (3-day snooze), weekly notification (not within 2 days of publish or 7 days after a boost; promotional category) | Owner: "keep reminding if they haven't boosted". |
 | 2026-10-28 | One boost at a time; boosts no longer extend | Owner: "must not allow them to boost again if the current boost is in progress". |
 | 2026-10-28 | Checkpoint V3 pinned at the "Checkpoint V3" docs commit (code = `ae8776f`) | Owner: "checkpoint this as V3". |
+| 2026-10-29 | No-photo profiles show a bride/groom illustration (`PersonaArt`), not the initial | Owner: "default show a bride illustration for bride profiles and groom illustration for grooms". |
 | 2026-10-28 | QA rounds 1–2 (crawler + click-through) and security round 2 (OTP cap, spoofing chars, CSP headers, permissions) | Owner: "become a tester … test every button … try to break the security and fix it". |
 | 2026-10-28 | npm audit findings left as-is (build-time Expo CLI/jest only); never `npm audit fix --force` (downgrades to SDK 51) | Not shipped in the app bundle. |
 

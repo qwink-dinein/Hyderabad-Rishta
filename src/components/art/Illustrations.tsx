@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import Svg, { Circle, Defs, G, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { colors } from '@/theme/tokens';
 
 /**
@@ -262,6 +262,55 @@ export const CornerFlourish = memo(function CornerFlourish({ size = 120, flip = 
         <Sprig x={6} y={70} color={color} />
         <Path d="M6 70c18-30 50-46 96-50" stroke={color} strokeWidth="0.9" fill="none" opacity={0.6} />
       </G>
+    </Svg>
+  );
+});
+
+/**
+ * Default portrait when a member has no photo (owner request 2026-10-29): a bride in a dupatta or a
+ * groom in a safa and sherwani. Modest and faceless — no features, so it never looks like a real person.
+ * Drawn bottom-anchored in a 120×140 box; the parent supplies the background.
+ */
+export const PersonaArt = memo(function PersonaArt({ kind, width, height }: { kind: 'bride' | 'groom'; width: number; height: number }) {
+  const skin = '#E3B993';
+  return (
+    <Svg width={width} height={height} viewBox="0 0 120 140" preserveAspectRatio="xMidYMax meet" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      {kind === 'bride' ? (
+        <G>
+          {/* dupatta: covers the head and falls over the shoulders */}
+          <Path d="M60 16C37 16 27 35 27 58c0 12 2 22-3 33C15 100 7 113 5 140h110c-2-27-10-40-19-49c-5-11-3-21-3-33c0-23-10-42-33-42z" fill="#8E2F45" />
+          <Path d="M5 140c2-27 10-40 19-49c10 8 22 12 36 12s26-4 36-12c9 9 17 22 19 49z" fill="#7A2439" />
+          <Ellipse cx="60" cy="61" rx="16.5" ry="20.5" fill={skin} />
+          {/* gold edging around the face and along the hem */}
+          <Path d="M60 37c-12 0-21 10-21 24s9 25 21 25s21-11 21-25s-9-24-21-24z" stroke={GOLD} strokeWidth="2" fill="none" />
+          <Path d="M24 91c10 8 22 12 36 12s26-4 36-12" stroke={GOLD} strokeWidth="2" fill="none" />
+          {[34, 47, 60, 73, 86].map((x, i) => (
+            <Circle key={x} cx={x} cy={i === 0 || i === 4 ? 99 : i === 2 ? 106.5 : 104} r="1.8" fill={GOLD} />
+          ))}
+          {/* maang tikka */}
+          <Path d="M60 37v4" stroke={GOLD} strokeWidth="1.2" />
+          <Circle cx="60" cy="43.5" r="2.4" fill={GOLD} />
+          <Path d="M14 140c3-14 8-22 14-28M106 140c-3-14-8-22-14-28" stroke={GOLD} strokeWidth="1" opacity={0.6} fill="none" />
+        </G>
+      ) : (
+        <G>
+          {/* sherwani with a gold band collar and buttons */}
+          <Path d="M10 140c2-26 15-38 34-43l16 9l16-9c19 5 32 17 34 43z" fill={FOREST} />
+          <Path d="M50 84h20v14l-10 8l-10-8z" fill={skin} />
+          <Path d="M44 97l16 9l16-9" stroke={GOLD} strokeWidth="2.4" fill="none" strokeLinejoin="round" />
+          <Path d="M60 106v34" stroke={GOLD} strokeWidth="1" opacity={0.7} />
+          {[114, 124, 134].map((y) => (
+            <Circle key={y} cx="60" cy={y} r="1.9" fill={GOLD} />
+          ))}
+          <Path d="M28 140c1-12 4-20 9-26M92 140c-1-12-4-20-9-26" stroke={GOLD} strokeWidth="1" opacity={0.5} fill="none" />
+          <Ellipse cx="60" cy="64" rx="16.5" ry="20.5" fill={skin} />
+          {/* safa (wedding turban) with a kalgi */}
+          <Path d="M41 58c-3-19 8-31 19-31s22 12 19 31c-5-6-12-9-19-9s-14 3-19 9z" fill="#C9A35C" />
+          <Path d="M43 50c6-5 11-7 17-7s11 2 17 7M45 41c5-3 10-5 15-5s10 2 15 5" stroke="#9C7A3C" strokeWidth="1.3" fill="none" />
+          <Circle cx="60" cy="40" r="2.6" fill={colors.ivory} stroke="#9C7A3C" strokeWidth="0.8" />
+          <Path d="M60 37c-1-6 1-11 5-15c-1 5-2 10-5 15z" fill={colors.ivory} stroke="#9C7A3C" strokeWidth="0.8" />
+        </G>
+      )}
     </Svg>
   );
 });

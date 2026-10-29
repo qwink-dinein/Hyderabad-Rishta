@@ -12,14 +12,15 @@ import { useOptions } from '@/hooks/useOptions';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { haptic } from '@/services/feedback';
 import { colors, motion, radius, shadow, space } from '@/theme/tokens';
+import { PersonaArt } from './art/Illustrations';
 import { Button } from './ui/Button';
 import { Badge } from './ui/feedback';
 import { Icon, StarMotif, type IconName } from './ui/Icon';
 import { Text } from './ui/Text';
 
 /**
- * Photo (respecting the owner's visibility setting) or an elegant placeholder:
- * the initial inside a gold ring on a patterned emerald field. Restricted photos never reach the client.
+ * Photo (respecting the owner's visibility setting) or, with no photo, a bride or groom illustration
+ * (owner request 2026-10-29) inside the gold arch. Restricted photos never reach the client.
  */
 export const ProfilePhoto = memo(function ProfilePhoto({ profile, height = 200, rounded = true }: { profile: PublicProfile; height?: number | '100%'; rounded?: boolean }) {
   const { t } = useTranslation();
@@ -28,19 +29,17 @@ export const ProfilePhoto = memo(function ProfilePhoto({ profile, height = 200, 
   if (uri) {
     return <Image source={{ uri }} style={[{ height, width: '100%' }, r]} contentFit="cover" contentPosition="top" transition={200} cachePolicy="memory-disk" accessibilityLabel={profile.displayName} />;
   }
-  const initial = profile.displayName.replace(/[^\p{L}]/gu, '').charAt(0).toUpperCase() || '•';
+  const kind = profile.profileType === 'groom' ? 'groom' : 'bride';
   if (typeof height === 'number' && height < 120) {
-    // Avatars: just the initial on a soft field — the arch artwork needs room to read.
+    // Avatars: just the figure on a soft field — the arch artwork needs room to read.
     return (
-      <LinearGradient colors={[colors.goldSoft, colors.sage]} style={[{ height, width: '100%', alignItems: 'center', justifyContent: 'center' }, r]} accessibilityLabel={profile.displayName}>
-        <Text variant="h2" color={colors.emerald} style={{ fontSize: Math.round(height * 0.42), lineHeight: Math.round(height * 0.56) }}>
-          {initial}
-        </Text>
+      <LinearGradient colors={[colors.goldSoft, colors.sage]} style={[{ height, width: '100%', alignItems: 'center', justifyContent: 'flex-end', overflow: 'hidden' }, r]} accessibilityLabel={profile.displayName} testID={`persona-${kind}`}>
+        <PersonaArt kind={kind} width={Math.round(height * 0.86)} height={Math.round(height * 0.92)} />
       </LinearGradient>
     );
   }
   return (
-    <LinearGradient colors={[colors.goldSoft, colors.sage]} style={[{ height, width: '100%', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, r]}>
+    <LinearGradient colors={[colors.goldSoft, colors.sage]} style={[{ height, width: '100%', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, r]} accessibilityLabel={profile.displayName} testID={`persona-${kind}`}>
       <View style={styles.motifA}>
         <StarMotif size={110} opacity={0.22} color={colors.goldMuted} />
       </View>
@@ -51,9 +50,9 @@ export const ProfilePhoto = memo(function ProfilePhoto({ profile, height = 200, 
         <Path d="M15 180V80C15 40 50 16 75 4c25 12 60 36 60 76v100" stroke={colors.goldMuted} strokeWidth="1.6" fill="rgba(255,255,255,0.55)" />
         <Path d="M27 180V84c0-32 28-52 48-62c20 10 48 30 48 62v96" stroke={colors.gold} strokeWidth="0.8" fill="none" opacity={0.7} />
       </Svg>
-      <Text variant="display" color={colors.emerald} style={{ fontSize: 44, lineHeight: 54, marginTop: 24 }}>
-        {initial}
-      </Text>
+      <View style={styles.persona}>
+        <PersonaArt kind={kind} width={120} height={140} />
+      </View>
       {profile.photosHidden ? (
         <View style={styles.lockPill}>
           <Icon name="lock" size={13} color={colors.ivory} />
@@ -277,6 +276,8 @@ const styles = StyleSheet.create({
   heartOn: { backgroundColor: 'rgba(255,255,255,0.92)' },
   heartPlain: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   boost: { position: 'absolute', top: space.md, left: space.md },
+  // Bottom of the figure meets the bottom of the 180-px arch (both centred).
+  persona: { marginTop: 40 },
   motifA: { position: 'absolute', top: -18, left: -14 },
   motifB: { position: 'absolute', bottom: 14, right: 18 },
   lockPill: {

@@ -91,7 +91,7 @@ Scale (pt): display 34 (hero) · h1 27 (screen titles) · h2 20 (card titles 18�
 - **Segmented** — pill segmented control (Received / Sent).
 - **Reveal** — 220 ms fade and slide for conditional fields ("Other", children count).
 - **ProfileCard** — 4:5 photo (max 400 pt), heart top-right, Boosted label top-left, "Name, age" plus code, relation badge, icon metadata rows (height, location, education, profession), up to 3 tags. Actions: **View profile** plus a contextual primary button (Express Interest / Interest sent / Respond / Connected). The button is hidden when declined, not accepting, or blocked. `featured` variant for horizontal rails.
-- **ProfilePhoto placeholder** — ivory to sage field, gold arch outline, emerald serif initial. Avatars under 120 pt show the initial only.
+- **ProfilePhoto placeholder** (no photo) — ivory to sage field, gold arch outline and a **bride or groom illustration** (`PersonaArt` in `src/components/art/Illustrations.tsx`): bride in a maroon dupatta with gold edging and a maang tikka; groom in a gold safa with a kalgi and an emerald sherwani. Faceless and modest, so it never looks like a real person. Chosen by `profileType`. Avatars under 120 pt show the figure only. ~~Emerald serif initial~~ (replaced 2026-10-29 at the owner's request).
 - **HeartButton** — 210 ms scale pulse, light haptic, and an accessible announcement.
 - **ProfileCardSkeleton** — soft pulse (static under Reduce Motion).
 - **PhotoPicker** — one large 4:5 main slot plus two stacked smaller slots, dashed gold empty states, label pills, replace and remove, a 0/3 counter, and the reassurance "Photos are optional…". Never a lone "+".
