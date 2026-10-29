@@ -37,6 +37,10 @@ export interface User {
   hasPin?: boolean;
   /** Phone-notification preferences (server-side so every device honours them). */
   pushPrefs?: PushPrefs;
+  /** Account added by an admin/sub-admin for this number (no OTP). The owner claims it with OTP. */
+  createdBy?: string;
+  /** When the number's owner first logged in (OTP) to a team-created account. */
+  claimedAt?: string;
 }
 
 /** Push categories. `account` (approvals, payments, safety, security) cannot be switched off in-app. */
@@ -197,6 +201,9 @@ export interface Profile {
   adminNote?: string;
   publishedAt?: string;
   boostUntil?: string;
+  /** Biodata entered by the team (admin id). The owner sees a "please review" note until they save it once. */
+  createdByAdminId?: string;
+  ownerReviewedAt?: string;
   /** Which boost end-time each lifecycle notice was already sent for (idempotent scheduler). */
   boostNotices?: { ending?: string; ended?: string };
   /** When the current (possibly extended) boost period began. */
@@ -396,6 +403,7 @@ export type NotificationType =
   | 'boost_ending'
   | 'boost_ended'
   | 'boost_reminder'
+  | 'team_created'
   | 'announcement';
 
 export interface AppNotification {

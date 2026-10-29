@@ -519,6 +519,7 @@ const en = {
   err: {
     crashTitle: "Something went wrong",
     crashBody: "Sorry, this screen hit an unexpected problem. Your data is safe. Please try again.",
+    phone_taken: "This number already has an account. Open that member instead.",
     boost_active: "Your profile is already boosted. You can boost again when it ends.",
     invalid_pin: "Incorrect PIN.",
     pin_locked: "Too many wrong PINs. Please reset your PIN.",
@@ -809,6 +810,7 @@ const en = {
       profile_approved: 'Your profile has been approved and is now live',
       profile_rejected: 'Your profile needs changes: {{note}}',
       profile_published: 'Your profile is now published',
+      team_created: "Our team created your biodata on Hyderabad Rishta. Please review it and make any changes.",
       boost_started: 'Your boost is active',
       payment_paid: 'Payment confirmed (simulated)',
       payment_failed: 'Payment failed — you were not charged',

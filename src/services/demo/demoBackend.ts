@@ -45,7 +45,7 @@ import { isAdminRole } from '@/domain/types';
 import { firstInvalidStep, otpSchema, requestMessageSchema } from '@/domain/validation';
 import { REPORT_REASONS } from '@/domain/options';
 import { biodataProblem, normalizePhone, isHttpsUrl, isInternalLink, LANGS, MAX_IDEM_KEY, MAX_PUSH_TOKEN, MAX_REPORTS_PER_DAY, MAX_SEARCH_PAGE, stripUnsafe, unsafeText } from '@/domain/security';
-import { AppError, type AdminRequestRow, type AdminStats, type Backend, type MemberDetail, type MemberRow, type ConnectionMetrics, type SendInterestInput, type NotificationView, type Page, type RecipientRow, type RequestView, type TrashItem } from '../backend';
+import { AppError, type AdminMemberDraft, type AdminPhoneCheck, type AdminRequestRow, type AdminStats, type Backend, type MemberDetail, type MemberRow, type ConnectionMetrics, type SendInterestInput, type NotificationView, type Page, type RecipientRow, type RequestView, type TrashItem } from '../backend';
 import { memoryKV, type KV } from '../storage';
 
 /** JSON deep clone — responses never share references with the "server" state. */
@@ -747,6 +747,11 @@ export class DemoBackend implements Backend {
         user.deactivatedAt = undefined;
         user.deactivatedBy = undefined;
       }
+      // A team-added account is claimed by its number's owner the first time they prove it with OTP.
+      if (user.createdBy && !user.claimedAt) {
+        user.claimedAt = this.iso();
+        this.audit(db, user.id, 'member.claimed', user.id, { createdBy: user.createdBy });
+      }
       // OTP proved the number on THIS phone: trust it for PIN login and start a session.
       const deviceId = this.trustThisDevice(db, user.id);
       this.startSession(db, user.id, { otp: true, deviceId });
@@ -896,6 +901,8 @@ export class DemoBackend implements Backend {
         p.biodata = clone(biodata);
         p.lastStep = Math.max(p.lastStep, lastStep);
         p.updatedAt = this.iso();
+        // The owner has gone through a biodata the team entered for them: stop the "please review" note.
+        if (p.createdByAdminId && !p.ownerReviewedAt) p.ownerReviewedAt = this.iso();
         // Editing a rejected profile returns it to draft so it can be resubmitted.
         if (p.status === 'rejected') p.status = 'draft';
         // Edits to a live profile keep it live (members aren't silently hidden mid-conversation);
@@ -2198,6 +2205,7 @@ export class DemoBackend implements Backend {
     return {
       userId: u.id, profileId: p?.id, code: p?.code, name: p?.biodata.basic.fullName, phoneMasked: `${u.countryCode} ${maskPhone(u.phone)}`,
       role: u.role, profileStatus: p?.status, city: p?.biodata.location.city, deactivatedAt: u.deactivatedAt, deactivatedBy: u.deactivatedBy, deletedAt: u.deletedAt,
+      addedByTeam: !!u.createdBy, claimedAt: u.claimedAt,
     };
   }
 
@@ -2243,5 +2251,97 @@ export class DemoBackend implements Backend {
         orders: db.orders.filter((o) => o.userId === u.id).map((o) => ({ ...o })),
       };
     });
+  }
+
+  // ---------- team-added members (owner request 2026-10-29) ----------
+  // An admin or sub-admin adds a member for a phone number without any OTP. The account belongs to
+  // that number: when its owner logs in (with OTP) they land in this account and see this biodata.
+  // One number = one account = one biodata still holds — a taken number is refused, never duplicated.
+
+  adminCheckPhone(countryCode: string, phone: string) {
+    return this.run((db): AdminPhoneCheck => {
+      this.admin(db);
+      ({ countryCode, phone } = this.normPhone(countryCode, phone));
+      const u = this.findUserByPhone(db, countryCode, phone);
+      return { available: !u, countryCode, phone, existingUserId: u?.id };
+    });
+  }
+
+  private teamDraft(db: DemoDb, p: Profile): AdminMemberDraft {
+    const u = db.users.find((x) => x.id === p.userId)!;
+    return { profile: clone(p), userId: u.id, phoneMasked: `${u.countryCode} ${maskPhone(u.phone)}`, claimed: !!u.claimedAt };
+  }
+
+  /** A team-added biodata the admin may still edit: not deleted, and its owner hasn't claimed the account. */
+  private teamProfile(db: DemoDb, profileId: string) {
+    const p = db.profiles.find((x) => x.id === profileId && !x.deletedAt);
+    if (!p || !p.createdByAdminId) throw new AppError('not_found');
+    const u = db.users.find((x) => x.id === p.userId);
+    if (!u || u.deletedAt) throw new AppError('not_found');
+    if (u.claimedAt) throw new AppError('invalid_state', 'The member now manages this biodata');
+    return p;
+  }
+
+  adminCreateMember(input: { countryCode: string; phone: string; biodata: Biodata; lastStep: number }) {
+    return this.run((db) => {
+      const a = this.admin(db);
+      const { countryCode, phone } = this.normPhone(String(input?.countryCode ?? ''), String(input?.phone ?? ''));
+      if (this.findUserByPhone(db, countryCode, phone)) throw new AppError('phone_taken');
+      const problem = biodataProblem(input.biodata);
+      if (problem) throw new AppError('validation', problem);
+      if (!String(input.biodata?.basic?.fullName ?? '').trim()) throw new AppError('validation', 'v.required');
+      const lastStep = Math.max(0, Math.min(7, Math.floor(Number(input.lastStep) || 0)));
+      const user: User = { id: uid('u_'), countryCode, phone, role: 'user', language: 'en', createdAt: this.iso(), createdBy: a.id };
+      db.users.push(user);
+      const p: Profile = {
+        id: uid('p_'), code: `HR-${db.nextCode++}`, userId: user.id, biodata: clone(input.biodata), status: 'draft',
+        createdAt: this.iso(), updatedAt: this.iso(), lastStep, createdByAdminId: a.id,
+      };
+      db.profiles.push(p);
+      this.audit(db, a.id, 'member.created_by_team', user.id, { code: p.code, phone: `${countryCode} ${maskPhone(phone)}` });
+      return this.teamDraft(db, p);
+    }, true);
+  }
+
+  adminSaveMemberBiodata(profileId: string, biodata: Biodata, lastStep: number) {
+    return this.run((db) => {
+      const a = this.admin(db);
+      const p = this.teamProfile(db, profileId);
+      const problem = biodataProblem(biodata);
+      if (problem) throw new AppError('validation', problem);
+      p.biodata = clone(biodata);
+      p.lastStep = Math.max(p.lastStep, Math.max(0, Math.min(7, Math.floor(Number(lastStep) || 0))));
+      p.updatedAt = this.iso();
+      if (p.status === 'rejected') p.status = 'draft';
+      this.audit(db, a.id, 'member.biodata_edited_by_team', p.userId, { code: p.code });
+      return this.teamDraft(db, p);
+    }, true);
+  }
+
+  adminGetMemberDraft(profileId: string) {
+    return this.run((db) => {
+      this.admin(db);
+      const p = db.profiles.find((x) => x.id === profileId && !x.deletedAt);
+      if (!p || !p.createdByAdminId) throw new AppError('not_found');
+      return this.teamDraft(db, p);
+    });
+  }
+
+  adminPublishMember(profileId: string) {
+    return this.run((db) => {
+      const a = this.admin(db);
+      const p = this.teamProfile(db, profileId);
+      if (firstInvalidStep(p.biodata) !== -1) throw new AppError('incomplete_biodata');
+      if (p.status !== 'published') {
+        // The team entered and checked it, so it goes live directly (no approval queue, no fee).
+        p.status = 'published';
+        p.publishedAt = p.publishedAt ?? this.iso();
+        p.adminNote = undefined;
+        p.updatedAt = this.iso();
+        this.notify(db, p.userId, 'team_created', {}, '/biodata/preview');
+        this.audit(db, a.id, 'member.published_by_team', p.userId, { code: p.code });
+      }
+      return this.teamDraft(db, p);
+    }, true);
   }
 }

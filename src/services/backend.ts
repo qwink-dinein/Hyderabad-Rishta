@@ -36,6 +36,7 @@ export type ErrorCode =
   | 'otp_expired'
   | 'blocked'
   | 'duplicate'
+  | 'phone_taken'
   | 'fee_disabled'
   | 'not_accepting'
   | 'incomplete_biodata'
@@ -188,6 +189,25 @@ export interface MemberRow {
   deactivatedAt?: string;
   deactivatedBy?: string;
   deletedAt?: string;
+  /** Added by the team without OTP; `claimedAt` once the owner has logged in. */
+  addedByTeam?: boolean;
+  claimedAt?: string;
+}
+
+/** Admin "add a member" (owner request 2026-10-29): the number's owner later claims it with OTP. */
+export interface AdminPhoneCheck {
+  available: boolean;
+  countryCode: string;
+  phone: string;
+  /** When taken: the existing account (open it instead of creating a duplicate). */
+  existingUserId?: string;
+}
+export interface AdminMemberDraft {
+  profile: Profile;
+  userId: string;
+  phoneMasked: string;
+  /** The owner has logged in: from now on only they edit the biodata. */
+  claimed: boolean;
 }
 
 /** Everything an admin needs to act on one member, on one screen. */
@@ -326,6 +346,15 @@ export interface Backend {
   /** Search by profile ID (HR-10023), name, city or phone digits. Phone searches are audited. */
   adminSearch(query: string): Promise<MemberRow[]>;
   adminGetMember(userId: string): Promise<MemberDetail>;
+  /** Is this number free for a new team-added member? (normalised, one number = one account) */
+  adminCheckPhone(countryCode: string, phone: string): Promise<AdminPhoneCheck>;
+  /** Creates the account for this number (no OTP) with its biodata as a draft. */
+  adminCreateMember(input: { countryCode: string; phone: string; biodata: Biodata; lastStep: number }): Promise<AdminMemberDraft>;
+  /** Edits a team-added biodata until its owner claims the account. */
+  adminSaveMemberBiodata(profileId: string, biodata: Biodata, lastStep: number): Promise<AdminMemberDraft>;
+  adminGetMemberDraft(profileId: string): Promise<AdminMemberDraft>;
+  /** Publishes a complete team-added biodata (the team is the approver; no fee is charged). */
+  adminPublishMember(profileId: string): Promise<AdminMemberDraft>;
 
   // admin — full moderation rights (master + sub-admins)
   adminSetRequireApproval(requireApproval: boolean): Promise<{ requireApproval: boolean; pending: number }>;

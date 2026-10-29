@@ -41,6 +41,7 @@ export const CATEGORY: Record<NotificationType, PushCategory> = {
   safety: 'account',
   security: 'account',
   admin_alert: 'account',
+  team_created: 'account',
   announcement: 'announcements',
 };
 

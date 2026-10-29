@@ -32,6 +32,7 @@ export const NOTIFICATION_ICONS: Record<string, IconName> = {
   boost_ending: 'clock',
   boost_ended: 'star',
   boost_reminder: 'star',
+  team_created: 'sparkle',
 };
 
 function localized(v: Partial<Record<Lang, string>> & { en: string }, lang: Lang) {
