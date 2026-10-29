@@ -332,6 +332,12 @@ export default function Login() {
             <Text variant="body" color={colors.muted} center style={{ marginBottom: space.lg }}>
               {secondsLeft > 0 ? t('auth.resendCountdown', { time: mmss }) : resendsLeft === 0 ? t('auth.noResends') : ' '}
             </Text>
+            {/* Codes go only on WhatsApp (no SMS): once Resend unlocks, remind people the number must use WhatsApp. */}
+            {secondsLeft === 0 ? (
+              <Text variant="caption" color={colors.muted} center style={{ marginBottom: space.md }} testID="whatsapp-hint">
+                {t('auth.whatsappHint')}
+              </Text>
+            ) : null}
             <Button label={t('auth.verify')} onPress={verify} loading={busy} full arrow testID="verify-otp" />
             <Row style={{ justifyContent: 'space-between', marginTop: space.md }} wrap>
               <Button label={t('auth.changeNumber')} kind="ghost" size="sm" onPress={() => setStage('phone')} />

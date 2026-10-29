@@ -13,3 +13,27 @@ verify_jwt = false
 sms_sent = 30
 token_verifications = 30
 sign_in_sign_ups = 30
+
+[functions.send-whatsapp-otp]
+# Called by Supabase Auth (Send SMS hook) with a Standard Webhooks signature, checked inside the function.
+verify_jwt = false
+
+[auth.sms]
+# Login codes are delivered on WhatsApp through Waplify by the hook below (owner choice 2026-10-29:
+# WhatsApp only, no SMS fallback). Supabase still generates, expires and verifies the code.
+enable_signup = true
+enable_confirmations = false
+otp_length = 6
+otp_expiry = 600          # 10 minutes (the template says so too)
+max_frequency = "60s"     # Resend unlocks after 60 seconds (the app shows the countdown)
+
+[auth.sms.test_otp]
+# App Store / Play reviewers cannot receive our WhatsApp: this number logs in with a fixed code and
+# never sends a message. Give it to reviewers in the submission notes; replace before launch if desired.
+919000000001 = "123456"
+
+[auth.hook.send_sms]
+enabled = true
+# Replace <project-ref> with the Supabase project ref after `supabase link`.
+uri = "https://<project-ref>.supabase.co/functions/v1/send-whatsapp-otp"
+secrets = "env(SEND_SMS_HOOK_SECRET)"
