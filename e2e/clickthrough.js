@@ -84,6 +84,17 @@ const db = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('hr.dem
     await page.waitForURL((u) => u.pathname === '/requests', { waitUntil: 'commit' });
   });
 
+  await step('discover: filter button beside the search box opens Filters; the badge counts active filters', MEMBER, async (page) => {
+    await page.goto(BASE + '/discover');
+    await page.getByTestId('discover-filter-btn').click();
+    await page.waitForURL((u) => u.pathname === '/filters', { waitUntil: 'commit' });
+    await page.goto(BASE + '/discover');
+    await page.getByTestId('discover-search').fill('Hyderabad');
+    await page.getByTestId('discover-search').press('Enter');
+    await page.getByRole('button', { name: 'Filters (1)', exact: true }).first().waitFor();
+    await page.screenshot({ path: `${SHOTS}/discover-filter-button.png` });
+  });
+
   await step('discover: sort, preferences, heart on a card updates the saved count', MEMBER, async (page) => {
     await page.goto(BASE + '/discover');
     await page.getByRole('button', { name: 'Open your shortlist (0 saved)' }).waitFor();

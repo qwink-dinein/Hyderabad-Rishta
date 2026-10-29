@@ -129,6 +129,23 @@ export default function Discover() {
             </Pressable>
           ) : null}
         </View>
+        {/* Same filter button as Home, right next to the search box. */}
+        <Pressable
+          onPress={() => router.push('/filters')}
+          accessibilityRole="button"
+          accessibilityLabel={activeFilterCount(filters) ? `${t('discover.filters')} (${activeFilterCount(filters)})` : t('discover.filters')}
+          style={styles.filterBtn}
+          testID="discover-filter-btn"
+        >
+          <Icon name="filter" size={20} color={colors.white} />
+          {activeFilterCount(filters) ? (
+            <View style={styles.filterCount}>
+              <Text variant="caption" color={colors.emerald} style={{ fontSize: 11, lineHeight: 14 }}>
+                {activeFilterCount(filters)}
+              </Text>
+            </View>
+          ) : null}
+        </Pressable>
       </Row>
       {backendInfo.kind === 'demo' ? <Banner tone="warning" icon="sparkle">{t('discover.demoData')}</Banner> : null}
       {featured.data?.length ? (
@@ -268,6 +285,8 @@ export default function Discover() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.ivory },
   column: { width: '100%', maxWidth: maxContentWidth + 280, alignSelf: 'center' },
+  filterBtn: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.emerald, alignItems: 'center', justifyContent: 'center' },
+  filterCount: { position: 'absolute', top: -5, right: -5, minWidth: 20, height: 20, paddingHorizontal: 4, borderRadius: 10, backgroundColor: colors.gold, borderWidth: 2, borderColor: colors.ivory, alignItems: 'center', justifyContent: 'center' },
   search: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 48, paddingHorizontal: space.md, borderRadius: radius.md, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
   searchInput: { flex: 1, fontSize: 16, color: colors.charcoal, paddingVertical: space.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },
