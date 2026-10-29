@@ -145,7 +145,7 @@ app ─► PushBridge: on sign-in re-bind token · taps → deep link + mark rea
 | Database | psql + Postgres 16 | RLS isolation, column grants, projection privacy, consent flow, admin audit |
 | Security | Jest + psql | `__tests__/attacks.test.ts` (20 app-rule attacks), `supabase/tests/60_attacks.test.sql` (73 DB attacks), `dataSize.test.ts` (store stays bounded) |
 | Auth | Jest + psql + Playwright | `pinLogin.test.ts` (20), `pinLoginEdge.test.ts` (15), `oneBiodata.test.ts` (22), SQL `80_one_biodata` (17), `90_pin_login` (37), e2e `pin.js`, `onebiodata.js` |
-| Boost & motion | Jest + psql + Playwright | `boostTab.test.ts`, SQL `95_boost_tab`, `96_one_boost`, e2e `boosttab.js`, `transitions.js` (samples frames) |
+| Boost & motion | Jest + psql + Playwright | `boostTab.test.ts`, `boostPlans.test.ts`, SQL `95_boost_tab`, `96_one_boost`, `98_boost_plans`, e2e `boost.js`, `transitions.js` (samples frames) |
 | Totals at V3 | | Jest 214 / 13 suites · SQL 11 suites (13 migrations) · e2e 12 suites / 85 steps. All e2e logins go through `e2e/auth.js` (handles PIN screens) |
 | E2E | Playwright (web export) | `console.js`: relation badges, report → admin bell → alerts deep link → search by ID → member page → pause, masked phone search; plus landing/lang/RTL, login, discover/filters/profile, requests/consent, dashboard, wizard → publish → approve → custom-value search, admin guard |
 
@@ -367,3 +367,28 @@ Normal returning login never sends one.
   - Jest: `attacks.test.ts` gains the OTP-resend brute force, spoofing characters and announcement tests (218 total).
   - SQL: `97_text_safety.test.sql` (12 suites).
   - e2e: `crawl`, `clickthrough`, `csp`.
+
+## 19. Boost options, My Boost, Home cards and Profile tab (2026-10-29, owner Mini PRD)
+- **Pricing model:** `PricingConfig.boostPlans: BoostPlan[]` = `{id, days, fee: {bride, groom}, enabled, popular}` (`src/domain/types.ts`).
+  - `resolvePricing(cfg, type).plans` lists the options a member can buy, shortest first; `boost` / `boostDays` are the default option's values.
+  - `validatePricing` requires 1–6 options with unique ids (`[a-z0-9_-]{1,20}`) and unique durations of 1–90 days, sane fees and at most one Popular.
+  - `syncBoostSummary` keeps the legacy `boost` / `boostDays` fields equal to the default option on every save. `withBoostPlans` upgrades configs saved before options existed (demo `load()` backfill; no schema bump).
+- **Buying:** `startBoost(planId?)` takes the price and length from the live config only (an unknown or switched-off option → `fee_disabled`). Order `terms = {pricingVersion, boostDays, planId, autoRenew:false}`. A repeat request for the same paid option returns the same open order; another option cancels it and creates one. A free option is applied at once. `boost_active` rules from §17 still apply.
+- **SQL** (`20261109000000_boost_plans.sql`):
+  - seeds `config.boostPlans`; CHECK `boost_plans_ok(config)`
+  - `boost_plan_terms(profile, plan)` returns the server price for the profile's type (service role only)
+  - trigger `orders_boost_terms`: every new boost order must match its option's amount, length and free/paid status, with no auto-renew
+  - trigger `pricing_boost_summary` keeps `boost_days` in sync
+  - view, shortlist and payment notices link to `/activity`
+  - The payment Edge Function (Phase 2) must create orders from `boost_plan_terms`.
+- **Analytics:** `dashboardMetrics` adds `boostState`, `boostDays`, `boostViews`, `previousViews`, `boostWindow` and `previousWindow` (`boostComparison` in `src/domain/metrics.ts`). "Before" exists only if the profile was published for the whole same-length window before the boost; owner views are always excluded.
+- **Completion:** `profileCompletion(biodata)` (`src/domain/completion.ts`) uses weighted items: basic 3, about 1, location 2, career 2, religion 1, practice 1, family 2, preferences 2, privacy 1. It returns the percentage and the first missing item's wizard step, and the profile counts as complete at 100 % (`PROFILE_COMPLETE_AT`).
+- **UI:**
+  - `src/components/HomeCards.tsx` (`CompletionCard`, `ActivityStats`, `BoostPromoCard`), `ProgressRing.tsx` and `src/hooks/useBoostStatus.ts`
+  - screens `src/app/boost.tsx` (options + My Boost) and `src/app/activity.tsx`
+  - the Profile tab list in `src/app/(tabs)/dashboard.tsx`; the Shortlist tab is `src/app/(tabs)/shortlist.tsx`
+  - Removed: `BoostTabButton`, `BoostPanel`, `BoostReminder`.
+- **Tests:**
+  - Jest: `boostPlans.test.ts` (options, prices, switching, free, upgrades, honest comparison).
+  - SQL: `98_boost_plans` (seed, server price, forged orders refused, price changes, nonsense configs).
+  - e2e: `boost.js` (tabs, completion updates after saving, activity, options + checkout, My Boost, Profile rows, admin price change, free boost, ended boost, unpublished).

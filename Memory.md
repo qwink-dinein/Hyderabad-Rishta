@@ -5,11 +5,11 @@
 
 ## Start here (V3 state in one screen)
 - **What:** Hyderabad Rishta, a Muslim matrimony app. Owner: mukarramjahmm.
-  - Specs: `PRD.md` (product), `design.md` (UI/motion), `Architecture.md` (§9 governance, §10 interests, §11–13 boost/push/UI, §14 security, §15 one-number rule, §16 PIN login, §17 boost tab, §18 QA + security round 2), `Tasks.md` (T-numbers), `Phases.md`, `CHECKPOINTS.md`.
+  - Specs: `PRD.md` (product), `design.md` (UI/motion), `Architecture.md` (§9 governance, §10 interests, §11–13 boost/push/UI, §14 security, §15 one-number rule, §16 PIN login, §17 boost tab, §18 QA + security round 2, §19 boost options + Home/Profile redesign), `Tasks.md` (T-numbers), `Phases.md`, `CHECKPOINTS.md`.
 - **Repo / branch:** `qwink-dinein/Hyderabad-Rishta` · `claude/sharp-bell-xxyxmj`. Commit and push there; never open a PR unless asked.
 - **Stack:** Expo SDK 58 · RN · TypeScript · Expo Router (`src/app/`) · TanStack Query · zustand · i18next (EN / UR RTL / TE) · zod.
   - The app runs on the offline **DemoBackend** (`src/services/demo/demoBackend.ts`, `SCHEMA_VERSION = 8`).
-  - Supabase SQL (14 migrations), Edge Functions (`push-dispatch`, `pin-login`) and tests are ready but **not connected**: the client adapter is Phase 2.
+  - Supabase SQL (15 migrations), Edge Functions (`push-dispatch`, `pin-login`) and tests are ready but **not connected**: the client adapter is Phase 2.
 - **Checkpoints (never move or delete):**
   - **V3 = LATEST = `dafa2120243b1bf067e78de03602e0c4fc4efd96`** ("Checkpoint V3: pin…"; code identical to `ae8776f`).
   - **V2** = `774ea9f34f3ebe0babe44520b297af610262c5fb`.
@@ -22,9 +22,10 @@
 |---|---|---|
 | Auth | OTP for registration/new phone/Forgot PIN, then **4-digit PIN** login. Server sessions in secure storage (`hr.auth`); device key + PIN; lockout 5 → 15 min, 10/day → OTP reset only | `src/domain/auth.ts`, `src/app/login.tsx`, `src/app/pin.tsx`, `src/components/ui/CodeInput.tsx`, `src/services/secureStorage.ts`, SQL `20261105000000_pin_login.sql`, `supabase/functions/pin-login/` |
 | Identity | **One number = one account = one biodata**: `normalizePhone()`, unique E.164, `profileRemovedAt` mark; only Delete account frees a number | `src/domain/phone.ts`, SQL `20261104000000_one_biodata_per_number.sql` |
-| Navigation | Tabs: Home · Discover · **Boost** (raised centre) · Requests · Profile. Shortlist = `/shortlist` stack screen (heart on Discover header + Home row). Notifications = `/notifications` stack screen | `src/app/(tabs)/_layout.tsx`, `src/components/BoostTabButton.tsx`, `src/components/TabHeader.tsx` |
+| Navigation | Tabs: Home · Discover · Shortlist · Requests · Profile (2026-10-29; floating Boost removed). `/boost`, `/activity`, `/notifications` are stack screens | `src/app/(tabs)/_layout.tsx`, `src/components/TabHeader.tsx` |
 | Motion | Native slide (Urdu mirrored), tab shift, web fade+rise, Reduce Motion fade | `src/navigation/transitions.tsx` |
-| Boost | Guaranteed Featured slot for everyone looking for that type. Centre tab + reminders (dot/halo, Home card with 3-day snooze, weekly `boost_reminder`). **One boost at a time** (no re-boost while active; ≤1 unpaid boost order; never extends) | `src/domain/featured.ts` (`boostNudge`, `boostReminderDue`), `src/components/BoostPanel.tsx`, `BoostReminder.tsx`, `src/app/(tabs)/boost.tsx`, SQL `…boost_tab.sql`, `…one_boost_at_a_time.sql` |
+| Boost | Guaranteed Featured slot. **Admin-priced options** (`boostPlans`: 7/14/30 days, bride/groom fees, enable, popular); price always from the server config; free skips payment. **One boost at a time**. My Boost with honest before/during views. Home card (3-day snooze) + weekly `boost_reminder` | `src/domain/pricing.ts`, `src/domain/featured.ts`, `src/domain/metrics.ts` (`boostComparison`), `src/app/boost.tsx`, `src/components/HomeCards.tsx`, `src/hooks/useBoostStatus.ts`, `src/app/admin/pricing.tsx`, SQL `…one_boost_at_a_time.sql`, `…boost_plans.sql` (Architecture §19) |
+| Home / Profile | Real completion ring (`src/domain/completion.ts`), activity counts, Profile tab list, `/activity` (metrics + payments) | `src/app/(tabs)/home.tsx`, `src/app/(tabs)/dashboard.tsx`, `src/app/activity.tsx` |
 | Push | Every profile action → in-app + phone; generic lock-screen text; categories; 12/h cap | `src/domain/push.ts` (→ generated `supabase/functions/_shared/push.ts`), `src/services/push.ts`, `PushBridge.tsx` |
 | Security | Deny-by-default RPCs, input caps, attack suites (73 SQL, 26 app), safe deep links, OTP 10-wrong/hour cap across resends, spoofing-character filter (`unsafeText`), web CSP/headers (`public/_headers`), no camera/mic permissions, `allowBackup:false` | `src/domain/security.ts`, SQL `…security_hardening.sql`, `…text_safety.sql`, `__tests__/attacks.test.ts`, `supabase/tests/60_attacks.test.sql`, `97_text_safety.test.sql`, `e2e/csp.js` |
 | QA | Crawler (every screen × 5 roles × EN/UR × 360/320 px), click-through (13 flows), revoked-session handler + crash screen in `src/app/_layout.tsx`, admin forced EN/LTR (`src/i18n/uiLang.tsx`) | `e2e/crawl.js`, `e2e/clickthrough.js` |
@@ -49,10 +50,10 @@
 ```bash
 npx tsc --noEmit && npx tsc -p supabase/functions/tsconfig.json
 EXPO_OFFLINE=1 npx expo lint            # 0 errors; 2 known i18next warnings
-npx jest                                # 218 tests / 13 suites
-pg_ctlcluster 16 main start; su postgres -c "cd /home/user/Hyderabad-Rishta && ./scripts/test-db.sh"   # 12 PASSED lines
+npx jest                                # 228 tests / 14 suites
+pg_ctlcluster 16 main start; su postgres -c "cd /home/user/Hyderabad-Rishta && ./scripts/test-db.sh"   # 14 PASSED lines
 EXPO_OFFLINE=1 npx expo export --platform web && node e2e/serve.js "$(pwd)/dist" 8081 &   # then:
-for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boosttab personas clickthrough csp crawl; do node e2e/$s.js; done   # 16 suites; crawl must report 0 high issues
+for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boost personas clickthrough csp crawl; do node e2e/$s.js; done   # 16 suites; crawl must report 0 high issues
 node scripts/sync-shared.js            # after editing src/domain/push.ts or src/domain/phone.ts
 ```
 - e2e suites sign in through `e2e/auth.js` (`loginWithOtp`), which also creates the test PIN **4827** when asked.
@@ -124,6 +125,7 @@ Reset everything: Settings → “Reset demo data”.
 | 2026-10-28 | Boost reminders: red dot + halo, Home card (3-day snooze), weekly notification (not within 2 days of publish or 7 days after a boost; promotional category) | Owner: "keep reminding if they haven't boosted". |
 | 2026-10-28 | One boost at a time; boosts no longer extend | Owner: "must not allow them to boost again if the current boost is in progress". |
 | 2026-10-28 | Checkpoint V3 pinned at the "Checkpoint V3" docs commit (code = `ae8776f`) | Owner: "checkpoint this as V3". |
+| 2026-10-29 | Mini PRD: boost options 7/14/30 priced by admin (initial ₹100/200/350; bride 7-day free), My Boost, Home completion/activity/Boost cards, Profile list, tabs Home·Discover·Shortlist·Requests·Profile | Owner: "Give admin the configurable price options" + Mini PRD. Never promise views/matches; no fake stats. |
 | 2026-10-29 | No-photo profiles show the owner's Hyderabadi bride/groom portraits (`assets/personas/*.webp`, in `ProfilePhoto`), by the profile's type. Two vector versions were rejected first ("very bad") — use the supplied artwork, don't redraw | Owner spec "Default Hyderabadi Bride & Groom Illustrations". |
 | 2026-10-28 | QA rounds 1–2 (crawler + click-through) and security round 2 (OTP cap, spoofing chars, CSP headers, permissions) | Owner: "become a tester … test every button … try to break the security and fix it". |
 | 2026-10-28 | npm audit findings left as-is (build-time Expo CLI/jest only); never `npm audit fix --force` (downgrades to SDK 51) | Not shipped in the app bundle. |

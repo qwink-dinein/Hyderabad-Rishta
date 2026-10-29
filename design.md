@@ -52,28 +52,30 @@ Scale (pt): display 34 (hero) · h1 27 (screen titles) · h2 20 (card titles 18�
 - There is no Messages tab, because there is no chat. Requests handles the connection workflow.
 - Admin navigation stays separate (`/admin/*`).
 
-### 5b. Boost centre tab (owner request 2026-10-28)
-- **Tabs:** Home · Discover · **Boost** (raised gold circle in the centre) · Requests · Profile.
-  - The Boost button turns emerald when selected, or while a boost is active.
-- **Reminders** show only while the member *could* boost and hasn't (`boostNudge() === 'ready'`):
-  - a red dot on the Boost button;
-  - a soft gold halo that pulses every ~4 s, off under Reduce Motion and on the Boost screen itself;
-  - a "Get noticed sooner" card on Home ("Not now" hides it for 3 days);
-  - a weekly `boost_reminder` notification.
-- **Weekly reminder rules:**
-  - Not within 2 days of going live, nor within 7 days of a boost ending.
-  - Never while boosting is disabled.
-  - Promotional push category: members can switch it off, and the hourly cap applies.
-- **Shortlist** is no longer a tab. Members reach it from:
-  - a heart button with a count in Discover's header (`ShortlistButton`);
-  - a "N saved profiles" row on Home;
-  - the profile hearts, as before.
-  - `/shortlist` is now a stack screen with Back and Home; old links still work.
-- **One boost at a time** (owner rule): while a boost runs, the Boost screen shows "You can boost again after {date}" instead of a Boost button.
-  - The backend refuses a second boost (`boost_active`) and repeat taps reuse one unpaid order.
-  - A payment for a stray second order is cancelled before charging. Boosts never stack or extend.
-  - SQL: `orders_one_open_boost`, `orders_boost_guard`, and `apply_boost` refuses while a boost is active.
-- **Profile tab:** keeps a one-line boost summary plus an "Open Boost" button. The full boost flow lives on the Boost tab.
+### 5b. ~~Boost centre tab~~ (2026-10-28, replaced 2026-10-29 by 5c)
+The raised Boost tab, its dot/halo and the Boost tab screen were removed. What stays: the Home Boost card ("Not now" hides it for 3 days), the weekly `boost_reminder` notification (not within 2 days of going live or 7 days after a boost; promotional category), and one boost at a time (no Boost button while one runs; `boost_active`; repeat taps reuse one order; never stacks or extends).
+
+### 5c. Profile completion, Boost options & Profile dashboard (owner Mini PRD 2026-10-29)
+- **Tabs:** Home · Discover · Shortlist (heart) · Requests · Profile — five equal tabs, the selected one on a sage pill.
+- **Home** under the welcome and search:
+  1. **Completion card** — white card with an emerald `ProgressRing` (fills over 700 ms, instant under Reduce Motion), "Complete your profile", "Next: <section>" in gold, and a Complete profile button. At 100 %: a compact "Your profile is complete" note.
+  2. **Your activity** — overline plus three equal tiles (icon, number, label): Profile views · Shortlisted you · Interests received. An unpublished profile gets one sage line explaining why.
+  3. **Boost card** — gold-soft card with a crown medallion, "Get more visibility with Boost", the live price ("From ₹100" / "Free boost available"), Not now plus a gold "Boost my profile" (or "Activate free boost"). While a boost runs it becomes a one-line status row; unpublished: "Publish your biodata to boost".
+- **Boost screen (`/boost`):**
+  - an emerald hero (crown, "Get more visibility")
+  - selectable option cards: radio, "7-day boost", price or FREE in green, three checked benefits, a gold "Popular" pill only when the admin set it; the selected card is gold-soft with a gold border
+  - a gold footer button "Continue · ₹100" / "Activate free boost"
+  - the honest note "cannot guarantee views, interests or matches"
+- **My Boost:**
+  - status card: crown, "Your profile is boosted" / "Your last boost has ended", valid-till or ended date, a days-left pill, start date and length
+  - "While boosted" benefits, including Featured reach
+  - a Profile views card: two bars (Before / During, each with its date range) only when the comparison is fair, otherwise "N views since your boost started" plus why there is no comparison
+- **Profile tab:** a header card (64 px round photo or bride/groom portrait in a gold ring, name, HR-ID, status badge, "Profile completion" bar), status help and actions (View as others see it, Pause/Resume, Publish/Continue). Then:
+  - a gold Boost row (crown, label by state, price/expiry hint)
+  - a grouped white list: Edit biodata · Manage photos · Partner preferences · Privacy settings · Profile views & activity
+  - a second group: Shortlisted profiles · Account settings
+  - Metrics and payments moved to `/activity`.
+- **Admin → Pricing → Boost options:** one card per option (duration, bride and groom Free/Paid/Disabled + amount, "Offered to members", "Popular" — at most one), Add a boost option (max 6), Remove.
 
 ## 6. Components (Design PRD §19)
 - **BrandMark** — 8-point star medallion with a rosette (art/Illustrations.tsx).

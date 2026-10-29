@@ -271,6 +271,17 @@ Cards show your history with each person, so nobody re-sends blindly: **Connecte
   - a Home card (dismissible for 3 days)
   - at most one reminder notification per week, which members can switch off with "announcements"
 - **One boost at a time:** while a boost runs, members can't boost again; the Boost screen shows when they can. A boost never extends or stacks.
+- ~~Boost as the centre tab~~ — replaced by §15.10 on 2026-10-29.
+
+### 15.10 Profile completion, Boost options & Profile dashboard (Mini PRD, 2026-10-29)
+- **Tabs:** Home · Discover · Shortlist · Requests · Profile. No floating Boost button; Boost opens from Home, the Profile tab and boost notifications (`/boost`).
+- **Home**, below the welcome and search:
+  - **Profile completion card:** a ring with the real percentage (`src/domain/completion.ts`; photos, income and employer never count). Tapping opens the first incomplete biodata section. At 100 % it becomes a "profile is complete" message.
+  - **Your activity:** recorded counts only — others' profile views, members who shortlisted you, interests received. No made-up trends. Unpublished profiles see an explanation instead; Interests opens Requests and the others open Activity.
+  - **Boost card** follows the real state: publish first, active status and expiry, or "Boost my profile · From ₹…" ("Activate free boost" when the default option is free). "Not now" hides it for 3 days.
+- **Boost options:** the admin sets 1–6 options in Admin → Pricing (initially 7 / 14 / 30 days at ₹100 / ₹200 / ₹350; brides' 7-day boost free). Each option has its own bride and groom price (free, paid or disabled), can be switched off, and can carry a "Popular" label only when the admin sets it. The shortest available option is pre-selected. Free options skip payment; paid ones show the exact amount in checkout. The order keeps its price and length forever; boosts never renew. Repeat taps reuse one open order; picking another option replaces it.
+- **My Boost:** active or ended status, start and expiry dates, days left, length, Featured reach, and views during the boost. A comparison with the same-length period before is shown only when the profile was live for all of it. "Boost again" (with the options) once it has ended.
+- **Profile tab:** photo or bride/groom portrait, name, profile ID, status, completion bar, then the Boost row (Boost my profile / My active boost / Boost again, with the free or "From" price) and Edit biodata · Manage photos · Partner preferences · Privacy settings · Profile views & activity · Shortlisted profiles · Account settings. Metrics and payments moved to `/activity`.
 
 ### 15.3 Visual design
 The visual, motion and sound specification is **Design PRD v1.0** (owner, 2026-10-28), summarised and tracked in `design.md`, with the approved reference in `docs/design/reference-ui.jpg`. Design changes never alter the behaviour defined in this PRD.
