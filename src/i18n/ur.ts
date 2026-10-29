@@ -274,6 +274,8 @@ const ur: DeepPartial<Translation> = {
     familyValues: 'خاندانی اقدار',
     fatherOccupation: 'والد کا پیشہ',
     motherOccupation: 'والدہ کا پیشہ',
+    siblingsGroup: "بہن بھائی",
+    siblingsTotal: "کل",
     siblings: 'بہن بھائیوں کی تعداد',
     brothers: 'بھائی',
     sisters: 'بہنیں',

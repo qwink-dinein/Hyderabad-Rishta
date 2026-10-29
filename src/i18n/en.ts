@@ -286,6 +286,8 @@ const en = {
     familyValues: 'Family values',
     fatherOccupation: "Father's occupation",
     motherOccupation: "Mother's occupation",
+    siblingsGroup: "Siblings",
+    siblingsTotal: "Total",
     siblings: 'Number of siblings',
     brothers: 'Brothers',
     sisters: 'Sisters',

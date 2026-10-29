@@ -274,6 +274,8 @@ const te: DeepPartial<Translation> = {
     familyValues: 'కుటుంబ విలువలు',
     fatherOccupation: 'తండ్రి వృత్తి',
     motherOccupation: 'తల్లి వృత్తి',
+    siblingsGroup: "తోబుట్టువులు",
+    siblingsTotal: "మొత్తం",
     siblings: 'తోబుట్టువుల సంఖ్య',
     brothers: 'సోదరులు',
     sisters: 'సోదరీమణులు',

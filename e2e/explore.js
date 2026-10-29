@@ -33,6 +33,41 @@ const setDb = (page, src) => page.evaluate((s) => { const d = JSON.parse(localSt
 (async () => {
   browser = await chromium.launch();
 
+  await step('owner changes 2026-10-29: siblings boxes line up (EN/UR/TE); preview has Home beside Edit; no card for a complete profile; Boost card always stays', '9000000001', async (page) => {
+    for (const lang of ['en', 'ur', 'te']) {
+      await page.evaluate((l) => localStorage.setItem('hr.lang', l), lang);
+      await page.goto(BASE + '/biodata?step=4');
+      const boxes = [];
+      for (const k of ['siblings', 'brothers', 'sisters']) {
+        const el = page.getByTestId(`family-${k}`);
+        await el.scrollIntoViewIfNeeded();
+        boxes.push(await el.boundingBox());
+      }
+      const ys = boxes.map((b) => Math.round(b.y));
+      const hs = boxes.map((b) => Math.round(b.height));
+      if (new Set(ys).size !== 1 || new Set(hs).size !== 1) throw new Error(`${lang}: siblings boxes not aligned ${ys} ${hs}`);
+      await shot(page, `f1-siblings-${lang}`);
+    }
+    await page.evaluate(() => localStorage.setItem('hr.lang', 'en'));
+    await page.goto(BASE + '/biodata/preview');
+    await page.getByTestId('preview-edit').waitFor();
+    await shot(page, 'f2-preview-footer');
+    await page.getByTestId('preview-home').click();
+    await page.waitForURL((u) => u.pathname === '/home', { waitUntil: 'commit' });
+    // Complete profile → no completion card; the Boost card stays (no "Not now"), even after a reload.
+    await page.waitForTimeout(1200);
+    if (await page.getByTestId('completion-card').count()) throw new Error('completion card shown for a complete profile');
+    await page.getByTestId('boost-reminder').waitFor();
+    if (await page.getByRole('button', { name: 'Not now' }).count()) throw new Error('"Not now" still offered');
+    await page.reload();
+    await page.getByTestId('boost-reminder').waitFor();
+    await shot(page, 'f3-home-complete');
+    // Something missing → the card comes back.
+    await setDb(page, "d.profiles.find((x) => x.id === 'p_1').biodata.basic.aboutMe = '';");
+    await page.goto(BASE + '/home');
+    await page.getByTestId('completion-card').waitFor();
+  });
+
   await step('brand-new member: Home, Profile, Boost, Activity all make sense without a biodata', '9812300099', async (page) => {
     await page.goto(BASE + '/home'); await page.waitForTimeout(1200); await shot(page, 'n1-home');
     if (await page.getByTestId('completion-card').count()) throw new Error('completion card without a biodata');

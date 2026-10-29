@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { CheckoutSheet, PricingNotice } from '@/components/Checkout';
 import { ProfileDetails } from '@/components/ProfileDetails';
 import { Button } from '@/components/ui/Button';
+import { Icon } from '@/components/ui/Icon';
+import { useGoHome } from '@/hooks/useGoHome';
 import { Badge, Banner, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { Header, Row, Screen } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
@@ -14,7 +16,7 @@ import { firstInvalidStep, STEP_KEYS } from '@/domain/validation';
 import { useInvalidateProfileState, useMyProfile, usePricing } from '@/hooks/queries';
 import { backend } from '@/services';
 import { celebrate, playSound } from '@/services/feedback';
-import { space } from '@/theme/tokens';
+import { colors, space } from '@/theme/tokens';
 
 /** Full preview exactly as others will see it (privacy applied), then publish (PRD §7). */
 export default function Preview() {
@@ -26,6 +28,7 @@ export default function Preview() {
   const errMsg = useErrorMessage();
   const [order, setOrder] = useState<Order | null>(null);
   const [busy, setBusy] = useState(false);
+  const goHome = useGoHome();
 
   if (isLoading || !pricing) return <Loading />;
   if (!profile) return <Redirect href="/biodata" />;
@@ -60,18 +63,22 @@ export default function Preview() {
     <Screen
       header={<Header title={t('preview.title')} />}
       footer={
-        canSubmit ? (
-          <Button
-            label={profile.status === 'rejected' ? t('preview.resubmit') : t('preview.publish')}
-            onPress={publish}
-            loading={busy}
-            disabled={invalidStep !== -1}
-            full
-            testID="publish"
-          />
-        ) : (
-          <Button label={t('dashboard.editBiodata')} kind="secondary" onPress={() => router.push('/biodata')} full />
-        )
+        // A Home button sits beside the main action, so after editing members can go straight home.
+        <Row gap={space.sm}>
+          <Button label={t('nav.home')} kind="secondary" icon={<Icon name="home" size={18} color={colors.emerald} />} onPress={goHome} style={{ flex: 1 }} testID="preview-home" />
+          {canSubmit ? (
+            <Button
+              label={profile.status === 'rejected' ? t('preview.resubmit') : t('preview.publish')}
+              onPress={publish}
+              loading={busy}
+              disabled={invalidStep !== -1}
+              style={{ flex: 1.6 }}
+              testID="publish"
+            />
+          ) : (
+            <Button label={t('dashboard.editBiodata')} kind="secondary" icon={<Icon name="edit" size={18} color={colors.emerald} />} onPress={() => router.push('/biodata')} style={{ flex: 1.6 }} testID="preview-edit" />
+          )}
+        </Row>
       }
     >
       <View style={{ gap: space.md, paddingVertical: space.lg }}>

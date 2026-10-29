@@ -339,15 +339,26 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
       <Field label={t('f.motherOccupation')} optional>
         <TextField value={fam.motherOccupation} onChangeText={(v) => set('family', 'motherOccupation', v)} accessibilityLabel={t('f.motherOccupation')} maxLength={80} />
       </Field>
-      <Row gap={space.sm} style={{ alignItems: 'flex-start' }}>
-        {(['siblings', 'brothers', 'sisters'] as const).map((k) => (
-          <View key={k} style={{ flex: 1 }}>
-            <Field label={t(`f.${k}`)} error={err(k)}>
-              <TextField value={fam[k] != null ? String(fam[k]) : ''} onChangeText={(v) => set('family', k, num(v))} keyboardType="number-pad" inputMode="numeric" maxLength={2} accessibilityLabel={t(`f.${k}`)} error={!!err(k)} />
-            </Field>
-          </View>
-        ))}
-      </Row>
+      {/* One "Siblings" group: short labels on their own row, so the three boxes always line up
+          (a long label wrapping onto two lines used to push its box down). */}
+      <Field label={t('f.siblingsGroup')} optional error={err('siblings') || err('brothers') || err('sisters')}>
+        <View style={{ gap: 6 }}>
+          <Row gap={space.sm} style={{ alignItems: 'flex-end' }}>
+            {(['siblingsTotal', 'brothers', 'sisters'] as const).map((k) => (
+              <Text key={k} variant="caption" style={{ flex: 1 }}>
+                {t(`f.${k}`)}
+              </Text>
+            ))}
+          </Row>
+          <Row gap={space.sm}>
+            {(['siblings', 'brothers', 'sisters'] as const).map((k) => (
+              <View key={k} style={{ flex: 1 }}>
+                <TextField value={fam[k] != null ? String(fam[k]) : ''} onChangeText={(v) => set('family', k, num(v))} keyboardType="number-pad" inputMode="numeric" maxLength={2} accessibilityLabel={t(`f.${k}`)} error={!!err(k)} testID={`family-${k}`} />
+              </View>
+            ))}
+          </Row>
+        </View>
+      </Field>
       <Field label={t('f.residence')} optional>
         <TextField value={fam.residence} onChangeText={(v) => set('family', 'residence', v)} accessibilityLabel={t('f.residence')} maxLength={80} />
       </Field>

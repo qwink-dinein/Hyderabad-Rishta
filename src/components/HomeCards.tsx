@@ -1,7 +1,5 @@
-import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
 import { profileCompletion } from '@/domain/completion';
 import { formatDate } from '@/domain/format';
@@ -42,17 +40,8 @@ export function CompletionCard() {
   if (!me) return null;
   const c = profileCompletion(me.biodata);
   const open = () => router.push({ pathname: '/biodata', params: { step: String(c.next?.step ?? 0) } });
-  if (c.complete) {
-    return (
-      <View style={[styles.card, styles.row]} testID="completion-done">
-        <ProgressRing percent={100} size={52} animate={false} label={t('completion.a11y', { percent: 100 })} />
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text variant="bodyStrong">{t('completion.doneTitle')}</Text>
-          <Text variant="caption">{t('completion.doneBody')}</Text>
-        </View>
-      </View>
-    );
-  }
+  // Shown only while something is missing: a complete profile needs no card (owner request 2026-10-29).
+  if (c.complete) return null;
   return (
     // Two separate tap targets (summary row + button), never a button nested inside a button.
     <View style={styles.card} testID="completion-card">
@@ -114,20 +103,14 @@ export function ActivityStats() {
   );
 }
 
-const SNOOZE_KEY = 'hr.boost.reminderSnoozedAt';
-const SNOOZE_MS = 3 * 86400000;
-
-/** Home: Boost card that follows the real state — publish first, active status, or the configured price. */
+/**
+ * Home: Boost card that follows the real state — publish first, active status, or the configured price.
+ * It always stays on Home (owner request 2026-10-29: no "Not now"); only its content changes.
+ */
 export function BoostPromoCard() {
   const { t } = useTranslation();
   const { data: me } = useMyProfile();
   const s = useBoostStatus();
-  const [snoozed, setSnoozed] = useState(true);
-  useEffect(() => {
-    AsyncStorage.getItem(SNOOZE_KEY)
-      .then((v) => setSnoozed(!!v && Date.now() - Number(v) < SNOOZE_MS))
-      .catch(() => setSnoozed(false));
-  }, []);
   if (!s.nudge || s.nudge === 'no_profile' || s.nudge === 'disabled') return null;
 
   if (s.nudge === 'active') {
@@ -164,7 +147,6 @@ export function BoostPromoCard() {
       </View>
     );
   }
-  if (snoozed) return null;
   return (
     <View style={styles.boost} testID="boost-reminder">
       <Row gap={space.md} style={{ alignItems: 'flex-start' }}>
@@ -179,20 +161,7 @@ export function BoostPromoCard() {
           </Text>
         </View>
       </Row>
-      <Row gap={space.sm}>
-        <Button
-          label={t('boost.notNow')}
-          kind="ghost"
-          size="sm"
-          onPress={() => {
-            setSnoozed(true);
-            AsyncStorage.setItem(SNOOZE_KEY, String(Date.now())).catch(() => undefined);
-          }}
-          style={{ flex: 1 }}
-          testID="boost-reminder-later"
-        />
-        <Button label={s.free ? t('myBoost.activateFree') : t('me.boostMy')} kind="gold" size="sm" arrow onPress={() => router.push('/boost')} style={{ flex: 1.6 }} testID="boost-reminder-cta" />
-      </Row>
+      <Button label={s.free ? t('myBoost.activateFree') : t('me.boostMy')} kind="gold" size="sm" arrow onPress={() => router.push('/boost')} style={{ alignSelf: 'flex-start' }} testID="boost-reminder-cta" />
     </View>
   );
 }

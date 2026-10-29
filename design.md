@@ -58,9 +58,9 @@ The raised Boost tab, its dot/halo and the Boost tab screen were removed. What s
 ### 5c. Profile completion, Boost options & Profile dashboard (owner Mini PRD 2026-10-29)
 - **Tabs:** Home · Discover · Shortlist (heart) · Requests · Profile — five equal tabs, the selected one on a sage pill.
 - **Home** under the welcome and search:
-  1. **Completion card** — white card with an emerald `ProgressRing` (fills over 700 ms, instant under Reduce Motion), "Complete your profile", "Next: <section>" in gold, and a Complete profile button. At 100 %: a compact "Your profile is complete" note.
+  1. **Completion card** — white card with an emerald `ProgressRing` (fills over 700 ms, instant under Reduce Motion), "Complete your profile", "Next: <section>" in gold, and a Complete profile button. Shown **only while the profile is below 100 %**; a complete profile shows no card (owner, 2026-10-29).
   2. **Your activity** — overline plus three equal tiles (icon, number, label): Profile views · Shortlisted you · Interests received. An unpublished profile gets one sage line explaining why.
-  3. **Boost card** — gold-soft card with a crown medallion, "Get more visibility with Boost", the live price ("From ₹100" / "Free boost available"), Not now plus a gold "Boost my profile" (or "Activate free boost"). While a boost runs it becomes a one-line status row; unpublished: "Publish your biodata to boost".
+  3. **Boost card** — gold-soft card with a crown medallion, "Get more visibility with Boost", the live price ("From ₹100" / "Free boost available") and a gold "Boost my profile" (or "Activate free boost"). It **always stays** on Home — no "Not now" (owner, 2026-10-29). While a boost runs it becomes a one-line status row; unpublished: "Publish your biodata to boost".
 - **Boost screen (`/boost`):**
   - an emerald hero (crown, "Get more visibility")
   - selectable option cards: radio, "7-day boost", price or FREE in green, three checked benefits, a gold "Popular" pill only when the admin set it; the selected card is gold-soft with a gold border
