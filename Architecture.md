@@ -427,3 +427,20 @@ Normal returning login never sends one.
   - Jest: `teamMembers.test.ts`, `adminCreateMemberEdge.test.ts`
   - SQL: `99_team_members`
   - e2e: `teammember.js`, end to end (admin adds 9999999999 → publishes → duplicate refused → sub-admin adds → owner logs in with OTP → same account and biodata → review clears the note → admin sees "claimed").
+
+## 22. Expert-team simulation and scale (2026-10-29)
+- **Owner ask:** "build an expert team… an admin, multiple users… expresses interests, pays for boost, deletes their profile… find the issues and fix… improve performance".
+- **Simulation** (`__tests__/simulation.test.ts`): one shared server store and one phone per person (its own secure storage: session token, trusted device, PIN). The cast is the master, the sub-admin, 14 seed members, newcomers who register over time, and the owners of team-added numbers, who claim their accounts with OTP.
+  - **Members:** browse, shortlist, express interest (also checking that it shows at once and that a retry is the same request), accept/decline/withdraw/poke, offer and accept numbers, consent, boost and pay (success, failure, abandoned checkout), edit, pause, block/report, log out and in (PIN or OTP), deactivate, delete (and sometimes re-register).
+  - **Team:** moderate, resolve reports, change boost prices and options, add and publish members, suspend/delete/restore accounts, housekeeping.
+  - **After every action** the whole database is checked: one number = one account; one live biodata per account; codes never reused; no orphan requests, offers or shortlists; never two open requests per pair; a shared number only on an accepted request; one open boost order per profile; honest amounts; every running boost backed by a paid or free order; no live session for removed accounts.
+  - **Also checked:** search never shows a number, a non-live, same-side or blocked profile.
+  - **Failures:** an unexpected exception (anything but `AppError`) counts as a bug.
+  - **Runs:** `SIM_STEPS`, `SIM_SEEDS`, `SIM_REPORT` (timings per operation and the refusal mix).
+- **Fixes from the pass:**
+  - `me()` hashed the session token once per user row on every request (O(users)).
+  - My Orders, Shortlist ids and Blocked re-ran `me()` per row.
+  - Discover and Featured rescanned requests, consents, blocks, users and the viewer's own profile for every candidate (quadratic). They now use `viewerContext()` (indexes built once, same answers).
+  - The weekly boost-reminder pass looked up users per profile.
+  - At 2,000 members: search 239 → 50 ms, Featured 60 → 38 ms, Requests 24 → 13 ms, Home dashboard 17 → 10 ms, My Orders 17 → 8 ms (`__tests__/scale.test.ts` guards correctness and bounds).
+- **SQL:** `20261112000000_hot_path_indexes.sql` indexes the foreign keys that member screens and RLS policies filter by (requests by sender/recipient, consents, blocks, shortlists, orders, offers, reports, views, impressions, deliveries).

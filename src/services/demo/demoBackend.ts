@@ -382,7 +382,9 @@ export class DemoBackend implements Backend {
   }
 
   private me(db: DemoDb): User {
-    const u = db.users.find((x) => x.id === this.currentSession(db)?.userId);
+    // Resolve the session once (hashing the token per user row made every call O(users)).
+    const sid = this.currentSession(db)?.userId;
+    const u = sid ? db.users.find((x) => x.id === sid) : undefined;
     // Deleted/suspended accounts lose their session on the very next call.
     if (!u || u.deletedAt) throw new AppError('unauthenticated');
     if (u.deactivatedAt) throw new AppError('forbidden', 'Account deactivated');
@@ -574,6 +576,46 @@ export class DemoBackend implements Backend {
   }
 
   /**
+   * Everything a list (Discover, Featured) needs about one viewer, indexed once — the same answers as
+   * relationWith / isBlockedBetween / project, without rescanning every table for every profile.
+   */
+  private viewerContext(db: DemoDb, viewer: User) {
+    const mine = this.myProfile(db, viewer.id);
+    const users = new Map(db.users.map((x) => [x.id, x]));
+    const reqStatus = new Map(db.requests.map((r) => [r.id, r.status]));
+    const blockedByMe = new Set(db.blocks.filter((b) => b.userId === viewer.id).map((b) => b.blockedProfileId));
+    const blockedMe = new Set(mine ? db.blocks.filter((b) => b.blockedProfileId === mine.id).map((b) => b.userId) : []);
+    const relations = new Map<string, ContactRequest>();
+    if (mine) {
+      for (const r of db.requests) {
+        const other = r.fromProfileId === mine.id ? r.toProfileId : r.toProfileId === mine.id ? r.fromProfileId : undefined;
+        if (!other) continue;
+        const prev = relations.get(other);
+        if (!prev || r.createdAt.localeCompare(prev.createdAt) > 0) relations.set(other, r);
+      }
+    }
+    const consentsTo = db.consents.filter((c) => c.granteeUserId === viewer.id);
+    const offersTo = db.phoneOffers.filter((o) => o.toUserId === viewer.id && o.status === 'accepted');
+    const scopes = (ownerId: string): ConsentScopes => {
+      if (ownerId === viewer.id) return { photos: true, phone: true, fullBiodata: true };
+      const records = consentsTo.filter((c) => c.grantorUserId === ownerId && reqStatus.get(c.requestId) === 'accepted');
+      const merged = records.length ? mergeScopes(records.map((c) => c.scopes)) : { ...NO_CONSENT };
+      merged.phone = offersTo.some((o) => o.fromUserId === ownerId && reqStatus.get(o.requestId) === 'accepted');
+      return merged;
+    };
+    return {
+      mine,
+      users,
+      blocked: (p: Profile) => blockedByMe.has(p.id) || blockedMe.has(p.userId),
+      relation: (p: Profile): Relation | undefined => {
+        const r = relations.get(p.id);
+        return r && { status: r.status, direction: r.fromUserId === viewer.id ? 'sent' : 'received', at: r.respondedAt ?? r.createdAt };
+      },
+      project: (p: Profile) => projectProfile(p, scopes(p.userId), users.get(p.userId), this.now()),
+    };
+  }
+
+  /**
    * Keeps the stored document small on a phone: only data nobody reads back, or that has a stated
    * lifetime, is dropped. Lifetime totals members/admins see (views, audit, orders) are never pruned.
    */
@@ -618,10 +660,15 @@ export class DemoBackend implements Backend {
       this.notify(db, p.userId, due === 'ending' ? 'boost_ending' : 'boost_ended', { until: p.boostUntil ?? '' }, '/boost');
     }
     // Gentle weekly "boost your profile" reminder while a live profile isn't boosted (owner request).
+    // Owners and pricing are looked up once per call, not per profile (this runs on every request).
+    let owners: Map<string, User> | undefined;
+    const disabledFor = new Map<string, boolean>();
     for (const p of db.profiles) {
       if (p.deletedAt || p.status !== 'published') continue;
-      const disabled = resolvePricing(db.pricing, profileTypeOf(p)).boost.mode === 'disabled';
-      if (!boostReminderDue(p, db.users.find((u) => u.id === p.userId), p.boostRemindedAt, disabled, this.now())) continue;
+      const type = profileTypeOf(p);
+      if (!disabledFor.has(type)) disabledFor.set(type, resolvePricing(db.pricing, type).boost.mode === 'disabled');
+      owners ??= new Map(db.users.map((u) => [u.id, u]));
+      if (!boostReminderDue(p, owners.get(p.userId), p.boostRemindedAt, disabledFor.get(type)!, this.now())) continue;
       p.boostRemindedAt = this.iso();
       this.notify(db, p.userId, 'boost_reminder', {}, '/boost');
     }
@@ -845,7 +892,8 @@ export class DemoBackend implements Backend {
   setLanguage(lang: Lang) {
     return this.run((db) => {
       if (!LANGS.includes(lang)) throw new AppError('validation');
-      const u = db.users.find((x) => x.id === this.currentSession(db)?.userId);
+      const sid = this.currentSession(db)?.userId;
+      const u = sid ? db.users.find((x) => x.id === sid) : undefined;
       if (u) u.language = lang;
     }, true);
   }
@@ -1057,7 +1105,10 @@ export class DemoBackend implements Backend {
   }
 
   getMyOrders() {
-    return this.run((db) => db.orders.filter((o) => o.userId === this.me(db).id).map((o) => ({ ...o })));
+    return this.run((db) => {
+      const id = this.me(db).id;
+      return db.orders.filter((o) => o.userId === id).map((o) => ({ ...o }));
+    });
   }
 
   getDashboard() {
@@ -1073,20 +1124,20 @@ export class DemoBackend implements Backend {
       const u = this.me(db);
       pageSize = Math.max(1, Math.min(MAX_SEARCH_PAGE, Math.floor(Number(pageSize) || 10)));
       page = Math.max(0, Math.floor(Number(page) || 0));
-      const mine = this.myProfile(db, u.id);
+      const ctx = this.viewerContext(db, u);
+      const mine = ctx.mine;
       const shortlisted = new Set(db.shortlists.filter((s) => s.userId === u.id).map((s) => s.profileId));
-      const users = new Map(db.users.map((x) => [x.id, x]));
       const candidates = db.profiles.filter((p) => {
         if (p.userId === u.id || p.status !== 'published' || p.deletedAt) return false;
-        const owner = users.get(p.userId);
+        const owner = ctx.users.get(p.userId);
         if (!owner || owner.deactivatedAt || owner.deletedAt) return false;
-        return !this.isBlockedBetween(db, u.id, p);
+        return !ctx.blocked(p);
       });
       // Default to the opposite type of the viewer's own profile.
       const f = { ...filters, show: filters.show ?? mine?.biodata.basic.lookingFor };
       const projected = candidates
         // Discovery NEVER carries contact details, even when consented (PRD §9.3) — only the profile view does.
-        .map((p) => ({ ...this.project(db, u, p), contact: undefined, relation: this.relationWith(db, u.id, p) }))
+        .map((p) => ({ ...ctx.project(p), contact: undefined, relation: ctx.relation(p) }))
         .filter((p) => matchesFilters(p, f, { shortlisted, now: this.now() }));
       const sorted = sortProfiles(projected, f.sort);
       const start = page * pageSize;
@@ -1124,21 +1175,20 @@ export class DemoBackend implements Backend {
   getFeatured(limit = 12) {
     return this.run((db) => {
       const u = this.me(db);
-      const mine = this.myProfile(db, u.id);
-      const lookingFor = mine?.biodata.basic.lookingFor;
+      const ctx = this.viewerContext(db, u);
+      const lookingFor = ctx.mine?.biodata.basic.lookingFor;
       const now = this.now();
       const eligible = db.profiles.filter((p) => {
         if (p.userId === u.id) return false;
-        if (!isFeaturable(p, db.users.find((x) => x.id === p.userId), now)) return false;
-        if (this.isBlockedBetween(db, u.id, p)) return false;
+        if (!isFeaturable(p, ctx.users.get(p.userId), now)) return false;
+        if (ctx.blocked(p)) return false;
         return !lookingFor || profileTypeOf(p) === lookingFor; // matrimony rule: people looking for this type
       });
       const shown = rotateFeatured(eligible, u.id, now).slice(0, Math.max(1, Math.min(limit, 50)));
       const day = dayKey(now);
-      for (const p of shown) {
-        if (!db.boostImpressions.some((i) => i.profileId === p.id && i.viewerUserId === u.id && i.day === day)) db.boostImpressions.push({ profileId: p.id, viewerUserId: u.id, day });
-      }
-      return shown.map((p) => ({ ...this.project(db, u, p), contact: undefined, relation: this.relationWith(db, u.id, p) }));
+      const seenToday = new Set(db.boostImpressions.filter((i) => i.viewerUserId === u.id && i.day === day).map((i) => i.profileId));
+      for (const p of shown) if (!seenToday.has(p.id)) db.boostImpressions.push({ profileId: p.id, viewerUserId: u.id, day });
+      return shown.map((p) => ({ ...ctx.project(p), contact: undefined, relation: ctx.relation(p) }));
     }, true);
   }
 
@@ -1182,7 +1232,10 @@ export class DemoBackend implements Backend {
   }
 
   getShortlistIds() {
-    return this.run((db) => db.shortlists.filter((s) => s.userId === this.me(db).id).map((s) => s.profileId));
+    return this.run((db) => {
+      const id = this.me(db).id;
+      return db.shortlists.filter((s) => s.userId === id).map((s) => s.profileId);
+    });
   }
 
   getShortlist() {
@@ -1514,19 +1567,23 @@ export class DemoBackend implements Backend {
   }
 
   getBlockedIds() {
-    return this.run((db) => db.blocks.filter((b) => b.userId === this.me(db).id).map((b) => b.blockedProfileId));
+    return this.run((db) => {
+      const id = this.me(db).id;
+      return db.blocks.filter((b) => b.userId === id).map((b) => b.blockedProfileId);
+    });
   }
 
   /** The member's block list with the real profile ID and the name they saw (their display preference). */
   getBlockedProfiles() {
-    return this.run((db) =>
-      db.blocks
-        .filter((b) => b.userId === this.me(db).id)
+    return this.run((db) => {
+      const id = this.me(db).id;
+      return db.blocks
+        .filter((b) => b.userId === id)
         .map((b) => {
           const p = db.profiles.find((x) => x.id === b.blockedProfileId);
           return { profileId: b.blockedProfileId, code: p?.code ?? '—', name: p ? displayNameFor(p.biodata.basic.fullName, p.biodata.privacy.displayName) : '—' };
-        }),
-    );
+        });
+    });
   }
 
   // ---------- notifications ----------

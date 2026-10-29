@@ -52,8 +52,9 @@
 ```bash
 npx tsc --noEmit && npx tsc -p supabase/functions/tsconfig.json
 EXPO_OFFLINE=1 npx expo lint            # 0 errors; 2 known i18next warnings
-npx jest                                # 247 tests / 17 suites
-pg_ctlcluster 16 main start; su postgres -c "cd /home/user/Hyderabad-Rishta && ./scripts/test-db.sh"   # 16 PASSED lines
+npx jest                                # all suites incl. simulation (400 steps × 2 seeds) and scale
+SIM_STEPS=3000 SIM_SEEDS=5 SIM_REPORT=1 npx jest simulation   # long expert-team hunt (background); prints timings and refusals
+pg_ctlcluster 16 main start; su postgres -c "cd /home/user/Hyderabad-Rishta && ./scripts/test-db.sh"   # 15 PASSED lines (one per test file)
 EXPO_OFFLINE=1 npx expo export --platform web && node e2e/serve.js "$(pwd)/dist" 8081 &   # then:
 for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boost personas livestate explore teammember clickthrough csp crawl; do node e2e/$s.js; done   # 19 suites; crawl must report 0 high issues
 node scripts/sync-shared.js            # after editing src/domain/push.ts or src/domain/phone.ts
@@ -127,6 +128,7 @@ Reset everything: Settings → “Reset demo data”.
 | 2026-10-28 | Boost reminders: red dot + halo, Home card (3-day snooze), weekly notification (not within 2 days of publish or 7 days after a boost; promotional category) | Owner: "keep reminding if they haven't boosted". |
 | 2026-10-28 | One boost at a time; boosts no longer extend | Owner: "must not allow them to boost again if the current boost is in progress". |
 | 2026-10-28 | Checkpoint V3 pinned at the "Checkpoint V3" docs commit (code = `ae8776f`) | Owner: "checkpoint this as V3". |
+| 2026-10-29 | Expert-team pass: a simulated community runs on one shared server with rule checks after every action; demo hot paths made linear; SQL hot-path indexes | Owner: "build an expert team … admin, multiple users … find the issues and fix … improve performance". Orders outliving erased members is intended (financial record; SQL `on delete set null`). |
 | 2026-10-29 | Completion card only while < 100 %; Boost card always on Home (no snooze); preview footer = Home + Edit/Publish; siblings = one group | Owner tweaks after V4. |
 | 2026-10-29 | Team-added members: admins and sub-admins add members without OTP; the owner gets the account on first OTP login; team edits stop once claimed; published directly (team = approver, no fee) | Owner: "admin and sub admin manually add any number of profiles without needing any otp… later someone with the same number login… show them the profile admin created". |
 | 2026-10-29 | Interest state airtight + Requests tab badge + queued banners + "number now visible" notice (Architecture §20) | Owner: "make this functionality airtight", "request option in tab should show 1,2,3". |
@@ -136,6 +138,8 @@ Reset everything: Settings → “Reset demo data”.
 | 2026-10-28 | npm audit findings left as-is (build-time Expo CLI/jest only); never `npm audit fix --force` (downgrades to SDK 51) | Not shipped in the app bundle. |
 
 ## Gotchas
+- Demo backend hot paths: never call `this.me(db)` / `currentSession()` inside a `.filter`/`.find` callback (each call hashes the token) and never do a per-profile table scan in lists — build lookups once (`viewerContext()`). `__tests__/scale.test.ts` (2,000 members) guards this.
+- Simulation: each persona is its own `DemoBackend` (own `secure` KV) over one shared `memoryKV`; reset the instance's in-memory copy before every call so it reads the shared server state.
 - Expo SDK 58: import `Tabs` from `expo-router/js-tabs` (root export is deprecated). Routes live in `src/app/`.
 - `npx expo install` needs `EXPO_OFFLINE=1` in this sandbox (api.expo.dev is blocked by network policy).
 - RN 0.88 refs: use `React.ComponentRef<typeof TextInput>` / `ScrollView`.
