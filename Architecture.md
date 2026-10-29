@@ -403,3 +403,27 @@ Normal returning login never sends one.
 - **Banners:** the in-app banner (`PushBridge`) queues up to 5 new notifications and shows them one after another (4.5 s each), so a paid boost shows "Payment confirmed" then "Your boost is active".
   - `request_accepted` carries `numberShared: '1'` when the accepted interest included the sender's number → "…accepted your interest. They can now see the number you shared." (demo `respondToRequest`; SQL trigger `notifications_accept_detail` in `20261110000000_notification_details.sql`).
 - **Tests:** Jest `notifyDetails.test.ts`; SQL `99_notification_details`; e2e `livestate.js`.
+
+## 21. Team-added members (2026-10-29)
+- **Data:** `User.createdBy` (admin id) and `claimedAt` (the owner's first OTP sign-in); `Profile.createdByAdminId` and `ownerReviewedAt` (the owner's first save).
+- **Demo backend** (`demoBackend.ts`, "team-added members"):
+  - `adminCheckPhone` (normalised; `existingUserId` when taken)
+  - `adminCreateMember` (account + draft; `phone_taken` if any account has the number)
+  - `adminSaveMemberBiodata` / `adminPublishMember` (only while unclaimed; publish needs a complete biodata, goes live directly, sends `team_created`)
+  - `adminGetMemberDraft`
+  - `verifyOtp` sets `claimedAt`; `saveDraft` by the owner sets `ownerReviewedAt`
+  - Sub-admins have the same powers (`this.admin()`).
+- **Production:**
+  1. The admin app calls the Edge Function `admin-create-member` (`supabase/functions/admin-create-member/`, core in `create.ts`) with the admin's JWT. It verifies `is_admin()` as the caller, normalises the phone, and creates the Supabase Auth user for that phone (`phone_confirm` false) via the Auth admin API. It then calls `admin_create_member()` (service role only), which inserts `app_users` (same id, `created_by`) plus the draft profile. If the database refuses, the Auth user this call created is deleted (an existing one is never touched).
+  2. Later edits and publishing go through the RPCs `admin_save_member_biodata` and `admin_publish_member` (`is_admin()`, unclaimed only).
+  3. When the owner signs in with phone OTP, Supabase Auth matches the same user by phone, so the session is that account. The client calls `claim_account()` once after OTP sign-in. **The Phase 2 adapter must do this and must never create a second `app_users` row**; the unique phone stops it anyway.
+  4. Trigger `profiles_owner_reviewed` sets `owner_reviewed_at` on the owner's first biodata save. `harden_profile_insert` clears the team flags on member inserts.
+  - Migration `20261111000000_team_members.sql`.
+- **UI:**
+  - `src/components/BiodataWizard.tsx` is the shared 7-step form: the member's `/biodata` and the admin's `/admin/member-biodata` use it. It follows the area language, so it is English in the console.
+  - `/admin/add-member`, `/admin/member-review`
+  - Member page badges and actions; Users badges; Home `TeamCreatedNote`.
+- **Tests:**
+  - Jest: `teamMembers.test.ts`, `adminCreateMemberEdge.test.ts`
+  - SQL: `99_team_members`
+  - e2e: `teammember.js`, end to end (admin adds 9999999999 → publishes → duplicate refused → sub-admin adds → owner logs in with OTP → same account and biodata → review clears the note → admin sees "claimed").

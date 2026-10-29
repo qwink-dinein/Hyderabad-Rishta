@@ -5,11 +5,11 @@
 
 ## Start here (V3 state in one screen)
 - **What:** Hyderabad Rishta, a Muslim matrimony app. Owner: mukarramjahmm.
-  - Specs: `PRD.md` (product), `design.md` (UI/motion), `Architecture.md` (§9 governance, §10 interests, §11–13 boost/push/UI, §14 security, §15 one-number rule, §16 PIN login, §17 boost tab, §18 QA + security round 2, §19 boost options + Home/Profile redesign, §20 live interest state + badge), `Tasks.md` (T-numbers), `Phases.md`, `CHECKPOINTS.md`.
+  - Specs: `PRD.md` (product), `design.md` (UI/motion), `Architecture.md` (§9 governance, §10 interests, §11–13 boost/push/UI, §14 security, §15 one-number rule, §16 PIN login, §17 boost tab, §18 QA + security round 2, §19 boost options + Home/Profile redesign, §20 live interest state + badge, §21 team-added members), `Tasks.md` (T-numbers), `Phases.md`, `CHECKPOINTS.md`.
 - **Repo / branch:** `qwink-dinein/Hyderabad-Rishta` · `claude/sharp-bell-xxyxmj`. Commit and push there; never open a PR unless asked.
 - **Stack:** Expo SDK 58 · RN · TypeScript · Expo Router (`src/app/`) · TanStack Query · zustand · i18next (EN / UR RTL / TE) · zod.
   - The app runs on the offline **DemoBackend** (`src/services/demo/demoBackend.ts`, `SCHEMA_VERSION = 8`).
-  - Supabase SQL (16 migrations), Edge Functions (`push-dispatch`, `pin-login`) and tests are ready but **not connected**: the client adapter is Phase 2.
+  - Supabase SQL (17 migrations), Edge Functions (`push-dispatch`, `pin-login`, `admin-create-member`) and tests are ready but **not connected**: the client adapter is Phase 2.
 - **Checkpoints (never move or delete):**
   - **V3 = LATEST = `dafa2120243b1bf067e78de03602e0c4fc4efd96`** ("Checkpoint V3: pin…"; code identical to `ae8776f`).
   - **V2** = `774ea9f34f3ebe0babe44520b297af610262c5fb`.
@@ -25,6 +25,7 @@
 | Navigation | Tabs: Home · Discover · Shortlist · Requests · Profile (2026-10-29; floating Boost removed). `/boost`, `/activity`, `/notifications` are stack screens | `src/app/(tabs)/_layout.tsx`, `src/components/TabHeader.tsx` |
 | Motion | Native slide (Urdu mirrored), tab shift, web fade+rise, Reduce Motion fade | `src/navigation/transitions.tsx` |
 | Boost | Guaranteed Featured slot. **Admin-priced options** (`boostPlans`: 7/14/30 days, bride/groom fees, enable, popular); price always from the server config; free skips payment. **One boost at a time**. My Boost with honest before/during views. Home card (3-day snooze) + weekly `boost_reminder` | `src/domain/pricing.ts`, `src/domain/featured.ts`, `src/domain/metrics.ts` (`boostComparison`), `src/app/boost.tsx`, `src/components/HomeCards.tsx`, `src/hooks/useBoostStatus.ts`, `src/app/admin/pricing.tsx`, SQL `…one_boost_at_a_time.sql`, `…boost_plans.sql` (Architecture §19) |
+| Team-added members | Admin/sub-admin add members for any number (no OTP); owner claims on OTP login; one number = one account (Architecture §21) | `src/app/admin/add-member.tsx`, `member-biodata.tsx`, `member-review.tsx`, `src/components/BiodataWizard.tsx`, SQL `…team_members.sql`, `supabase/functions/admin-create-member/` |
 | Home / Profile | Real completion ring (`src/domain/completion.ts`), activity counts, Profile tab list, `/activity` (metrics + payments) | `src/app/(tabs)/home.tsx`, `src/app/(tabs)/dashboard.tsx`, `src/app/activity.tsx` |
 | Push | Every profile action → in-app + phone; generic lock-screen text; categories; 12/h cap | `src/domain/push.ts` (→ generated `supabase/functions/_shared/push.ts`), `src/services/push.ts`, `PushBridge.tsx` |
 | Security | Deny-by-default RPCs, input caps, attack suites (73 SQL, 26 app), safe deep links, OTP 10-wrong/hour cap across resends, spoofing-character filter (`unsafeText`), web CSP/headers (`public/_headers`), no camera/mic permissions, `allowBackup:false` | `src/domain/security.ts`, SQL `…security_hardening.sql`, `…text_safety.sql`, `__tests__/attacks.test.ts`, `supabase/tests/60_attacks.test.sql`, `97_text_safety.test.sql`, `e2e/csp.js` |
@@ -50,10 +51,10 @@
 ```bash
 npx tsc --noEmit && npx tsc -p supabase/functions/tsconfig.json
 EXPO_OFFLINE=1 npx expo lint            # 0 errors; 2 known i18next warnings
-npx jest                                # 232 tests / 15 suites
-pg_ctlcluster 16 main start; su postgres -c "cd /home/user/Hyderabad-Rishta && ./scripts/test-db.sh"   # 15 PASSED lines
+npx jest                                # 247 tests / 17 suites
+pg_ctlcluster 16 main start; su postgres -c "cd /home/user/Hyderabad-Rishta && ./scripts/test-db.sh"   # 16 PASSED lines
 EXPO_OFFLINE=1 npx expo export --platform web && node e2e/serve.js "$(pwd)/dist" 8081 &   # then:
-for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boost personas livestate explore clickthrough csp crawl; do node e2e/$s.js; done   # 18 suites; crawl must report 0 high issues
+for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boost personas livestate explore teammember clickthrough csp crawl; do node e2e/$s.js; done   # 19 suites; crawl must report 0 high issues
 node scripts/sync-shared.js            # after editing src/domain/push.ts or src/domain/phone.ts
 ```
 - e2e suites sign in through `e2e/auth.js` (`loginWithOtp`), which also creates the test PIN **4827** when asked.
@@ -125,6 +126,7 @@ Reset everything: Settings → “Reset demo data”.
 | 2026-10-28 | Boost reminders: red dot + halo, Home card (3-day snooze), weekly notification (not within 2 days of publish or 7 days after a boost; promotional category) | Owner: "keep reminding if they haven't boosted". |
 | 2026-10-28 | One boost at a time; boosts no longer extend | Owner: "must not allow them to boost again if the current boost is in progress". |
 | 2026-10-28 | Checkpoint V3 pinned at the "Checkpoint V3" docs commit (code = `ae8776f`) | Owner: "checkpoint this as V3". |
+| 2026-10-29 | Team-added members: admins and sub-admins add members without OTP; the owner gets the account on first OTP login; team edits stop once claimed; published directly (team = approver, no fee) | Owner: "admin and sub admin manually add any number of profiles without needing any otp… later someone with the same number login… show them the profile admin created". |
 | 2026-10-29 | Interest state airtight + Requests tab badge + queued banners + "number now visible" notice (Architecture §20) | Owner: "make this functionality airtight", "request option in tab should show 1,2,3". |
 | 2026-10-29 | Mini PRD: boost options 7/14/30 priced by admin (initial ₹100/200/350; bride 7-day free), My Boost, Home completion/activity/Boost cards, Profile list, tabs Home·Discover·Shortlist·Requests·Profile | Owner: "Give admin the configurable price options" + Mini PRD. Never promise views/matches; no fake stats. |
 | 2026-10-29 | No-photo profiles show the owner's Hyderabadi bride/groom portraits (`assets/personas/*.webp`, in `ProfilePhoto`), by the profile's type. Two vector versions were rejected first ("very bad") — use the supplied artwork, don't redraw | Owner spec "Default Hyderabadi Bride & Groom Illustrations". |
@@ -153,6 +155,7 @@ Reset everything: Settings → “Reset demo data”.
 - Owner rule: ONE number = ONE account = ONE biodata. Always pass phones through `normalizePhone()`; never create a profile if any profile row exists for the user or `profileRemovedAt` is set. Only Delete account frees a number (Architecture §15).
 - PIN login (Architecture §16): OTP only for registration / new phone / Forgot PIN / first PIN. Never bump the demo SCHEMA_VERSION (it reseeds = wipes accounts) — backfill in `load()` instead. e2e suites log in through `e2e/auth.js` (handles PIN screens; test PIN 4827). Demo login state lives in secure KV `hr.auth`, not the db.
 
+- The biodata form is ONE component (`src/components/BiodataWizard.tsx`) used by members and admins; change questions there only.
 - Any LTR fragment (price, phone) interpolated into a translated sentence goes through `bidiIsolate()` (`src/domain/format.ts`), or Urdu shows "100₹".
 - No Prettier config in the repo: never run `prettier --write` (it reformats whole files to 80 columns).
 - Don't `pkill -f e2e/serve.js` inside a compound shell command: the pattern matches the shell itself and kills it (exit 144). Start the server with a separate background command.

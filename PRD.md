@@ -273,6 +273,12 @@ Cards show your history with each person, so nobody re-sends blindly: **Connecte
 - **One boost at a time:** while a boost runs, members can't boost again; the Boost screen shows when they can. A boost never extends or stacks.
 - ~~Boost as the centre tab~~ — replaced by §15.10 on 2026-10-29.
 
+### 15.11 Team-added members (owner request 2026-10-29)
+- Admins and sub-admins can add **any number of members** for any phone number, **without an OTP**: Admin → "Add a member" → phone check → the same 7-step biodata form members use → review → Publish now (the team is the approver; no fee) or Keep as draft.
+- **One number = one account:** a number that already has an account (however it is typed) is refused, with a link to that member.
+- When the **owner of that number logs in with OTP**, they land in that same account and see the biodata the team created. On Home: "Our team created your biodata — please review it" until they save it once. They also get a notification.
+- The team can edit and publish the biodata only until the owner has signed in. After that, the member manages it. The admin member page shows "added by team · not yet signed in / claimed".
+
 ### 15.10 Profile completion, Boost options & Profile dashboard (Mini PRD, 2026-10-29)
 - **Tabs:** Home · Discover · Shortlist · Requests · Profile. No floating Boost button; Boost opens from Home, the Profile tab and boost notifications (`/boost`).
 - **Home**, below the welcome and search:
