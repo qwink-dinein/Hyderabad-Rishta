@@ -34,7 +34,7 @@ export const ProfilePhoto = memo(function ProfilePhoto({ profile, height = 200, 
     // Avatars: just the figure on a soft field — the arch artwork needs room to read.
     return (
       <LinearGradient colors={[colors.goldSoft, colors.sage]} style={[{ height, width: '100%', alignItems: 'center', justifyContent: 'flex-end', overflow: 'hidden' }, r]} accessibilityLabel={profile.displayName} testID={`persona-${kind}`}>
-        <PersonaArt kind={kind} width={Math.round(height * 0.86)} height={Math.round(height * 0.92)} />
+        <PersonaArt kind={kind} seed={profile.id} width={Math.round(height * 0.86)} height={Math.round(height * 0.92)} />
       </LinearGradient>
     );
   }
@@ -51,7 +51,7 @@ export const ProfilePhoto = memo(function ProfilePhoto({ profile, height = 200, 
         <Path d="M27 180V84c0-32 28-52 48-62c20 10 48 30 48 62v96" stroke={colors.gold} strokeWidth="0.8" fill="none" opacity={0.7} />
       </Svg>
       <View style={styles.persona}>
-        <PersonaArt kind={kind} width={120} height={140} />
+        <PersonaArt kind={kind} seed={profile.id} width={120} height={140} />
       </View>
       {profile.photosHidden ? (
         <View style={styles.lockPill}>

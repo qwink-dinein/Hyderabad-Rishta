@@ -267,50 +267,161 @@ export const CornerFlourish = memo(function CornerFlourish({ size = 120, flip = 
 });
 
 /**
- * Default portrait when a member has no photo (owner request 2026-10-29): a bride in a dupatta or a
- * groom in a safa and sherwani. Modest and faceless — no features, so it never looks like a real person.
- * Drawn bottom-anchored in a 120×140 box; the parent supplies the background.
+ * Default portrait when a member has no photo (owner request 2026-10-29, redrawn with faces the same
+ * day): a bride in a dupatta or a groom in a safa and sherwani. Each profile gets its own look —
+ * skin tone, outfit colours, eyes, jewellery, beard — picked from a stable seed (the profile ID), so
+ * the same person always looks the same. Drawn bottom-anchored in a 120×140 box.
  */
-export const PersonaArt = memo(function PersonaArt({ kind, width, height }: { kind: 'bride' | 'groom'; width: number; height: number }) {
-  const skin = '#E3B993';
+const SKINS = [
+  ['#F3CDAA', '#E2B08A'],
+  ['#E6B68E', '#D19B72'],
+  ['#D49F77', '#BC845D'],
+  ['#BC855F', '#A06C49'],
+] as const;
+const HAIRS = ['#2A1C16', '#3A281F', '#1C1716', '#4A3022'];
+const DUPATTAS = [
+  ['#9C2F4B', '#7E2239'],
+  ['#C2445E', '#9E3049'],
+  ['#6E2D63', '#56214D'],
+  ['#1E6B5A', '#15503F'],
+  ['#C8603C', '#A4492A'],
+] as const;
+const BLOUSES = ['#D9B062', '#E8C987', '#B8364F', '#2F5C4D'];
+const LIPS = ['#B4485C', '#C45E6C', '#A33B50', '#B9545A'];
+const SHERWANIS = [
+  ['#1F4A3E', '#163A30'],
+  ['#6A2638', '#521C2B'],
+  ['#2E3D5C', '#222E47'],
+  ['#E9DCC0', '#D2C29F'],
+  ['#5B4632', '#463424'],
+] as const;
+const SAFAS = [
+  ['#D2A852', '#A9832F'],
+  ['#B2384E', '#8C2638'],
+  ['#E8D6A8', '#C4AE78'],
+  ['#C8603C', '#A4492A'],
+] as const;
+const INK = '#3A2620';
+
+function seeded(seed: string) {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
+  return <T,>(list: readonly T[], salt: number) => list[Math.abs(Math.imul(h ^ (salt * 0x9e3779b1), 2654435761) >>> 7) % list.length];
+}
+
+/** Eyes, brows, nose, blush, mouth — shared by both portraits (face centred on 60,`cy`). */
+function Face({ cy, closed, lips, brow, shade, smile }: { cy: number; closed: boolean; lips?: string; brow: number; shade: string; smile: boolean }) {
+  const ey = cy + 1;
   return (
-    <Svg width={width} height={height} viewBox="0 0 120 140" preserveAspectRatio="xMidYMax meet" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      {kind === 'bride' ? (
-        <G>
-          {/* dupatta: covers the head and falls over the shoulders */}
-          <Path d="M60 16C37 16 27 35 27 58c0 12 2 22-3 33C15 100 7 113 5 140h110c-2-27-10-40-19-49c-5-11-3-21-3-33c0-23-10-42-33-42z" fill="#8E2F45" />
-          <Path d="M5 140c2-27 10-40 19-49c10 8 22 12 36 12s26-4 36-12c9 9 17 22 19 49z" fill="#7A2439" />
-          <Ellipse cx="60" cy="61" rx="16.5" ry="20.5" fill={skin} />
-          {/* gold edging around the face and along the hem */}
-          <Path d="M60 37c-12 0-21 10-21 24s9 25 21 25s21-11 21-25s-9-24-21-24z" stroke={GOLD} strokeWidth="2" fill="none" />
-          <Path d="M24 91c10 8 22 12 36 12s26-4 36-12" stroke={GOLD} strokeWidth="2" fill="none" />
-          {[34, 47, 60, 73, 86].map((x, i) => (
-            <Circle key={x} cx={x} cy={i === 0 || i === 4 ? 99 : i === 2 ? 106.5 : 104} r="1.8" fill={GOLD} />
-          ))}
-          {/* maang tikka */}
-          <Path d="M60 37v4" stroke={GOLD} strokeWidth="1.2" />
-          <Circle cx="60" cy="43.5" r="2.4" fill={GOLD} />
-          <Path d="M14 140c3-14 8-22 14-28M106 140c-3-14-8-22-14-28" stroke={GOLD} strokeWidth="1" opacity={0.6} fill="none" />
-        </G>
+    <G>
+      <Path d={`M49.5 ${ey - 5.2}q4.2-2.8 8.4-0.6M62.1 ${ey - 5.8}q4.2-2.2 8.4 0.6`} stroke={INK} strokeWidth={brow} strokeLinecap="round" fill="none" />
+      {closed ? (
+        <Path d={`M51 ${ey}q3.2 2.4 6.4 0M62.6 ${ey}q3.2 2.4 6.4 0`} stroke={INK} strokeWidth="1.2" strokeLinecap="round" fill="none" />
       ) : (
         <G>
-          {/* sherwani with a gold band collar and buttons */}
-          <Path d="M10 140c2-26 15-38 34-43l16 9l16-9c19 5 32 17 34 43z" fill={FOREST} />
-          <Path d="M50 84h20v14l-10 8l-10-8z" fill={skin} />
-          <Path d="M44 97l16 9l16-9" stroke={GOLD} strokeWidth="2.4" fill="none" strokeLinejoin="round" />
-          <Path d="M60 106v34" stroke={GOLD} strokeWidth="1" opacity={0.7} />
-          {[114, 124, 134].map((y) => (
-            <Circle key={y} cx="60" cy={y} r="1.9" fill={GOLD} />
-          ))}
-          <Path d="M28 140c1-12 4-20 9-26M92 140c-1-12-4-20-9-26" stroke={GOLD} strokeWidth="1" opacity={0.5} fill="none" />
-          <Ellipse cx="60" cy="64" rx="16.5" ry="20.5" fill={skin} />
-          {/* safa (wedding turban) with a kalgi */}
-          <Path d="M41 58c-3-19 8-31 19-31s22 12 19 31c-5-6-12-9-19-9s-14 3-19 9z" fill="#C9A35C" />
-          <Path d="M43 50c6-5 11-7 17-7s11 2 17 7M45 41c5-3 10-5 15-5s10 2 15 5" stroke="#9C7A3C" strokeWidth="1.3" fill="none" />
-          <Circle cx="60" cy="40" r="2.6" fill={colors.ivory} stroke="#9C7A3C" strokeWidth="0.8" />
-          <Path d="M60 37c-1-6 1-11 5-15c-1 5-2 10-5 15z" fill={colors.ivory} stroke="#9C7A3C" strokeWidth="0.8" />
+          <Path d={`M50.6 ${ey}q3.6-3 7.2 0q-3.6 2.5-7.2 0zM62.2 ${ey}q3.6-3 7.2 0q-3.6 2.5-7.2 0z`} fill="#FFFDF8" />
+          <Circle cx="54.3" cy={ey - 0.2} r="1.9" fill="#3B2418" />
+          <Circle cx="65.8" cy={ey - 0.2} r="1.9" fill="#3B2418" />
+          <Circle cx="54.9" cy={ey - 0.8} r="0.55" fill="#FFFFFF" />
+          <Circle cx="66.4" cy={ey - 0.8} r="0.55" fill="#FFFFFF" />
+          <Path d={`M50.2 ${ey + 0.1}q3.9-3.5 7.8-0.2M61.9 ${ey - 0.1}q3.9-3.3 7.8 0.2`} stroke={INK} strokeWidth="1.1" strokeLinecap="round" fill="none" />
         </G>
       )}
+      <Path d={`M60.3 ${ey + 2}q-1.6 4.4 0 5.6q1.1 0.5 2-0.3`} stroke={shade} strokeWidth="1" strokeLinecap="round" fill="none" />
+      <Circle cx="51.5" cy={ey + 6} r="3.2" fill="#E88A8A" opacity={0.22} />
+      <Circle cx="68.5" cy={ey + 6} r="3.2" fill="#E88A8A" opacity={0.22} />
+      {lips ? (
+        <Path d={`M56 ${ey + 10.4}q2-1.5 4 0q2-1.5 4 0q-1.6 3.4-4 3.4q-2.4 0-4-3.4z`} fill={lips} />
+      ) : (
+        <Path d={smile ? `M56.4 ${ey + 10.6}q3.6 2.8 7.2 0` : `M56.8 ${ey + 11}q3.2 1.2 6.4 0`} stroke="#8A4A40" strokeWidth="1.3" strokeLinecap="round" fill="none" />
+      )}
+    </G>
+  );
+}
+
+export const PersonaArt = memo(function PersonaArt({ kind, seed, width, height }: { kind: 'bride' | 'groom'; seed: string; width: number; height: number }) {
+  const pick = seeded(seed + kind);
+  const [skin, shade] = pick(SKINS, 1);
+  const hair = pick(HAIRS, 2);
+  const closed = pick([false, false, true], 3);
+  if (kind === 'bride') {
+    const [dup, dupDark] = pick(DUPATTAS, 4);
+    const blouse = pick(BLOUSES, 5);
+    const lips = pick(LIPS, 6);
+    const nath = pick([false, true, false], 7);
+    const hood = 'M60 32C40 32 33 47 34 63C35 76 36 84 30 95C40 101 50 104 60 104C70 104 80 101 90 95C84 84 85 76 86 63C87 47 80 32 60 32Z';
+    const opening = 'M60 40.5C48.5 40.5 43 49 43 60.5C43 73 49.5 85 60 85C70.5 85 77 73 77 60.5C77 49 71.5 40.5 60 40.5Z';
+    return (
+      <Svg width={width} height={height} viewBox="0 0 120 140" preserveAspectRatio="xMidYMax meet" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <Path d="M6 140C8 114 20 102 40 97h40c20 5 32 17 34 43z" fill={blouse} />
+        <Path d="M25 100C18 109 11 121 9 140h21c2-16 8-28 17-36zM95 100c7 9 14 21 16 40H90c-2-16-8-28-17-36z" fill={dup} />
+        <Path d="M25 100C18 109 11 121 9 140M95 100c7 9 14 21 16 40" stroke={GOLD} strokeWidth="2" fill="none" />
+        <G transform="translate(60 64) scale(1.18) translate(-60 -64)">
+        <Path d="M53.5 76h13v24h-13z" fill={shade} />
+        <Ellipse cx="60" cy="61" rx="17.5" ry="21.5" fill={hair} />
+        <Ellipse cx="60" cy="62" rx="15.2" ry="18.8" fill={skin} />
+        <Path d="M44.8 60C44.3 49 51 43.5 59.4 43.6L60 46.4L60.6 43.6C69 43.5 75.7 49 75.2 60C72.5 53 67 49.4 60.6 49.6L60 51L59.4 49.6C53 49.4 47.5 53 44.8 60Z" fill={hair} />
+        <Face cy={62} closed={closed} lips={lips} brow={1} shade={shade} smile />
+        {nath ? <Circle cx="63.2" cy="70.6" r="2.3" stroke={GOLD} strokeWidth="0.9" fill="none" /> : null}
+        {/* jhumkas */}
+        {[44.6, 75.4].map((x) => (
+          <G key={x}>
+            <Path d={`M${x} 66v3`} stroke={GOLD} strokeWidth="0.9" />
+            <Path d={`M${x - 2.6} 74.2q2.6-6 5.2 0z`} fill={GOLD} />
+            <Circle cx={x} cy="75.4" r="0.9" fill={GOLD} />
+          </G>
+        ))}
+        <Path d={`${hood}${opening}`} fill={dup} fillRule="evenodd" />
+        <Path d="M30 95C40 101 50 104 60 104C70 104 80 101 90 95" stroke={dupDark} strokeWidth="1.2" fill="none" opacity={0.6} />
+        <Path d={opening} stroke={GOLD} strokeWidth="1.8" fill="none" />
+        {[[40.5, 52], [39.6, 63], [40.6, 74], [79.5, 52], [80.4, 63], [79.4, 74]].map(([x, y]) => (
+          <Circle key={`${x}${y}`} cx={x} cy={y} r="1" fill={GOLD} opacity={0.9} />
+        ))}
+        {/* maang tikka */}
+        <Path d="M60 40.5v5" stroke={GOLD} strokeWidth="1" />
+        <Circle cx="60" cy="46.6" r="2" fill={GOLD} />
+        <Circle cx="60" cy="46.6" r="0.8" fill="#C2445E" />
+        </G>
+        {/* necklace */}
+        <Path d="M46 113q14 10 28 0" stroke={GOLD} strokeWidth="1.8" fill="none" />
+        <Path d="M57.4 118.4l2.6 4.4l2.6-4.4z" fill={GOLD} />
+      </Svg>
+    );
+  }
+  const [sher, sherDark] = pick(SHERWANIS, 4);
+  const [safa, safaDark] = pick(SAFAS, 5);
+  const beard = pick(['none', 'short', 'full', 'full'], 6);
+  const stole = pick([true, false], 7);
+  const smile = pick([true, true, false], 8);
+  return (
+    <Svg width={width} height={height} viewBox="0 0 120 140" preserveAspectRatio="xMidYMax meet" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <Path d="M6 140C8 113 22 101 42 96l18 8l18-8c20 5 34 17 36 44z" fill={sher} />
+      <Path d="M60 104v36" stroke={sherDark} strokeWidth="1.2" />
+      {[114, 123, 132].map((y) => (
+        <Circle key={y} cx="60" cy={y} r="1.8" fill={GOLD} />
+      ))}
+      {stole ? <Path d="M78 96c14 4 26 16 30 44H94c-2-18-9-31-20-39z" fill={GOLD} opacity={0.85} /> : null}
+      <Path d="M53 77h14v22l-7 5l-7-5z" fill={shade} />
+      <Path d="M44 96l16 8l16-8v4.5l-16 8l-16-8z" fill={GOLD} />
+      <G transform="translate(60 70) scale(1.2) translate(-60 -70)">
+      <Ellipse cx="44.6" cy="64.5" rx="2.4" ry="3.8" fill={shade} />
+      <Ellipse cx="75.4" cy="64.5" rx="2.4" ry="3.8" fill={shade} />
+      <Ellipse cx="60" cy="63.5" rx="15.6" ry="19.2" fill={skin} />
+      <Path d="M44.6 60c0-4 1-7 2.5-9l1.4 9zM75.4 60c0-4-1-7-2.5-9l-1.4 9z" fill={hair} />
+      {beard !== 'none' ? (
+        <G opacity={beard === 'short' ? 0.55 : 1}>
+          <Path d="M44.8 64C45.2 76.5 51.2 85.5 60 85.5S74.8 76.5 75.2 64C73.4 70.5 70 74.6 66 75.8C63 74.8 57 74.8 54 75.8C50 74.6 46.6 70.5 44.8 64Z" fill={hair} />
+          <Path d="M54.2 72.6q5.8-3 11.6 0q-5.8 1.4-11.6 0z" fill={hair} />
+        </G>
+      ) : null}
+      <Face cy={63} closed={closed} brow={1.7} shade={shade} smile={smile} />
+      {/* safa with folds, brooch and kalgi */}
+      <Path d="M41.8 58.5C38.6 40 48 29.5 60 29.5S81.4 40 78.2 58.5C73 52.4 66.8 49.6 60 49.6S47 52.4 41.8 58.5Z" fill={safa} />
+      <Path d="M43.5 50.5C51 42.5 65 38.5 76.6 46.5M43 43.5C50 36 62 33 73.6 38M46.5 54C54 48 64 46.5 72 49" stroke={safaDark} strokeWidth="1.3" fill="none" strokeLinecap="round" />
+      <Path d="M60 42c-2-7.5 0-14.5 6.5-20c-1.6 7.5-3 14-6.5 20z" fill={colors.ivory} stroke={GOLD} strokeWidth="0.8" />
+      <Circle cx="60" cy="44.5" r="3.4" fill={GOLD} />
+      <Circle cx="60" cy="44.5" r="1.5" fill="#B2384E" />
+      </G>
     </Svg>
   );
 });
