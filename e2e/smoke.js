@@ -72,8 +72,10 @@ const step = async (name, fn) => {
   });
   await step('dashboard', async () => {
     await page.goto(BASE + '/dashboard');
-    await page.getByText('Profile views').waitFor();
+    await page.getByTestId('me-activity').waitFor(); // metrics moved to /activity (PRD 15.10)
     await shot('09-dashboard');
+    await page.goto(BASE + '/activity');
+    await page.getByTestId('activity-metrics').waitFor();
   });
   await step('logout', async () => {
     await page.goto(BASE + '/settings');
