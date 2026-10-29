@@ -34,6 +34,6 @@ max_frequency = "60s"     # Resend unlocks after 60 seconds (the app shows the c
 
 [auth.hook.send_sms]
 enabled = true
-# Replace <project-ref> with the Supabase project ref after `supabase link`.
-uri = "https://<project-ref>.supabase.co/functions/v1/send-whatsapp-otp"
+# Live project hyderabad-rishta (ap-south-1).
+uri = "https://hlthzrznuztapfsloxkm.supabase.co/functions/v1/send-whatsapp-otp"
 secrets = "env(SEND_SMS_HOOK_SECRET)"

@@ -117,6 +117,11 @@ select chk('M: admin search refused', t_fails($q$select * from admin_search('Vic
 -- 2e. Storage: photos live under <uid>/…; no writing into someone else's folder
 select chk('M: cannot upload into another member''s photo folder', t_fails($q$insert into storage.objects (bucket_id, name) values ('profile-photos', '00000000-0000-0000-0000-0000000007b1/x.jpg')$q$));
 
+-- 2f. Advisor follow-ups: visibility checks answer only for the caller; trigger functions are not callable
+select chk('M: cannot ask whether another member can see a profile (block probing)', (select not can_view_profile('00000000-0000-0000-0000-0000000007b1', '80000000-0000-0000-0000-0000000007a1')));
+select chk('M: own visibility check still works', (select can_view_profile(auth.uid(), '80000000-0000-0000-0000-0000000007b1')));
+select chk('M: trigger function not callable through the API', t_fails($q$select trg_report_rate()$q$));
+
 -- ═══════════════ 3. Sub-admin limits ═══════════════
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000007d1', false);
 select chk('S: cannot promote self to master', t_fails($q$update app_users set role = 'master' where id = auth.uid()$q$));
