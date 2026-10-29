@@ -19,6 +19,8 @@ Supabase schema with RLS (tested on Postgres 16) · 52 Jest tests · Playwright 
 
 **Since V2 (checkpoint V3):** security pass with attack suites; 5 MB photo uploads compressed on the phone; data-retention limits; one number = one account = one biodata; OTP registration plus 4-digit PIN login; smooth screen transitions; Boost as the raised centre tab with reminders; one boost at a time. Totals: 214 Jest tests, 11 SQL suites, 12 Playwright suites (85 steps), lint clean. See `CHECKPOINTS.md`.
 
+**Checkpoint V4 (2026-10-29):** everything below plus bride/groom portraits, admin-priced 7/14/30-day boosts with My Boost, Home completion/activity cards, Profile tab list and 5 tabs, live interest state with the Requests badge, and team-added members (no OTP; the owner claims the account on login). Totals: 247 Jest tests, 16 SQL suites, 19 Playwright suites. See `CHECKPOINTS.md`.
+
 **After V3 (production QA, not a new checkpoint):** a crawler checks every screen × role × EN/UR × phone width, and a click-through tests every remaining button. Fixes: accessibility state, admin English/LTR, script-direction text, localized dates, revoked-session handling and a crash screen. Security round 2 added an OTP hourly cap across resends, a spoofing-character filter (app + SQL), web CSP/security headers and the removal of camera/mic permissions. Totals: 218 Jest tests, 12 SQL suites, 15 Playwright suites. See Architecture §18.
 
 **Exit criteria met:** typecheck clean, all tests green, web export builds, E2E journeys pass with zero console errors.

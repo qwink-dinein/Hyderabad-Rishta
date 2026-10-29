@@ -1,9 +1,9 @@
 # Memory — project context for future sessions
 
 > **Read this file first; it is written so you don't need to re-read the code or past chats.** Append decisions, gotchas and state; never delete history (strike through instead).
-> Last updated: 2026-10-28 (after V3: QA rounds 1–2 + security round 2 — Architecture §18; not a new checkpoint)
+> Last updated: 2026-10-29 (V4 checkpoint)
 
-## Start here (V3 state in one screen)
+## Start here (V4 state in one screen)
 - **What:** Hyderabad Rishta, a Muslim matrimony app. Owner: mukarramjahmm.
   - Specs: `PRD.md` (product), `design.md` (UI/motion), `Architecture.md` (§9 governance, §10 interests, §11–13 boost/push/UI, §14 security, §15 one-number rule, §16 PIN login, §17 boost tab, §18 QA + security round 2, §19 boost options + Home/Profile redesign, §20 live interest state + badge, §21 team-added members), `Tasks.md` (T-numbers), `Phases.md`, `CHECKPOINTS.md`.
 - **Repo / branch:** `qwink-dinein/Hyderabad-Rishta` · `claude/sharp-bell-xxyxmj`. Commit and push there; never open a PR unless asked.
@@ -11,13 +11,14 @@
   - The app runs on the offline **DemoBackend** (`src/services/demo/demoBackend.ts`, `SCHEMA_VERSION = 8`).
   - Supabase SQL (17 migrations), Edge Functions (`push-dispatch`, `pin-login`, `admin-create-member`) and tests are ready but **not connected**: the client adapter is Phase 2.
 - **Checkpoints (never move or delete):**
-  - **V3 = LATEST = `dafa2120243b1bf067e78de03602e0c4fc4efd96`** ("Checkpoint V3: pin…"; code identical to `ae8776f`).
+  - **V4 = LATEST = `PENDING`** ("Checkpoint V4: team…"; code identical to `d5e7817`).
+  - **V3** = `dafa2120243b1bf067e78de03602e0c4fc4efd96` (code = `ae8776f`).
   - **V2** = `774ea9f34f3ebe0babe44520b297af610262c5fb`.
   - **V1** = `4636968089a30394f9c9ca594b1a06783c1c4775`.
   - Tags can't be pushed (403); recreate locally (`git tag -a v3 <id> -m V3`). Restore commands are in `CHECKPOINTS.md`.
 - **Preview artifact:** https://claude.ai/artifact/YK9mg5vQzR19CEfoaX4bSJ (republish with `url` + `files {app.html}`; see "Hosted web preview" below).
 
-### Features at V3 (where they live)
+### Features at V4 (where they live)
 | Area | What | Key files |
 |---|---|---|
 | Auth | OTP for registration/new phone/Forgot PIN, then **4-digit PIN** login. Server sessions in secure storage (`hr.auth`); device key + PIN; lockout 5 → 15 min, 10/day → OTP reset only | `src/domain/auth.ts`, `src/app/login.tsx`, `src/app/pin.tsx`, `src/components/ui/CodeInput.tsx`, `src/services/secureStorage.ts`, SQL `20261105000000_pin_login.sql`, `supabase/functions/pin-login/` |

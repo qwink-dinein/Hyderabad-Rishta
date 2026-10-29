@@ -1,10 +1,93 @@
 # Checkpoints — Hyderabad Rishta
 
 > Known-good snapshots of the app. Each is pinned by a **commit ID on GitHub** (permanent; tags can't be pushed from the session that made them), so it survives this machine and any future session.
-> **Latest checkpoint: V3.** (V2 and V1 remain restorable below.)
+> **Latest checkpoint: V4.** (V3, V2 and V1 remain restorable below.)
 > If something breaks later, compare against or roll back to a checkpoint (commands below).
 
-## V3 — the commit "Checkpoint V3" / tag `v3` (2026-10-28) ✅ owner-approved — LATEST
+## V4 — the commit "Checkpoint V4" / tag `v4` (2026-10-29) ✅ owner-approved — LATEST
+
+**Where:** branch `claude/sharp-bell-xxyxmj`, repo `qwink-dinein/Hyderabad-Rishta`.
+- **V4 is the commit titled "Checkpoint V4: …".** Its full ID is recorded in `Memory.md` and in the "V4 commit ID" line below; find it any time with `git log --grep "Checkpoint V4" --format=%H -1`.
+- The app code is identical to **`d5e7817`** ("Docs: team-added members"); the V4 commit only adds this record.
+- A local tag `v4` points at it. Pushing tags is blocked here; recreate it with `git tag -a v4 <V4 id> -m V4`.
+
+**Preview at V4:** https://claude.ai/artifact/YK9mg5vQzR19CEfoaX4bSJ (version 21 of the preview).
+**Builds on V3:** everything under V3, V2 and V1 still works and is covered by the tests below.
+
+**V4 commit ID: `PENDING`** (filled in by the next commit).
+
+### Verified at V4
+| Check | Result |
+|---|---|
+| `npx tsc --noEmit` and `npx tsc -p supabase/functions/tsconfig.json` | clean |
+| `npx expo lint` | 0 errors (2 harmless i18next warnings) |
+| `npx jest` | **247 / 247** passing (17 suites) |
+| `./scripts/test-db.sh` (Postgres 16, **17 migrations**) | **16 suites PASSED**: the 11 from V3 + text safety, boost plans, notification details, team members (and attacks still 73 blocked) |
+| Playwright `e2e/` | **19 suites, all passing**: smoke, journey, admin, interest, console, boostpush, home, photos, onebiodata, pin, transitions, boost, personas, livestate, explore, teammember, clickthrough, csp, crawl (0 issues across every screen × 5 roles × EN/UR × 360/320 px) |
+
+### Added since V3
+1. **QA rounds** (Architecture §18):
+   - a crawler over every screen (`e2e/crawl.js`), a click-through of every button (`clickthrough.js`) and an exploratory edge-state suite (`explore.js`)
+   - fixes: accessibility state, admin English/LTR, script-direction text, localized dates, revoked-session handling, crash screen, Filters→Discover, block list, paused/pending Boost messaging, Urdu prices, nested buttons
+2. **Security round 2** (§18):
+   - the OTP cap survives resends
+   - spoofing characters are refused (app + SQL)
+   - web CSP and security headers (`public/_headers`, `e2e/csp.js`)
+   - no camera/mic permissions; `allowBackup` off
+3. **No-photo portraits:** the owner's Hyderabadi bride/groom artwork (`assets/personas/*.webp`) replaces the initial letter everywhere, chosen by profile type. A real photo always takes precedence, and the portrait falls back safely if it fails to load.
+4. **Discover filter button** beside the search box, as on Home.
+5. **Boost options & dashboards** (PRD 15.10, §19):
+   - admin-priced 7/14/30-day options (any number of options, per bride/groom, free/paid/disabled, "Popular" flag)
+   - the server enforces prices (SQL guard); free options skip payment; no renewal; one order per member
+   - My Boost with honest before/during views
+   - Home completion ring, activity counts and Boost card
+   - Profile tab as a list
+   - tabs Home · Discover · Shortlist · Requests · Profile (floating Boost removed); `/activity`
+6. **Live interest state** (§20):
+   - "Interest sent" shows instantly; no duplicates
+   - Requests tab badge (1, 2, 3…)
+   - queued notification banners; "accepted — your number is now visible"
+7. **Team-added members** (PRD 15.11, §21):
+   - admins and sub-admins add any number of members for any phone, with no OTP, using the same 7-step form; review → publish
+   - the number's owner logs in with OTP and gets that account and biodata, with a "please review" note
+   - one number = one account; team edits stop once claimed
+   - server: SQL `…team_members.sql` + Edge Function `admin-create-member`
+
+### Key commits V3 → V4
+| Commit | What |
+|---|---|
+| `d5e7817` | **V4 code** (docs for team-added members) |
+| `3117035`, `adf119a` | Team-added members: UI + shared wizard; backend + SQL + Edge Function |
+| `494aa75`, `89f86c8`, `ed7dc71` | Principal-tester pass fixes |
+| `4718aa6` | Interest state airtight, Requests badge, notifications |
+| `f00f859`, `cbabf94` | Boost options, My Boost, Home cards, Profile tab, 5 tabs |
+| `975e475` | Discover filter button |
+| `fc1dc2d`, `97eef6f` | Bride/groom portraits |
+| `987cbd7` | Security round 2 + production readiness |
+| `1e8c6b2`, `cb7c85f` | QA rounds 1–2 |
+
+### How to get back to V4
+```bash
+git fetch origin claude/sharp-bell-xxyxmj
+V4=$(git log --grep "Checkpoint V4: team" --format=%H -1)   # or the V4 commit ID above
+git tag -a v4 "$V4" -m V4 2>/dev/null || true
+git diff v4 --stat                   # what changed since V4
+git checkout v4 -- <path>            # restore one file/folder to V4, then commit
+git revert --no-edit v4..HEAD        # undo everything after V4 as new commits (safe, keeps history)
+git checkout -b restore-v4 v4        # or inspect V4 on its own branch
+```
+Then verify:
+1. `npm install`
+2. `npx tsc --noEmit`
+3. `npx jest` (expect 247 passing)
+4. `su postgres -c ./scripts/test-db.sh` (expect 16 PASSED lines; start Postgres first with `pg_ctlcluster 16 main start`)
+5. `npx expo export --platform web`, then `node e2e/serve.js "$(pwd)/dist" 8081` and the 19 e2e suites
+
+The demo database is still `SCHEMA_VERSION = 8` (new fields are filled in on load; existing demo accounts are kept).
+
+---
+
+## V3 — the commit "Checkpoint V3" / tag `v3` (2026-10-28) ✅ owner-approved (superseded by V4, still restorable)
 
 **Where:** branch `claude/sharp-bell-xxyxmj`, repo `qwink-dinein/Hyderabad-Rishta`.
 - **V3 is the commit titled "Checkpoint V3: …".** Its full ID is recorded in `Memory.md` and in the "V3 commit ID" line at the end of this section; find it any time with `git log --grep "Checkpoint V3" --format=%H -1`.
