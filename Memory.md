@@ -56,7 +56,7 @@ npx jest                                # all suites incl. simulation (400 steps
 SIM_STEPS=3000 SIM_SEEDS=5 SIM_REPORT=1 npx jest simulation   # long expert-team hunt (background); prints timings and refusals
 pg_ctlcluster 16 main start; su postgres -c "cd /home/user/Hyderabad-Rishta && ./scripts/test-db.sh"   # 15 PASSED lines (one per test file)
 EXPO_OFFLINE=1 npx expo export --platform web && node e2e/serve.js "$(pwd)/dist" 8081 &   # then:
-for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boost personas livestate explore teammember clickthrough csp crawl; do node e2e/$s.js; done   # 19 suites; crawl must report 0 high issues
+for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boost personas livestate explore teammember badgecount clickthrough csp crawl; do node e2e/$s.js; done   # 20 suites; crawl must report 0 high issues
 node scripts/sync-shared.js            # after editing src/domain/push.ts or src/domain/phone.ts
 ```
 - e2e suites sign in through `e2e/auth.js` (`loginWithOtp`), which also creates the test PIN **4827** when asked.
