@@ -14,7 +14,7 @@
 **Preview at V4:** https://claude.ai/artifact/YK9mg5vQzR19CEfoaX4bSJ (version 21 of the preview).
 **Builds on V3:** everything under V3, V2 and V1 still works and is covered by the tests below.
 
-**V4 commit ID: `PENDING`** (filled in by the next commit).
+**V4 commit ID: `520bf085e80ac2cdc60264eb58065abfc1ade309`** (short `520bf08`).
 
 ### Verified at V4
 | Check | Result |
@@ -56,7 +56,8 @@
 ### Key commits V3 → V4
 | Commit | What |
 |---|---|
-| `d5e7817` | **V4 code** (docs for team-added members) |
+| `520bf08` | **V4**: Checkpoint V4, docs only; code = `d5e7817` |
+| `d5e7817` | V4 code (docs for team-added members) |
 | `3117035`, `adf119a` | Team-added members: UI + shared wizard; backend + SQL + Edge Function |
 | `494aa75`, `89f86c8`, `ed7dc71` | Principal-tester pass fixes |
 | `4718aa6` | Interest state airtight, Requests badge, notifications |

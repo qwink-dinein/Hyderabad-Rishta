@@ -11,7 +11,7 @@
   - The app runs on the offline **DemoBackend** (`src/services/demo/demoBackend.ts`, `SCHEMA_VERSION = 8`).
   - Supabase SQL (17 migrations), Edge Functions (`push-dispatch`, `pin-login`, `admin-create-member`) and tests are ready but **not connected**: the client adapter is Phase 2.
 - **Checkpoints (never move or delete):**
-  - **V4 = LATEST = `PENDING`** ("Checkpoint V4: team…"; code identical to `d5e7817`).
+  - **V4 = LATEST = `520bf085e80ac2cdc60264eb58065abfc1ade309`** ("Checkpoint V4: team…"; code identical to `d5e7817`).
   - **V3** = `dafa2120243b1bf067e78de03602e0c4fc4efd96` (code = `ae8776f`).
   - **V2** = `774ea9f34f3ebe0babe44520b297af610262c5fb`.
   - **V1** = `4636968089a30394f9c9ca594b1a06783c1c4775`.
