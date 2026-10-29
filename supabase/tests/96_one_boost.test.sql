@@ -1,6 +1,8 @@
 \set ON_ERROR_STOP on
 -- One boost at a time: no second boost order while one runs, one pending order max, no stacking.
 reset role;
+-- Fixtures below use arbitrary boost prices/lengths to test other rules; 98_boost_plans tests the price guard.
+alter table orders disable trigger orders_boost_terms;
 insert into auth.users values ('00000000-0000-0000-0000-000000000bb1');
 insert into app_users (id, country_code, phone) values ('00000000-0000-0000-0000-000000000bb1', '+91', '9666100001');
 insert into profiles (id, user_id, biodata, status, published_at) values
@@ -40,4 +42,6 @@ insert into orders (id, user_id, profile_id, kind, amount, currency, status, ter
 do $$ begin
   assert apply_boost('b2000000-0000-0000-0000-000000000bb3') > now() + interval '2 days', 'boost again after the previous one ended';
 end $$;
+reset role;
+alter table orders enable trigger orders_boost_terms;
 select 'ALL ONE-BOOST TESTS PASSED' as result;

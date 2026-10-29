@@ -33,7 +33,7 @@ export function BellButton() {
   );
 }
 
-/** Saved profiles (heart + count) — the shortlist's home on Discover now that Boost has the centre tab. */
+/** Saved profiles (heart + count) on Discover's header — a shortcut to the Shortlist tab. */
 export function ShortlistButton() {
   const { t } = useTranslation();
   const { data } = useShortlistIds();

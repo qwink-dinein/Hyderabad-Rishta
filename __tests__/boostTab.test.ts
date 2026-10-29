@@ -1,3 +1,4 @@
+import { withSinglePlan } from '@/domain/pricing';
 import { DEMO_ADMIN_PHONE, DEMO_OTP, DEMO_USER_PHONE } from '@/data/seed';
 import { BOOST_REMINDER_EVERY_MS, boostNudge, boostReminderDue } from '@/domain/featured';
 import { CATEGORY } from '@/domain/push';
@@ -65,7 +66,7 @@ describe('demo backend reminders', () => {
     // Boost (free for this test) → no more reminders while boosted, nor the week after it ends.
     await login(b, DEMO_ADMIN_PHONE);
     const cfg = await b.getPricing();
-    await b.adminUpdatePricing({ ...cfg, boostDays: 7, boost: { bride: { mode: 'free', amount: 0 }, groom: { mode: 'free', amount: 0 } } });
+    await b.adminUpdatePricing(withSinglePlan(cfg, 7, { bride: { mode: 'free', amount: 0 }, groom: { mode: 'free', amount: 0 } }));
     await login(b, DEMO_USER_PHONE);
     await b.startBoost();
     clock += 10 * DAY; // boost ended 3 days ago
@@ -94,7 +95,7 @@ describe('one boost at a time (owner rule 2026-10-28)', () => {
   async function setBoost(b: DemoBackend, mode: 'free' | 'paid') {
     await login(b, DEMO_ADMIN_PHONE);
     const cfg = await b.getPricing();
-    await b.adminUpdatePricing({ ...cfg, boostDays: 7, boost: { bride: { mode, amount: mode === 'paid' ? 499 : 0 }, groom: { mode, amount: mode === 'paid' ? 499 : 0 } } });
+    await b.adminUpdatePricing(withSinglePlan(cfg, 7, { bride: { mode, amount: mode === 'paid' ? 499 : 0 }, groom: { mode, amount: mode === 'paid' ? 499 : 0 } }));
     await login(b, DEMO_USER_PHONE);
   }
 

@@ -266,10 +266,24 @@ export interface Fee {
   amount: number; // in minor-free whole currency units (INR)
 }
 
+/** One Boost option the admin configures (owner PRD 2026-10-29: 7 / 14 / 30 days, prices per type). */
+export interface BoostPlan {
+  /** Stable id stored on orders (e.g. "d7"). */
+  id: string;
+  days: number;
+  fee: Record<ProfileType, Fee>;
+  enabled: boolean;
+  /** "Popular" label — only when the admin deliberately sets it. */
+  popular: boolean;
+}
+
 export interface PricingConfig {
   version: number;
   currency: string;
   publication: Record<ProfileType, Fee>;
+  /** Boost options shown on the Boost screen. The default selection is the shortest available one. */
+  boostPlans: BoostPlan[];
+  /** Derived summary of the default plan (kept in sync on save; read by older code and SQL). */
   boost: Record<ProfileType, Fee>;
   boostDays: number;
   requireApproval: boolean;
@@ -293,7 +307,7 @@ export interface Order {
   currency: string;
   status: OrderStatus;
   /** Snapshot of the terms at purchase time — later price changes never alter it. */
-  terms: { pricingVersion: number; boostDays?: number; autoRenew: false };
+  terms: { pricingVersion: number; boostDays?: number; planId?: string; autoRenew: false };
   simulated: boolean;
   createdAt: string;
 }
@@ -489,6 +503,16 @@ export interface DashboardMetrics {
   boostStartedAt?: string;
   /** Unique members who were shown this profile in Featured since the boost started. */
   featuredReach?: number;
+  /** Latest boost (active or ended): its length and the views it earned. */
+  boostState?: 'active' | 'expired';
+  boostDays?: number;
+  /** Views (others only) from boost start until now or its end. */
+  boostViews?: number;
+  /** Views in the same-length window just before the boost — only when the profile was live for all of it. */
+  previousViews?: number;
+  /** The comparison windows, for honest labels. */
+  boostWindow?: { from: string; to: string };
+  previousWindow?: { from: string; to: string };
 }
 
 /** One featured impression per viewer per day (proof of delivery for paid boosts). */

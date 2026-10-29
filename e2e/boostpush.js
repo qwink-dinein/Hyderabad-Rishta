@@ -39,7 +39,7 @@ const step = async (name, fn) => {
   });
   await step('boost → payment → in-app arrival banner + dashboard proof', async () => {
     await page.goto(BASE + '/boost');
-    await page.getByRole('button', { name: /^Boost for/ }).click();
+    await page.getByTestId('boost-cta').click(); // default option: 7 days
     await page.getByRole('button', { name: 'Simulate successful payment' }).click();
     await page.getByTestId('arrival-banner').waitFor({ timeout: 8000 });
     await page.screenshot({ path: `${SHOTS}/52-arrival-banner.png` });

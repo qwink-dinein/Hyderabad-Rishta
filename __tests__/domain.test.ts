@@ -155,7 +155,7 @@ describe('dynamic pricing (PRD §8)', () => {
   const cfg = (pub: 'free' | 'paid', boost: 'free' | 'paid' | 'disabled'): PricingConfig => ({
     ...DEFAULT_PRICING,
     publication: { bride: { mode: pub, amount: 299 }, groom: { mode: pub, amount: 299 } },
-    boost: { bride: { mode: boost, amount: 199 }, groom: { mode: boost, amount: 199 } },
+    boostPlans: [{ id: 'd7', days: 7, fee: { bride: { mode: boost, amount: 199 }, groom: { mode: boost, amount: 199 } }, enabled: true, popular: false }],
   });
   it('picks the right copy for every combination', () => {
     expect(pricingCopy(cfg('free', 'free'), 'bride').key).toBe('pricing.copy.bothFree');
@@ -166,15 +166,24 @@ describe('dynamic pricing (PRD §8)', () => {
   });
   it('resolves per profile type from the same config', () => {
     expect(resolvePricing(DEFAULT_PRICING, 'bride').boost.mode).toBe('free');
-    expect(resolvePricing(DEFAULT_PRICING, 'groom').boostLabel).toBe('₹499');
+    expect(resolvePricing(DEFAULT_PRICING, 'groom').boostLabel).toBe('₹100');
+    expect(resolvePricing(DEFAULT_PRICING, 'groom').plans.map((p) => [p.days, p.label])).toEqual([[7, '₹100'], [14, '₹200'], [30, '₹350']]);
+    expect(resolvePricing(DEFAULT_PRICING, 'bride').plans[0].fee.mode).toBe('free');
     expect(pricingCopy(DEFAULT_PRICING, 'groom').params.days).toBe('7');
   });
   it('validates admin input', () => {
     expect(validatePricing(cfg('paid', 'paid'))).toEqual([]);
     const bad = cfg('paid', 'free');
     bad.publication.bride.amount = 0;
-    bad.boostDays = 0;
+    bad.boostPlans[0].days = 0;
     expect(validatePricing(bad).length).toBe(2);
+    const dup = cfg('paid', 'paid');
+    dup.boostPlans = [dup.boostPlans[0], { ...dup.boostPlans[0], id: 'other' }];
+    expect(validatePricing(dup)).toEqual(['Boost 7 days: two options have the same duration']);
+    expect(validatePricing({ ...dup, boostPlans: [] })).toEqual(['Add at least one boost option']);
+    const pop = cfg('paid', 'paid');
+    pop.boostPlans = [{ ...pop.boostPlans[0], popular: true }, { ...pop.boostPlans[0], id: 'd14', days: 14, popular: true }];
+    expect(validatePricing(pop)).toEqual(['Only one option can be marked Popular']);
   });
 });
 

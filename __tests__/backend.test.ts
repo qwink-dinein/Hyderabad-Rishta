@@ -1,3 +1,4 @@
+import { withSinglePlan } from '@/domain/pricing';
 import { buildSeed, DEMO_ADMIN_PHONE, DEMO_OTP, DEMO_USER_PHONE } from '@/data/seed';
 import { EMPTY_FILTERS } from '@/domain/search';
 import type { Biodata } from '@/domain/types';
@@ -270,7 +271,7 @@ describe('pricing & payments (PRD §8)', () => {
     const b = makeBackend();
     await login(b, DEMO_ADMIN_PHONE);
     const cfg = await b.getPricing();
-    await b.adminUpdatePricing({ ...cfg, boostDays: 3, boost: { bride: { mode: 'free', amount: 0 }, groom: { mode: 'free', amount: 0 } } });
+    await b.adminUpdatePricing(withSinglePlan(cfg, 3, { bride: { mode: 'free', amount: 0 }, groom: { mode: 'free', amount: 0 } }));
     await b.logout();
     await login(b, DEMO_USER_PHONE);
     const { order, profile } = await b.startBoost();
@@ -282,11 +283,12 @@ describe('pricing & payments (PRD §8)', () => {
     const b = makeBackend();
     await login(b, DEMO_ADMIN_PHONE);
     const cfg = await b.getPricing();
-    await expectCode(b.adminUpdatePricing({ ...cfg, boostDays: 0 }), 'validation');
-    await b.adminUpdatePricing({ ...cfg, boostDays: 10 });
+    await expectCode(b.adminUpdatePricing({ ...cfg, boostPlans: cfg.boostPlans.map((p, i) => (i === 0 ? { ...p, days: 0 } : p)) }), 'validation');
+    await b.adminUpdatePricing({ ...cfg, boostPlans: cfg.boostPlans.map((p, i) => (i === 0 ? { ...p, days: 10 } : p)) });
     const hist = await b.adminPricingHistory();
-    expect(hist[0].before.boostDays).toBe(7);
-    expect(hist[0].after.boostDays).toBe(10);
+    expect(hist[0].before.boostPlans[0].days).toBe(7);
+    expect(hist[0].after.boostPlans[0].days).toBe(10);
+    expect(hist[0].after.boostDays).toBe(10); // derived summary follows the default (shortest) option
   });
 });
 

@@ -4,7 +4,7 @@ import { afterWrongPin, attemptsLeft, PIN_OTP_WINDOW_MS, pinProblem, SESSION_IDL
 import { DECLINE_COOLDOWN_DAYS, isActiveRequest, PHONE_CONSENT_TEXT, pokeEligibility, sanitizeMessage } from '@/domain/connections';
 import { displayNameFor, maskPhone, uid } from '@/domain/format';
 import { announcementStats, audienceFor, dashboardMetrics, isAnnouncementLive } from '@/domain/metrics';
-import { resolvePricing, validatePricing } from '@/domain/pricing';
+import { resolvePricing, syncBoostSummary, validatePricing, withBoostPlans } from '@/domain/pricing';
 import { isBoostActive, mergeScopes, NO_CONSENT, profileTypeOf, projectProfile } from '@/domain/privacy';
 import { matchesFilters, sortProfiles, type SearchFilters } from '@/domain/search';
 import { boostNoticeDue, BOOST_ENDING_NOTICE_MS, boostReminderDue, dayKey, isFeaturable, rotateFeatured } from '@/domain/featured';
@@ -250,7 +250,8 @@ export class DemoBackend implements Backend {
         // Existing accounts survive upgrades: add new collections in place (never a reseed), and turn a
         // pre-PIN login into a real session so nobody is signed out by this update.
         const d = this.db;
-        const upgraded = !d.sessions || !!d.sessionUserId;
+        const upgraded = !d.sessions || !!d.sessionUserId || !d.pricing.boostPlans?.length;
+        d.pricing = withBoostPlans(d.pricing);
         d.sessions ??= [];
         d.devices ??= [];
         d.pins ??= [];
@@ -970,7 +971,7 @@ export class DemoBackend implements Backend {
     }, true);
   }
 
-  startBoost() {
+  startBoost(planId?: string) {
     return this.run((db) => {
       const u = this.me(db);
       const p = this.myProfile(db, u.id);
@@ -979,20 +980,29 @@ export class DemoBackend implements Backend {
       // One boost at a time: no buying another while the current one runs (owner rule 2026-10-28).
       if (isBoostActive(p, this.now())) throw new AppError('boost_active', undefined, { until: p.boostUntil });
       const pricing = resolvePricing(db.pricing, profileTypeOf(p));
-      if (pricing.boost.mode === 'disabled') throw new AppError('fee_disabled');
-      // A boost already waiting for payment is reused — repeat taps never create a second order.
+      if (!pricing.plans.length) throw new AppError('fee_disabled');
+      if (planId !== undefined && (typeof planId !== 'string' || planId.length > 20)) throw new AppError('validation');
+      // Price and length always come from the live config, never from the client.
+      const plan = planId ? pricing.plans.find((x) => x.id === planId) : pricing.plans[0];
+      if (!plan) throw new AppError('fee_disabled'); // that option was switched off or changed
+      const paid = plan.fee.mode === 'paid';
+      // A boost already waiting for payment is reused — repeat taps or retries never create a second
+      // order. Choosing a different option replaces it (still only one open order).
       const open = db.orders.find((o) => o.profileId === p.id && o.kind === 'boost' && o.status === 'pending');
-      if (open) return { profile: clone(p), order: { ...open } };
+      if (open) {
+        if (open.terms.planId === plan.id && open.amount === plan.fee.amount && paid) return { profile: clone(p), order: { ...open } };
+        open.status = 'cancelled';
+      }
       const order: Order = {
         id: uid('o_'),
         userId: u.id,
         profileId: p.id,
         kind: 'boost',
-        amount: pricing.boost.mode === 'paid' ? pricing.boost.amount : 0,
+        amount: paid ? plan.fee.amount : 0,
         currency: pricing.currency,
-        status: pricing.boost.mode === 'paid' ? 'pending' : 'free',
-        terms: { pricingVersion: db.pricing.version, boostDays: pricing.boostDays, autoRenew: false },
-        simulated: pricing.boost.mode === 'paid',
+        status: paid ? 'pending' : 'free',
+        terms: { pricingVersion: db.pricing.version, boostDays: plan.days, planId: plan.id, autoRenew: false },
+        simulated: paid,
         createdAt: this.iso(),
       };
       db.orders.unshift(order);
@@ -1028,11 +1038,11 @@ export class DemoBackend implements Backend {
       this.alertAdmins(db, 'payment', { code: p.code, status: outcome === 'success' ? 'paid' : 'failed', amount: String(order.amount), item: order.kind }, '/admin/orders');
       if (outcome === 'failure') {
         order.status = 'failed';
-        this.notify(db, u.id, 'payment', { status: 'failed' }, '/dashboard');
+        this.notify(db, u.id, 'payment', { status: 'failed' }, '/activity');
         return { order: { ...order }, profile: clone(p) };
       }
       order.status = 'paid';
-      this.notify(db, u.id, 'payment', { status: 'paid' }, '/dashboard');
+      this.notify(db, u.id, 'payment', { status: 'paid' }, '/activity');
       if (order.kind === 'publication') this.goLive(db, p);
       else this.applyBoost(db, p, order);
       return { order: { ...order }, profile: clone(p) };
@@ -1101,7 +1111,7 @@ export class DemoBackend implements Backend {
     if (last && nowMs - new Date(last.createdAt).getTime() < VIEW_NOTICE_WINDOW_MS) return;
     const since = last ? new Date(last.createdAt).getTime() : nowMs - VIEW_NOTICE_WINDOW_MS;
     const viewers = new Set(db.views.filter((v) => v.profileId === p.id && v.viewerUserId !== p.userId && new Date(v.at).getTime() >= since).map((v) => v.viewerUserId));
-    this.notify(db, p.userId, 'profile_viewed', { count: String(Math.max(1, viewers.size)) }, '/dashboard');
+    this.notify(db, p.userId, 'profile_viewed', { count: String(Math.max(1, viewers.size)) }, '/activity');
   }
 
   getFeatured(limit = 12) {
@@ -1194,7 +1204,7 @@ export class DemoBackend implements Backend {
       const target = db.profiles.find((x) => x.id === profileId);
       if (target && !db.shortlistNotified.includes(key)) {
         db.shortlistNotified.push(key);
-        this.notify(db, target.userId, 'profile_shortlisted', {}, '/dashboard');
+        this.notify(db, target.userId, 'profile_shortlisted', {}, '/activity');
       }
       return true;
     }, true);
@@ -1665,7 +1675,7 @@ export class DemoBackend implements Backend {
       const errors = validatePricing(cfg);
       if (errors.length) throw new AppError('validation', errors.join('; '));
       const before = clone(db.pricing);
-      const after: PricingConfig = { ...clone(cfg), version: before.version + 1, updatedAt: this.iso(), updatedBy: a.id };
+      const after: PricingConfig = { ...syncBoostSummary(clone(cfg)), version: before.version + 1, updatedAt: this.iso(), updatedBy: a.id };
       db.pricing = after;
       db.pricingHistory.unshift({ id: uid('pc_'), adminId: a.id, before, after, at: this.iso() });
       this.audit(db, a.id, 'pricing.updated', undefined, { version: after.version });

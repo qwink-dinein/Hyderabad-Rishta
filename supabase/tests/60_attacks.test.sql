@@ -30,8 +30,10 @@ insert into contact_requests (id, from_user_id, from_profile_id, to_user_id, to_
 insert into phone_offers (id, request_id, from_user_id, to_user_id, with_interest, consent_text) values
  ('91000000-0000-0000-0000-0000000007a1', '90000000-0000-0000-0000-0000000007a1', '00000000-0000-0000-0000-0000000007b1', '00000000-0000-0000-0000-0000000007a1', true, 'consent');
 insert into notifications (id, user_id, type) values ('92000000-0000-0000-0000-0000000007b1', '00000000-0000-0000-0000-0000000007b1', 'poke');
+alter table orders disable trigger orders_boost_terms; -- fixture only
 insert into orders (id, user_id, profile_id, kind, amount, currency, status, terms) values
  ('93000000-0000-0000-0000-0000000007b1', '00000000-0000-0000-0000-0000000007b1', '80000000-0000-0000-0000-0000000007b1', 'boost', 199, 'INR', 'pending', '{"boostDays":7}');
+alter table orders enable trigger orders_boost_terms;
 
 -- ═══════════════ 1. Signed-out visitor (anon) ═══════════════
 set role anon;

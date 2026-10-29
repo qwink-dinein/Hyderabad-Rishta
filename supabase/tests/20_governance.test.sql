@@ -1,6 +1,8 @@
 \set ON_ERROR_STOP on
 -- Runs after 10_rls_privacy (same DB). Users: a (member), b (member), c (master after upgrade), d (sub-admin).
 reset role;
+-- Fixtures below use arbitrary boost prices/lengths to test other rules; 98_boost_plans tests the price guard.
+alter table orders disable trigger orders_boost_terms;
 update app_users set role = 'master' where id = '00000000-0000-0000-0000-00000000000c';
 insert into auth.users values ('00000000-0000-0000-0000-00000000000d'), ('00000000-0000-0000-0000-00000000000e');
 insert into app_users (id, country_code, phone, role) values
@@ -97,4 +99,6 @@ do $$ begin
   assert (select role from app_users where phone = '9000000001') = 'master', 'time-locked recovery completed';
   assert (select count(*) from app_users where role = 'master') = 1, 'still exactly one master';
 end $$;
+reset role;
+alter table orders enable trigger orders_boost_terms;
 select 'ALL GOVERNANCE TESTS PASSED' as result;

@@ -4,16 +4,16 @@ import { Redirect, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { ProfileCard } from '@/components/ProfileCard';
+import { TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
 import { EmptyState, ErrorView, Loading } from '@/components/ui/feedback';
-import { Header } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import type { PublicProfile } from '@/domain/types';
 import { useShortlist, useToggleShortlist } from '@/hooks/queries';
 import { useSession } from '@/state/session';
 import { colors, maxContentWidth, space } from '@/theme/tokens';
 
-/** Saved profiles. Opened from Discover's heart button and Home (no longer a tab: Boost took its place). */
+/** Shortlist tab: saved profiles (also reachable from Discover's heart button and the Profile tab). */
 export default function ShortlistScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -26,7 +26,7 @@ export default function ShortlistScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <Header title={t('shortlist.title')} />
+      <TabHeader title={t('shortlist.title')} />
       {data?.length ? (
         <Text variant="caption" center style={{ marginTop: space.xs }} testID="shortlist-count">
           {t('shortlist.count', { count: data.length })}

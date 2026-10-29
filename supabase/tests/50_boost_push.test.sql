@@ -2,6 +2,8 @@
 -- Boost guarantees + push pipeline. Members: g1 (groom, boosted), g2 (groom, boosted then paused),
 -- b1/b2 (brides, viewers), x1 (bride who blocks g1). Admin-free: everything here is member-facing.
 reset role;
+-- Fixtures below use arbitrary boost prices/lengths to test other rules; 98_boost_plans tests the price guard.
+alter table orders disable trigger orders_boost_terms;
 insert into auth.users values
  ('00000000-0000-0000-0000-0000000000c1'), ('00000000-0000-0000-0000-0000000000c2'),
  ('00000000-0000-0000-0000-0000000000d1'), ('00000000-0000-0000-0000-0000000000d2'), ('00000000-0000-0000-0000-0000000000d3');
@@ -161,4 +163,6 @@ reset role;
 do $$ begin
   assert (select boost_until is null and code <> 'HR-1' and status = 'draft' from profiles where user_id = '00000000-0000-0000-0000-0000000000e1'), 'insert hardened';
 end $$;
+reset role;
+alter table orders enable trigger orders_boost_terms;
 select 'ALL BOOST & PUSH TESTS PASSED';

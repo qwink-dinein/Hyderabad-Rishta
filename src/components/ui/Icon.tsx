@@ -10,7 +10,8 @@ export type IconName =
   | 'heart' | 'heartFilled' | 'search' | 'filter' | 'bell' | 'user' | 'users' | 'mail' | 'chevronLeft' | 'chevronRight'
   | 'chevronDown' | 'close' | 'check' | 'camera' | 'lock' | 'shield' | 'globe' | 'settings' | 'star' | 'eye' | 'phone'
   | 'flag' | 'ban' | 'plus' | 'pause' | 'play' | 'sparkle' | 'home' | 'chart'
-  | 'arrowRight' | 'arrowLeft' | 'message' | 'mapPin' | 'briefcase' | 'cap' | 'ruler' | 'volume' | 'vibrate' | 'help' | 'info' | 'compass' | 'clock';
+  | 'arrowRight' | 'arrowLeft' | 'message' | 'mapPin' | 'briefcase' | 'cap' | 'ruler' | 'volume' | 'vibrate' | 'help' | 'info' | 'compass' | 'clock'
+  | 'crown' | 'edit' | 'sliders' | 'image';
 
 const PATHS: Record<IconName, string> = {
   heart: 'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z',
@@ -55,6 +56,10 @@ const PATHS: Record<IconName, string> = {
   info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zm0-10v6m0-9v.1',
   compass: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zm3.5-12.5-2 5-5 2 2-5z',
   clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zm0-13v5l3 2',
+  crown: 'M4 18h16M5 18 3.5 8l5 4L12 5l3.5 7 5-4L19 18z',
+  edit: 'M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4',
+  sliders: 'M4 7h9m4 0h3M4 17h3m4 0h9M15 5v4M9 15v4',
+  image: 'M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M15 9.5h.01',
 };
 
 export interface IconProps {

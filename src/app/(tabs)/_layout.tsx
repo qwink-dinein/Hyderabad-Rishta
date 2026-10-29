@@ -3,7 +3,6 @@ import { Redirect } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { BoostTabButton } from '@/components/BoostTabButton';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { useTabTransitions } from '@/navigation/transitions';
 import { useSession } from '@/state/session';
@@ -11,8 +10,8 @@ import { colors, radius } from '@/theme/tokens';
 import { fontFamily } from '@/theme/fonts';
 
 /**
- * Authenticated member area: Home · Discover · BOOST (raised centre) · Requests · Profile.
- * Shortlist lives at /shortlist (Discover's heart button and Home), since Boost took its tab (owner request 2026-10-28).
+ * Authenticated member area: Home · Discover · Shortlist · Requests · Profile (owner PRD 2026-10-29:
+ * five balanced tabs; Boost is reached from Home and Profile, with entry points that follow its state).
  * The notification centre is a stack screen (/notifications) opened from the header bell and deep links.
  * Guarded here; the backend independently rejects unauthenticated calls.
  */
@@ -42,14 +41,14 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: colors.ivory },
         tabBarActiveTintColor: colors.emerald,
         tabBarInactiveTintColor: colors.muted,
-        tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.border, minHeight: (lang === 'ur' ? 70 : 62) + insets.bottom, paddingTop: 6, overflow: 'visible' },
+        tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.border, minHeight: (lang === 'ur' ? 70 : 62) + insets.bottom, paddingTop: 6 },
         // Urdu Nastaliq needs about twice the line height, or labels are clipped at the bottom.
         tabBarLabelStyle: { fontFamily: fontFamily(lang, 'medium'), fontSize: 11, lineHeight: lang === 'ur' ? 22 : 15 },
       }}
     >
       <Tabs.Screen name="home" options={{ title: t('nav.home'), tabBarIcon: icon('home') }} />
       <Tabs.Screen name="discover" options={{ title: t('nav.discover'), tabBarIcon: icon('search') }} />
-      <Tabs.Screen name="boost" options={{ title: t('nav.boost'), tabBarButton: (props) => <BoostTabButton {...props} /> }} />
+      <Tabs.Screen name="shortlist" options={{ title: t('nav.shortlist'), tabBarIcon: icon('heart', 'heartFilled') }} />
       <Tabs.Screen name="requests" options={{ title: t('nav.requests'), tabBarIcon: icon('mail') }} />
       <Tabs.Screen name="dashboard" options={{ title: t('nav.profile'), tabBarIcon: icon('user') }} />
     </Tabs>

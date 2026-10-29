@@ -38,6 +38,37 @@ export function dashboardMetrics(
     featuredReach: profile.boostStartedAt
       ? new Set((data.impressions ?? []).filter((i) => i.profileId === profile.id && i.day >= profile.boostStartedAt!.slice(0, 10)).map((i) => i.viewerUserId)).size
       : 0,
+    ...boostComparison(profile, views, now),
+  };
+}
+
+const DAY_MS = 86400000;
+
+/**
+ * Latest boost's honest numbers: views from its start until now (or its end), and the views in the
+ * same-length window just before it — the comparison is left out unless the profile was published
+ * for the whole earlier window (otherwise "before" would be unfairly low).
+ */
+export function boostComparison(profile: Profile, views: ViewEvent[], now = new Date()): Partial<DashboardMetrics> {
+  if (!profile.boostStartedAt || !profile.boostUntil) return {};
+  const start = new Date(profile.boostStartedAt).getTime();
+  const until = new Date(profile.boostUntil).getTime();
+  const end = Math.min(now.getTime(), until);
+  if (!(end > start)) return { boostState: until > now.getTime() ? 'active' : 'expired', boostDays: Math.round((until - start) / DAY_MS), boostViews: 0 };
+  const inWindow = (from: number, to: number) => views.filter((v) => {
+    const t = new Date(v.at).getTime();
+    return t >= from && t < to;
+  }).length;
+  const length = end - start;
+  const prevFrom = start - length;
+  const liveSince = profile.publishedAt ? new Date(profile.publishedAt).getTime() : Infinity;
+  const fair = liveSince <= prevFrom;
+  return {
+    boostState: until > now.getTime() ? 'active' : 'expired',
+    boostDays: Math.round((until - start) / DAY_MS),
+    boostViews: inWindow(start, end + 1),
+    boostWindow: { from: new Date(start).toISOString(), to: new Date(end).toISOString() },
+    ...(fair ? { previousViews: inWindow(prevFrom, start), previousWindow: { from: new Date(prevFrom).toISOString(), to: new Date(start).toISOString() } } : {}),
   };
 }
 

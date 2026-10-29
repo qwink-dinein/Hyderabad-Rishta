@@ -249,7 +249,8 @@ export interface Backend {
   saveDraft(biodata: Biodata, lastStep: number): Promise<Profile>;
   submitForPublication(): Promise<{ profile: Profile; order?: Order }>;
   setPaused(paused: boolean): Promise<Profile>;
-  startBoost(): Promise<{ profile: Profile; order: Order }>;
+  /** `planId` picks a Boost option (default: the shortest available). Price/duration come from the server's config. */
+  startBoost(planId?: string): Promise<{ profile: Profile; order: Order }>;
   completePayment(orderId: string, outcome: 'success' | 'failure'): Promise<{ order: Order; profile: Profile }>;
   getMyOrders(): Promise<Order[]>;
   getDashboard(): Promise<DashboardMetrics>;

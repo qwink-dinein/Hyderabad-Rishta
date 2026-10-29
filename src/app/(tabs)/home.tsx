@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { BrandMark } from '@/components/art/Illustrations';
 import { ProfileCard, ProfileCardSkeleton } from '@/components/ProfileCard';
-import { BoostReminder } from '@/components/BoostReminder';
+import { ActivityStats, BoostPromoCard, CompletionCard } from '@/components/HomeCards';
 import { PushPrompt } from '@/components/PushSettings';
 import { TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
@@ -121,7 +121,10 @@ export default function Home() {
             </LinearGradient>
           ) : null}
 
-          <BoostReminder />
+          {/* Owner PRD 2026-10-29: completion, then real activity, then Boost (when it applies). */}
+          <CompletionCard />
+          <ActivityStats />
+          <BoostPromoCard />
           <PushPrompt />
 
           {newInterests ? (
@@ -137,19 +140,6 @@ export default function Home() {
             </Pressable>
           ) : null}
 
-          {/* Shortlist lives here and on Discover now that Boost has the centre tab. */}
-          {shortIds?.length ? (
-            <Pressable onPress={() => router.push('/shortlist')} accessibilityRole="button" style={styles.attention} testID="home-shortlist">
-              <View style={styles.attentionIcon}>
-                <Icon name="heartFilled" size={20} color={colors.emerald} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text variant="bodyStrong">{t('shortlist.count', { count: shortIds.length })}</Text>
-                <Text variant="caption">{t('home.shortlistHint')}</Text>
-              </View>
-              <Icon name="chevronRight" size={18} color={colors.muted} />
-            </Pressable>
-          ) : null}
         </View>
 
         {featuredItems.length || featured.isLoading ? (

@@ -1,3 +1,4 @@
+import { withSinglePlan } from '@/domain/pricing';
 import fs from 'fs';
 import path from 'path';
 import { DEMO_ADMIN_PHONE, DEMO_OTP, DEMO_USER_PHONE } from '@/data/seed';
@@ -36,7 +37,7 @@ async function code(p: Promise<unknown>, c: string) {
 async function freeBoost(b: DemoBackend, phone: string, days = 7) {
   await as(b, DEMO_ADMIN_PHONE);
   const cfg = await b.getPricing();
-  await b.adminUpdatePricing({ ...cfg, boostDays: days, boost: { bride: { mode: 'free', amount: 0 }, groom: { mode: 'free', amount: 0 } } });
+  await b.adminUpdatePricing(withSinglePlan(cfg, days, { bride: { mode: 'free', amount: 0 }, groom: { mode: 'free', amount: 0 } }));
   await as(b, phone);
   await b.startBoost();
 }
