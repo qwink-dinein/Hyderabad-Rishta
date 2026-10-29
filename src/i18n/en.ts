@@ -394,6 +394,11 @@ const en = {
     privacy: "Never share your PIN. Hyderabad Rishta will never ask for it.",
     step: "Step {{n}} of {{total}}",
   },
+  teamNote: {
+    title: "Our team created your biodata",
+    body: "Please check every detail and change anything that is not right. Saving it once confirms it is yours.",
+    cta: "Review my biodata",
+  },
   completion: {
     title: "Complete your profile",
     body: "Add more details to help families understand your biodata.",

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { useTranslation } from 'react-i18next';
+import { useUiT } from '@/i18n/uiLang';
 import { uid } from '@/domain/format';
 import type { Photo } from '@/domain/types';
 import { AppError } from '@/services/backend';
@@ -21,7 +21,7 @@ const MAX_PHOTOS = 3;
  * Supabase Storage with signed URLs (Architecture.md).
  */
 export function PhotoPicker({ photos, onChange }: { photos: Photo[]; onChange: (p: Photo[]) => void }) {
-  const { t } = useTranslation();
+  const t = useUiT();
   const [error, setError] = useState<string | null>(null);
   const [busySlot, setBusySlot] = useState<number | null>(null);
   const [progress, setProgress] = useState(0);

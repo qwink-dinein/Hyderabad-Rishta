@@ -72,9 +72,18 @@ export default function AdminMember() {
             {m.profileStatus ? <Badge label={m.profileStatus} tone={m.profileStatus === 'published' ? 'success' : m.profileStatus === 'rejected' ? 'danger' : 'gold'} /> : null}
             {u.deactivatedAt ? <Badge label="suspended" tone="danger" /> : null}
             {deleted ? <Badge label="in trash" tone="danger" /> : null}
+            {u.createdBy ? <Badge label={u.claimedAt ? 'added by team · claimed' : 'added by team · not yet signed in'} tone={u.claimedAt ? 'success' : 'gold'} /> : null}
           </Row>
         </Row>
         {p?.adminNote ? <Text variant="caption">Last admin note: {p.adminNote}</Text> : null}
+        {u.createdBy && !u.claimedAt && p && !deleted ? (
+          // Team-added and the owner hasn't signed in yet: the team can still edit and publish it.
+          <Row gap={space.sm} wrap>
+            <Button label="Edit biodata" size="sm" kind="secondary" onPress={() => router.push({ pathname: '/admin/member-biodata', params: { profileId: p.id } })} testID="member-edit-biodata" />
+            <Button label={p.status === 'published' ? 'Review' : 'Review & publish'} size="sm" onPress={() => router.push({ pathname: '/admin/member-review', params: { profileId: p.id } })} testID="member-review" />
+          </Row>
+        ) : null}
+        {u.createdBy && u.claimedAt ? <Text variant="caption">{`The member signed in on ${formatDate(u.claimedAt, 'en')} and now manages this biodata.`}</Text> : null}
       </Card>
 
       {deleted ? (

@@ -1,4 +1,5 @@
 import { CodeLink } from '@/components/admin/CodeLink';
+import { router } from 'expo-router';
 import { View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
@@ -34,6 +35,7 @@ export default function AdminUsers() {
   return (
     <Screen header={<Header title="Users" />}>
       <View style={{ gap: space.sm, paddingTop: space.lg }}>
+        <Button label="Add a member" size="sm" arrow onPress={() => router.push('/admin/add-member')} style={{ alignSelf: 'flex-start' }} testID="users-add-member" />
         <Text variant="caption">Phone numbers are masked even for admins. Suspended members cannot log back in until reactivated.</Text>
         {isLoading ? (
           <Loading />
@@ -54,6 +56,7 @@ export default function AdminUsers() {
                     {u.role === 'master' ? <Badge label="master" tone="gold" /> : u.role === 'admin' ? <Badge label="sub-admin" tone="emerald" /> : null}
                     {u.profileStatus ? <Badge label={u.profileStatus} tone="muted" /> : <Badge label="no profile" tone="muted" />}
                     {u.deactivatedAt ? <Badge label={u.deactivatedBy === u.id ? 'deactivated by member' : 'suspended'} tone="danger" /> : null}
+                    {u.createdBy ? <Badge label={u.claimedAt ? 'added by team · claimed' : 'added by team'} tone="gold" /> : null}
                   </Row>
                 </Row>
                 <Text variant="caption">

@@ -12,13 +12,13 @@ const STRICT = process.argv.includes('--strict');
 
 const PUBLIC = ['/', '/language', '/login', '/login?next=biodata', '/recover', '/legal/privacy', '/legal/terms', '/legal/help', '/does-not-exist'];
 const MEMBER = ['/home', '/discover', '/boost', '/requests', '/dashboard', '/shortlist', '/activity', '/notifications', '/settings', '/filters', '/profile/p_2', '/profile/p_4', '/request/p_8', '/biodata', '/biodata?step=3', '/biodata/preview', '/pin?mode=change&next=/settings'];
-const ADMIN = ['/admin', '/admin/search', '/admin/alerts', '/admin/profiles', '/admin/users', '/admin/requests', '/admin/reports', '/admin/announcements', '/admin/pricing', '/admin/orders', '/admin/trash', '/admin/audit', '/admin/team', '/admin/member/u_2', '/settings', '/notifications'];
+const ADMIN = ['/admin', '/admin/add-member', '/admin/search', '/admin/alerts', '/admin/profiles', '/admin/users', '/admin/requests', '/admin/reports', '/admin/announcements', '/admin/pricing', '/admin/orders', '/admin/trash', '/admin/audit', '/admin/team', '/admin/member/u_2', '/settings', '/notifications'];
 const ROLES = [
   { name: 'visitor', phone: null, routes: PUBLIC },
   { name: 'new-member', phone: '9812300001', routes: ['/home', '/discover', '/boost', '/requests', '/dashboard', '/shortlist', '/settings', '/biodata'] },
   { name: 'member', phone: '9000000001', routes: MEMBER },
   { name: 'master', phone: '9000000000', routes: ADMIN },
-  { name: 'sub-admin', phone: '9000000009', routes: ['/admin', '/admin/team', '/admin/pricing', '/admin/trash', '/admin/member/u_2'] },
+  { name: 'sub-admin', phone: '9000000009', routes: ['/admin', '/admin/add-member', '/admin/team', '/admin/pricing', '/admin/trash', '/admin/member/u_2'] },
 ];
 const WIDTHS = [360, 320];
 const LANGS = ['en', 'ur'];

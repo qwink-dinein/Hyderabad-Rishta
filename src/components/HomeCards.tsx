@@ -14,6 +14,27 @@ import { Icon, type IconName } from './ui/Icon';
 import { Row } from './ui/layout';
 import { Text } from './ui/Text';
 
+/** Home: the team entered this biodata for the member (admin "add a member"); ask them to review it once. */
+export function TeamCreatedNote() {
+  const { t } = useTranslation();
+  const { data: me } = useMyProfile();
+  if (!me?.createdByAdminId || me.ownerReviewedAt) return null;
+  return (
+    <View style={[styles.boost, { backgroundColor: colors.sage, borderColor: colors.emerald }]} testID="team-created-note">
+      <Row gap={space.md} style={{ alignItems: 'flex-start' }}>
+        <View style={[styles.crown, { backgroundColor: colors.emerald }]}>
+          <Icon name="sparkle" size={20} color={colors.white} />
+        </View>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text variant="bodyStrong">{t('teamNote.title')}</Text>
+          <Text variant="caption">{t('teamNote.body')}</Text>
+        </View>
+      </Row>
+      <Button label={t('teamNote.cta')} size="sm" arrow onPress={() => router.push({ pathname: '/biodata', params: { step: '0' } })} style={{ alignSelf: 'flex-start' }} testID="team-created-review" />
+    </View>
+  );
+}
+
 /** Home: real completion from the saved biodata; opens the first section that still needs details. */
 export function CompletionCard() {
   const { t } = useTranslation();

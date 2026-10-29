@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useUiLang, useUiT } from '@/i18n/uiLang';
 import * as O from '@/domain/options';
 import { formatHeight } from '@/domain/format';
 import type { Option } from '@/components/ui/forms';
@@ -30,7 +30,9 @@ const SOURCES: Record<Group, readonly string[]> = {
 
 /** Translated option lists. Re-computed when the language changes. */
 export function useOptions() {
-  const { t, i18n } = useTranslation();
+  // Follows the area's language: English inside the admin console, the member's language elsewhere.
+  const t = useUiT();
+  const lang = useUiLang();
   return useMemo(() => {
     const opts = (g: Group): Option[] => SOURCES[g].map((v) => ({ value: v, label: t(`opt.${g}.${v}`) }));
     const label = (g: Group, v?: string, other?: string) => {
@@ -53,5 +55,5 @@ export function useOptions() {
     };
     return { opts, label, heights, ages, plain, subMaslakOpts, maslakLabel };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [t, i18n.language]);
+  }, [t, lang]);
 }

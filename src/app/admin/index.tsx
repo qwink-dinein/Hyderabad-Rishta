@@ -17,6 +17,7 @@ import { colors, radius, space } from '@/theme/tokens';
 
 type NavItem = { href: Href; icon: IconName; label: string; desc: string; masterOnly?: boolean };
 const NAV: NavItem[] = [
+  { href: '/admin/add-member', icon: 'plus', label: 'Add a member', desc: 'Create a biodata for any phone number — no OTP. The owner gets it when they log in' },
   { href: '/admin/search', icon: 'search', label: 'Find a member', desc: 'Search by profile ID (HR-10023), name, city or phone' },
   { href: '/admin/alerts', icon: 'bell', label: 'Alerts', desc: 'Reports, payments, approvals, deletions, security' },
   { href: '/admin/profiles', icon: 'user', label: 'Profiles', desc: 'Approve, reject, pause, resume, remove photos, delete' },

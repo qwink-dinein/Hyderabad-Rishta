@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { BrandMark } from '@/components/art/Illustrations';
 import { ProfileCard, ProfileCardSkeleton } from '@/components/ProfileCard';
-import { ActivityStats, BoostPromoCard, CompletionCard } from '@/components/HomeCards';
+import { ActivityStats, BoostPromoCard, CompletionCard, TeamCreatedNote } from '@/components/HomeCards';
 import { PushPrompt } from '@/components/PushSettings';
 import { TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
@@ -128,6 +128,7 @@ export default function Home() {
           ) : null}
 
           {/* Owner PRD 2026-10-29: completion, then real activity, then Boost (when it applies). */}
+          <TeamCreatedNote />
           <CompletionCard />
           <ActivityStats />
           <BoostPromoCard />
