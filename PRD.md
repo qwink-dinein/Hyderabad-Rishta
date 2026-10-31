@@ -336,3 +336,17 @@ Users can register and complete biodata · photos optional, up to three · "Othe
 | 12 | Tests: two demo accounts — accept, decline, withdrawn offers, expiry, repeated pokes, blocking, simultaneous actions | ✅ | `__tests__/interest.test.ts` (21), `supabase/tests/30_interest.test.sql`, `e2e/interest.js` |
 
 Design decision (not in the feature PRD, flagged for owner review): after a **decline**, the same sender can't re-send to that person for **30 days** (anti-harassment).
+
+### 15.12 Persistent profile rotation in Discover (owner Mini PRD, 2026-10-31)
+- **Persistent position:** each member has a server-stored feed per filter set (stable order, cursor pages), shared by all their devices and kept across app restarts and logins. Reopening continues with the next unseen profile; loaded cards never move.
+- **Real impressions only:** a card counts as seen when ≥ 50 % of it is on screen for ≥ 1 s. Opening the full profile is recorded separately. Shortlist and interest are recorded too. One row per member and profile, so repeats never inflate numbers; repeats within 30 minutes are ignored.
+- **Cooldowns (admin-configurable, Pricing → Discover rotation):**
+  - seen card: 3 days
+  - opened profile: 7 days
+  - shortlisted and actively requested (pending/accepted) profiles leave normal Discover but stay in Shortlist and Requests
+  - blocked or ineligible profiles never appear
+  - after its cooldown a profile may return, after everything unseen
+- **Ranking:** ~40 % new · 30 % matching the member's partner preferences · 20 % other unseen · 10 % boosted, per ten cards, adjusting when a group runs out. Boost never bypasses filters, privacy or eligibility.
+- **New profiles:** "N new profiles since your last visit" opens a separate list without moving the main browsing position.
+- **Refresh and empty states:** Refresh Discover rebuilds the feed (new eligible profiles in, seen ones out). When everything is seen: "You've caught up with all available profiles for now. New profiles will appear here as they are published."
+- **Scope of rotation:** explicit keyword searches and "shortlisted only" show every match. The Featured strip keeps its own fair daily rotation.

@@ -80,6 +80,7 @@
 | T-073 | QA round 2: click-through of every remaining button/flow; fixes (aria state app-wide, Filters→Discover, block list names, revoked-session handling, crash screen) | ✅ |
 | T-075 | No photo → owner-supplied Hyderabadi bride/groom portrait (cropped to `assets/personas/*.webp`) instead of the initial letter, everywhere `ProfilePhoto` is used (Discover, Home featured, Shortlist, Requests, connection screen, profile page, preview); photo wins; removal restores; load-failure fallbacks; `e2e/personas.js` | ✅ |
 | T-076 | Discover: filter button beside the search box (same as Home) with an active-filter count badge | ✅ |
+| T-091 | Discover persistent rotation (owner Mini PRD): shared engine, demo + live (tables, RPCs, discover-feed function), real impressions (50 % / 1 s), cooldowns configurable, blend, new-since-last-visit, Refresh, caught-up state, EN/UR/TE, tests + e2e | ✅ |
 | T-087 | Supabase adapter (whole Backend contract) + member/admin server functions + photo-urls + delete-account + pricing rules fix + pg_cron jobs + eas.json profiles; live end-to-end test (needs test phone numbers) | ✅ code; ⏳ owner: dashboard phone provider + test numbers, then live test |
 | T-088 | Payments (paid boosts/publication): provider decision (Apple/Google in-app purchase vs Razorpay on web) + webhook function | ⏳ owner decision |
 | T-089 | Push sending: deploy `push-dispatch`, FCM + APNs keys, cron | ⏳ needs owner accounts |

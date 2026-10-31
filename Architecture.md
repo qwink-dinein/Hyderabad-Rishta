@@ -462,3 +462,22 @@ Normal returning login never sends one.
 - **Errors:** SQL raises the app's error codes as messages; `map.ts#toAppError` maps them (and SQLSTATEs) to `AppError`.
 - **Gaps:** `completePayment` throws `fee_disabled` until the payment provider; backup-phone verification; team-added photos.
 - **Tests:** `supabaseMap.test.ts` (mapping, errors, chunked storage), Edge Function cores (`photoUrlsEdge`, `deleteAccountEdge`, …), SQL suites `99_member_api`, `99_admin_api`, live `__tests__/live/supabaseLive.test.ts`.
+
+## 25. Discover rotation (2026-10-31)
+- **Engine:** `src/domain/feed.ts`, pure and shared. It holds the filter-set key, cooldowns, exclusions, the 40/30/20/10 blend, returning profiles, snapshots, cursors, new-since-last-visit and the `serveFeed` orchestrator.
+  - **Demo:** `DemoBackend.getDiscoverFeed` runs it on `discoverCandidates()`, which is the same eligibility and privacy projection as search.
+  - **Live:** the Edge Function `discover-feed` runs the synced copy (`scripts/sync-shared.js` → `supabase/functions/_shared/{types,options,search,feed}.ts`) on the member's own `search_profiles` results (their JWT). Server-generated, identical ordering.
+- **Storage (live):**
+  - `profile_seen`: one row per viewer and profile; impressions, views, interaction; own-read RLS; written only by `record_impressions` and triggers on `view_events`, `shortlists` and `contact_requests`.
+  - `feed_state`: snapshot per filter set; 20 per member.
+  - `get_feed_context`, `save_feed_state`.
+  - Cooldown columns on `pricing_config`; `run_feed_retention` daily.
+- **App:**
+  - `useDiscoverFeed` (cursor infinite query; `refresh()` rebuilds server-side).
+  - `useImpressions` (FlatList viewability `itemVisiblePercentThreshold: 50, minimumViewTime: 1000`, batched every 2 s and on background).
+  - The Discover screen shows the new-since chip and view, Refresh, the caught-up state, and dedupes ids across pages.
+- **Tests:**
+  - `__tests__/discoverFeed.test.ts`: engine plus all acceptance criteria on the demo, with clock, restarts, logins and multiple devices.
+  - `__tests__/discoverFeedEdge.test.ts`
+  - SQL `99_discover_rotation`
+  - e2e `rotation.js`

@@ -11,7 +11,7 @@ export type IconName =
   | 'chevronDown' | 'close' | 'check' | 'camera' | 'lock' | 'shield' | 'globe' | 'settings' | 'star' | 'eye' | 'phone'
   | 'flag' | 'ban' | 'plus' | 'pause' | 'play' | 'sparkle' | 'home' | 'chart'
   | 'arrowRight' | 'arrowLeft' | 'message' | 'mapPin' | 'briefcase' | 'cap' | 'ruler' | 'volume' | 'vibrate' | 'help' | 'info' | 'compass' | 'clock'
-  | 'crown' | 'edit' | 'sliders' | 'image';
+  | 'crown' | 'edit' | 'sliders' | 'image' | 'refresh';
 
 const PATHS: Record<IconName, string> = {
   heart: 'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z',
@@ -43,6 +43,7 @@ const PATHS: Record<IconName, string> = {
   sparkle: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16z',
   home: 'M4 11l8-7 8 7v9h-5v-6h-6v6H4z',
   chart: 'M4 20V10m6 10V4m6 16v-7m4 7H3',
+  refresh: 'M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7',
   arrowRight: 'M5 12h14m-5-5 5 5-5 5',
   arrowLeft: 'M19 12H5m5-5-5 5 5 5',
   message: 'M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-8l-4 3v-3H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm3 5h8m-8 3h5',

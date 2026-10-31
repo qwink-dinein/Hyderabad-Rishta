@@ -190,6 +190,8 @@ export interface FeedPage<T = PublicProfile> {
   newSinceLastVisit: number;
   /** Nothing unseen left: "You've caught up…". */
   caughtUp: boolean;
+  /** Profiles matching these filters at all (seen or not) — tells "no matches" apart from "caught up". */
+  total?: number;
 }
 
 /**
@@ -258,6 +260,7 @@ export async function serveFeed(filters: SearchFilters, req: FeedRequest, deps: 
         remaining: fresh(snap.ids, nextOffset ?? snap.ids.length),
         newSinceLastVisit: newSinceLastVisit(candidates, ctx).length,
         caughtUp: nextOffset == null,
+        total: eligible.size,
       };
     }
   }
@@ -285,5 +288,6 @@ export async function serveFeed(filters: SearchFilters, req: FeedRequest, deps: 
     remaining: fresh(snap.ids, nextOffset ?? snap.ids.length),
     newSinceLastVisit: view === 'all' ? newSinceLastVisit(candidates, ctx).length : 0,
     caughtUp: nextOffset == null,
+    total: eligible.size,
   };
 }

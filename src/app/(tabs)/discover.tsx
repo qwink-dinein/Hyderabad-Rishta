@@ -12,8 +12,10 @@ import { Row } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { formatHeight } from '@/domain/format';
 import { activeFilterCount, EMPTY_FILTERS, filtersFromPreferences, type SearchFilters } from '@/domain/search';
+import type { FeedView } from '@/domain/feed';
 import type { PublicProfile } from '@/domain/types';
-import { useFeatured, useMyProfile, useSearch, useShortlistIds, useToggleShortlist } from '@/hooks/queries';
+import { useFeatured, useMyProfile, useShortlistIds, useToggleShortlist } from '@/hooks/queries';
+import { useDiscoverFeed, useImpressions } from '@/hooks/useDiscoverFeed';
 import { useOptions } from '@/hooks/useOptions';
 import { backendInfo } from '@/services';
 import { useFilters } from '@/state/filters';
@@ -25,14 +27,27 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Chip = { key: string; label: string; remove: () => void };
 
-/** Discovery list with removable filter chips, counts and incremental loading (PRD §9). */
+/**
+ * Discovery list with removable filter chips and incremental loading (PRD §9), on the persistent rotation
+ * feed (owner Mini PRD 2026-10-31): continues past what was really seen, never moves loaded cards, offers the
+ * profiles new since the last visit, and says so when everything has been seen.
+ */
 export default function Discover() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { filters, setFilters, patch } = useFilters();
   const { data: me } = useMyProfile();
-  const search = useSearch(filters);
+  const [view, setView] = useState<FeedView>('all');
+  const search = useDiscoverFeed(filters, view);
+  const impressions = useImpressions();
+  // Changing filters starts that filter set's own feed (and leaves the "new" list).
+  const filtersSig = JSON.stringify(filters);
+  const [viewSig, setViewSig] = useState(filtersSig);
+  if (viewSig !== filtersSig) {
+    setViewSig(filtersSig);
+    setView('all');
+  }
   const featured = useFeatured();
   const { data: shortIds } = useShortlistIds();
   const toggle = useToggleShortlist();
@@ -47,8 +62,15 @@ export default function Discover() {
     setQ(filters.keyword ?? '');
   }
 
-  const items = useMemo(() => search.data?.pages.flatMap((p) => p.items) ?? [], [search.data]);
-  const total = search.data?.pages[0]?.total ?? 0;
+  const items = useMemo(() => {
+    // Pages never repeat a profile; this guards against a retried request appending a page twice.
+    const seen = new Set<string>();
+    return (search.data?.pages.flatMap((p) => p.items) ?? []).filter((p) => !seen.has(p.id) && !!seen.add(p.id));
+  }, [search.data]);
+  const firstPage = search.data?.pages[0];
+  const toDiscover = (firstPage?.items.length ?? 0) + (firstPage?.remaining ?? 0);
+  const newCount = view === 'all' ? firstPage?.newSinceLastVisit ?? 0 : 0;
+  const noMatches = firstPage?.total === 0;
   const columns = width >= 900 ? 2 : 1;
 
   const chips = useMemo<Chip[]>(() => {
@@ -92,7 +114,7 @@ export default function Discover() {
   const onToggle = useCallback((id: string) => toggle.mutate(id), [toggle]);
   const renderItem = useCallback(
     ({ item }: { item: PublicProfile }) => (
-      <View style={{ flex: 1 / columns, padding: space.sm }}>
+      <View style={{ flex: 1 / columns, padding: space.sm }} testID={`discover-card-${item.id}`}>
         <ProfileCard profile={item} shortlisted={shortSet.has(item.id)} onToggleShortlist={onToggle} onOpen={onOpen} />
       </View>
     ),
@@ -212,11 +234,43 @@ export default function Discover() {
           </Pressable>
         </View>
       ) : null}
-      {search.data ? (
-        <Text variant="label" color={colors.muted} accessibilityLiveRegion="polite">
-          {t('discover.count', { count: total })}
-        </Text>
+      {view === 'new' ? (
+        <Banner icon="sparkle">
+          <Text variant="caption" color={colors.emerald}>
+            {t('discover.viewingNew')}
+          </Text>
+          <Button label={t('discover.backToAll')} size="sm" kind="secondary" onPress={() => setView('all')} style={{ alignSelf: 'flex-start', marginTop: space.sm }} testID="discover-back-all" />
+        </Banner>
+      ) : newCount ? (
+        <Pressable onPress={() => setView('new')} accessibilityRole="button" style={styles.newChip} testID="discover-new-chip">
+          <Icon name="sparkle" size={16} color={colors.emerald} />
+          <Text variant="label" color={colors.emerald}>
+            {t('discover.newSince', { count: newCount })}
+          </Text>
+          <Icon name={isRTL(lang) ? 'chevronLeft' : 'chevronRight'} size={16} color={colors.emerald} />
+        </Pressable>
       ) : null}
+      {search.data ? (
+        <Row style={{ justifyContent: 'space-between' }} wrap>
+          <Text variant="label" color={colors.muted} accessibilityLiveRegion="polite" testID="discover-count">
+            {t('discover.toDiscover', { count: toDiscover })}
+          </Text>
+          <Button label={t('discover.refresh')} size="sm" kind="ghost" icon={<Icon name="refresh" size={16} color={colors.emerald} />} onPress={() => void search.refresh()} testID="discover-refresh" />
+        </Row>
+      ) : null}
+    </View>
+  );
+
+  const caughtUp = (
+    <View style={{ padding: space.xl, gap: space.sm, alignItems: 'center' }} testID="discover-caught-up">
+      <Icon name="check" size={28} color={colors.emerald} />
+      <Text variant="h3" center>
+        {t('discover.caughtUpTitle')}
+      </Text>
+      <Text variant="caption" center>
+        {t('discover.caughtUpBody')}
+      </Text>
+      <Button label={t('discover.refresh')} size="sm" kind="secondary" icon={<Icon name="refresh" size={16} color={colors.emerald} />} onPress={() => void search.refresh()} />
     </View>
   );
 
@@ -251,24 +305,28 @@ export default function Discover() {
           maxToRenderPerBatch={6}
           windowSize={7}
           removeClippedSubviews
-          refreshControl={<RefreshControl refreshing={search.isRefetching && !search.isFetchingNextPage} onRefresh={() => void search.refetch()} tintColor={colors.emerald} />}
+          onViewableItemsChanged={impressions.onViewableItemsChanged}
+          viewabilityConfig={impressions.viewabilityConfig}
+          refreshControl={<RefreshControl refreshing={search.isRefetching && !search.isFetchingNextPage} onRefresh={() => void search.refresh()} tintColor={colors.emerald} />}
           ListEmptyComponent={
-            <EmptyState
-              icon="search"
-              title={t('discover.empty')}
-              body={t('discover.emptyHint')}
-              action={chips.length ? <Button label={t('discover.clearFilters')} kind="secondary" size="sm" onPress={() => setFilters({ ...EMPTY_FILTERS, sort: filters.sort })} /> : undefined}
-            />
+            noMatches ? (
+              <EmptyState
+                icon="search"
+                title={t('discover.empty')}
+                body={t('discover.emptyHint')}
+                action={chips.length ? <Button label={t('discover.clearFilters')} kind="secondary" size="sm" onPress={() => setFilters({ ...EMPTY_FILTERS, sort: filters.sort })} /> : undefined}
+              />
+            ) : (
+              caughtUp
+            )
           }
           ListFooterComponent={
             items.length ? (
               search.isFetchingNextPage ? (
                 <Loading />
               ) : !search.hasNextPage ? (
-                <View style={{ padding: space.xl, gap: space.xs }}>
-                  <Text variant="caption" center>
-                    {t('discover.endOfList')}
-                  </Text>
+                <View>
+                  {caughtUp}
                   <Text variant="caption" center>
                     {t('discover.boostedNote')}
                   </Text>
@@ -290,6 +348,18 @@ const styles = StyleSheet.create({
   search: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 48, paddingHorizontal: space.md, borderRadius: radius.md, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
   searchInput: { flex: 1, fontSize: 16, color: colors.charcoal, paddingVertical: space.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },
+  newChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    alignSelf: 'flex-start',
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.sage,
+    borderWidth: 1,
+    borderColor: colors.emerald,
+  },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',

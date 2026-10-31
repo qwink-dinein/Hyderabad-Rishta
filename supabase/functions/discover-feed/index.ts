@@ -28,7 +28,9 @@ Deno.serve(async (req) => {
     return Response.json(r.body, { status: r.status });
   } catch (e) {
     const msg = (e as Error).message ?? '';
-    if (/unauthenticated|JWT/i.test(msg)) return Response.json({ error: 'unauthenticated' }, { status: 401 });
+    const status = (e as { status?: number }).status;
+    // A public-key call (no member) is refused by the database with "permission denied".
+    if (status === 401 || /unauthenticated|JWT|permission denied/i.test(msg)) return Response.json({ error: 'unauthenticated' }, { status: 401 });
     if (/forbidden/i.test(msg)) return Response.json({ error: 'forbidden' }, { status: 403 });
     return Response.json({ error: 'unavailable' }, { status: 503 });
   }
