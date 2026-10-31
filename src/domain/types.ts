@@ -298,6 +298,9 @@ export interface PricingConfig {
   requestExpiryDays: number;
   pokeWaitHours: number;
   pokeMaxPer7Days: number;
+  /** Discover rotation: days a seen card stays out of normal Discover, and an opened profile. */
+  feedImpressionCooldownDays: number;
+  feedViewCooldownDays: number;
   updatedAt: string;
   updatedBy?: string;
 }

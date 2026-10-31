@@ -1,3 +1,4 @@
+import type { FeedPage, FeedRequest } from '@/domain/feed';
 import type { SearchFilters } from '@/domain/search';
 import type { AnnouncementStats } from '@/domain/metrics';
 import type {
@@ -277,6 +278,13 @@ export interface Backend {
 
   // discovery
   searchProfiles(filters: SearchFilters, page: number, pageSize?: number): Promise<Page<PublicProfile>>;
+  /**
+   * Discover's persistent rotation (owner Mini PRD 2026-10-31): a stable, server-generated order per filter
+   * set, resumed on reopen and shared across devices; seen profiles cool down (see domain/feed.ts).
+   */
+  getDiscoverFeed(filters: SearchFilters, req: FeedRequest): Promise<FeedPage>;
+  /** Cards that were really seen (≥ 50 % visible for ≥ 1 s). Duplicates within 30 minutes are ignored. */
+  recordImpressions(profileIds: string[]): Promise<void>;
   getProfile(profileId: string): Promise<PublicProfile>;
   getShortlistIds(): Promise<string[]>;
   getShortlist(): Promise<PublicProfile[]>;

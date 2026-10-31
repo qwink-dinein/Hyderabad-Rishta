@@ -196,6 +196,8 @@ export function mapPricing(r: Row): PricingConfig {
     requestExpiryDays: n(r.request_expiry_days) ?? DEFAULT_PRICING.requestExpiryDays,
     pokeWaitHours: n(r.poke_wait_hours) ?? DEFAULT_PRICING.pokeWaitHours,
     pokeMaxPer7Days: n(r.poke_max_per_7_days) ?? DEFAULT_PRICING.pokeMaxPer7Days,
+    feedImpressionCooldownDays: n(r.feed_impression_cooldown_days) ?? DEFAULT_PRICING.feedImpressionCooldownDays,
+    feedViewCooldownDays: n(r.feed_view_cooldown_days) ?? DEFAULT_PRICING.feedViewCooldownDays,
     updatedAt: String(r.updated_at ?? new Date(0).toISOString()),
     updatedBy: s(r.updated_by),
   });

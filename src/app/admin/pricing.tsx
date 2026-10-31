@@ -136,6 +136,20 @@ export default function AdminPricing() {
           ))}
         </Card>
       </Section>
+      <Section title="Discover rotation">
+        <Card style={{ gap: space.sm }}>
+          {(
+            [
+              ['feedImpressionCooldownDays', 'A seen card leaves Discover for (days)', '0–60. A card counts as seen after it was at least half on screen for a second.'],
+              ['feedViewCooldownDays', 'An opened profile leaves Discover for (days)', '0–90. After this it may return, after all unseen profiles.'],
+            ] as const
+          ).map(([key, label, hint]) => (
+            <Field key={key} label={label} hint={hint}>
+              <TextField value={String(cfg[key] ?? '')} onChangeText={(v) => setCfg({ ...cfg, [key]: Number(v.replace(/\D/g, '')) || 0 })} keyboardType="number-pad" accessibilityLabel={label} testID={`pricing-${key}`} />
+            </Field>
+          ))}
+        </Card>
+      </Section>
       <Section title="Publication workflow">
         <ToggleRow label="Require admin approval before publishing" value={cfg.requireApproval} onChange={(v) => setCfg({ ...cfg, requireApproval: v })} hint="Off: profiles go live as soon as they are submitted (and paid, if applicable)." />
       </Section>

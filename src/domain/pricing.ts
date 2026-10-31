@@ -25,6 +25,8 @@ export const DEFAULT_PRICING: PricingConfig = {
   requestExpiryDays: 14,
   pokeWaitHours: 48,
   pokeMaxPer7Days: 2,
+  feedImpressionCooldownDays: 3,
+  feedViewCooldownDays: 7,
   updatedAt: new Date(0).toISOString(),
 };
 
@@ -136,6 +138,8 @@ export function validatePricing(cfg: PricingConfig): string[] {
   if (!Number.isInteger(cfg.requestExpiryDays) || cfg.requestExpiryDays < 1 || cfg.requestExpiryDays > 90) errors.push('Request expiry must be 1–90 days');
   if (!Number.isInteger(cfg.pokeWaitHours) || cfg.pokeWaitHours < 1 || cfg.pokeWaitHours > 336) errors.push('Reminder wait must be 1–336 hours');
   if (!Number.isInteger(cfg.pokeMaxPer7Days) || cfg.pokeMaxPer7Days < 0 || cfg.pokeMaxPer7Days > 7) errors.push('Reminders per person per 7 days must be 0–7');
+  if (!Number.isInteger(cfg.feedImpressionCooldownDays) || cfg.feedImpressionCooldownDays < 0 || cfg.feedImpressionCooldownDays > 60) errors.push('Seen-card cooldown must be 0–60 days');
+  if (!Number.isInteger(cfg.feedViewCooldownDays) || cfg.feedViewCooldownDays < 0 || cfg.feedViewCooldownDays > 90) errors.push('Opened-profile cooldown must be 0–90 days');
   return errors;
 }
 

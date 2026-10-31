@@ -4,7 +4,8 @@ import { afterWrongPin, attemptsLeft, PIN_OTP_WINDOW_MS, pinProblem, SESSION_IDL
 import { DECLINE_COOLDOWN_DAYS, isActiveRequest, PHONE_CONSENT_TEXT, pokeEligibility, sanitizeMessage } from '@/domain/connections';
 import { displayNameFor, maskPhone, uid } from '@/domain/format';
 import { announcementStats, audienceFor, dashboardMetrics, isAnnouncementLive } from '@/domain/metrics';
-import { resolvePricing, syncBoostSummary, validatePricing, withBoostPlans } from '@/domain/pricing';
+import { DEFAULT_PRICING, resolvePricing, syncBoostSummary, validatePricing, withBoostPlans } from '@/domain/pricing';
+import { DEFAULT_FEED_CONFIG, serveFeed, type FeedPage, type FeedRequest, type FeedSnapshot, type SeenRecord } from '@/domain/feed';
 import { isBoostActive, mergeScopes, NO_CONSENT, profileTypeOf, projectProfile } from '@/domain/privacy';
 import { matchesFilters, sortProfiles, type SearchFilters } from '@/domain/search';
 import { boostNoticeDue, BOOST_ENDING_NOTICE_MS, boostReminderDue, dayKey, isFeaturable, rotateFeatured } from '@/domain/featured';
@@ -136,6 +137,10 @@ export interface DemoDb {
   boostImpressions: BoostImpression[];
   /** `${shortlisterId}:${profileId}` pairs already notified (re-toggling never re-notifies). */
   shortlistNotified: string[];
+  /** Discover rotation: what each member has really seen (impressions, opened, shortlist/interest). */
+  seen: (SeenRecord & { viewerId: string; impressions: number })[];
+  /** Discover rotation: one stored feed per member and filter set (stable order, resumable). */
+  feedStates: (FeedSnapshot & { userId: string })[];
 }
 
 const SCHEMA_VERSION = 8;
@@ -189,6 +194,8 @@ export function freshDb(now = new Date()): DemoDb {
     pushOutbox: [],
     boostImpressions: [],
     shortlistNotified: [],
+    seen: [],
+    feedStates: [],
     sessions: [],
     devices: [],
     pins: [],
@@ -255,6 +262,11 @@ export class DemoBackend implements Backend {
         d.sessions ??= [];
         d.devices ??= [];
         d.pins ??= [];
+        // Discover rotation (2026-10-31): new collections and cooldown settings, added in place.
+        d.seen ??= [];
+        d.feedStates ??= [];
+        d.pricing.feedImpressionCooldownDays ??= DEFAULT_PRICING.feedImpressionCooldownDays;
+        d.pricing.feedViewCooldownDays ??= DEFAULT_PRICING.feedViewCooldownDays;
         if (d.sessionUserId) {
           if (!this.currentSession(d) && d.users.some((u) => u.id === d.sessionUserId)) this.startSession(d, d.sessionUserId, {});
           d.sessionUserId = undefined;
@@ -630,6 +642,9 @@ export class DemoBackend implements Backend {
       });
     }
     db.idem = db.idem.filter((x) => now - new Date(x.at).getTime() < 86400000);
+    // Rotation history only matters while a cooldown can apply; old feed snapshots are rebuilt anyway.
+    if (db.seen.length > 5000) db.seen = db.seen.filter((x) => now - new Date([x.impressedAt ?? '', x.viewedAt ?? '', x.interactedAt ?? ''].sort().pop() || 0).getTime() < 180 * 86400000);
+    db.feedStates = db.feedStates.filter((x) => now - new Date(x.openedAt).getTime() < 7 * 86400000);
     db.sessions = db.sessions.filter((x) => !x.revokedAt || now - new Date(x.revokedAt).getTime() < 30 * 86400000);
     db.otps = db.otps.filter((o) => now - o.issuedAt < OTP_TTL_MS || o.resends.some((t) => now - t < OTP_TTL_MS));
     if (db.analytics.length > MAX_ANALYTICS) db.analytics = db.analytics.slice(-MAX_ANALYTICS);
@@ -1149,6 +1164,90 @@ export class DemoBackend implements Backend {
     });
   }
 
+  /** Discover rotation history: one row per viewer and profile, updated in place (no inflation). */
+  private markSeen(db: DemoDb, viewerId: string, profileId: string, patch: Partial<SeenRecord>, countImpression = false) {
+    let row = db.seen.find((x) => x.viewerId === viewerId && x.profileId === profileId);
+    if (!row) {
+      row = { viewerId, profileId, impressions: 0 };
+      db.seen.push(row);
+    }
+    Object.assign(row, patch);
+    if (countImpression) row.impressions++;
+  }
+
+  /** Every profile this member may see under these filters (privacy-projected), for the feed engine. */
+  private discoverCandidates(db: DemoDb, u: User, filters: SearchFilters) {
+    const ctx = this.viewerContext(db, u);
+    const shortlisted = new Set(db.shortlists.filter((s) => s.userId === u.id).map((s) => s.profileId));
+    const f = { ...filters, show: filters.show ?? ctx.mine?.biodata.basic.lookingFor };
+    return db.profiles
+      .filter((p) => {
+        if (p.userId === u.id || p.status !== 'published' || p.deletedAt) return false;
+        const owner = ctx.users.get(p.userId);
+        return !!owner && !owner.deactivatedAt && !owner.deletedAt && !ctx.blocked(p);
+      })
+      .map((p) => ({ ...ctx.project(p), contact: undefined, relation: ctx.relation(p) }))
+      .filter((p) => matchesFilters(p, f, { shortlisted, now: this.now() }));
+  }
+
+  getDiscoverFeed(filters: SearchFilters, req: FeedRequest): Promise<FeedPage> {
+    return this.run((db) => {
+      const u = this.me(db);
+      const f = { ...filters, show: filters.show ?? this.myProfile(db, u.id)?.biodata.basic.lookingFor };
+      return serveFeed(f, req, {
+        candidates: async () => this.discoverCandidates(db, u, f),
+        context: async () => {
+          const mine = this.myProfile(db, u.id);
+          const active = new Set<string>();
+          if (mine) {
+            for (const r of db.requests) {
+              if (r.status !== 'pending' && r.status !== 'accepted') continue;
+              if (r.fromProfileId === mine.id) active.add(r.toProfileId);
+              else if (r.toProfileId === mine.id) active.add(r.fromProfileId);
+            }
+          }
+          return {
+            viewerId: u.id,
+            seen: new Map(db.seen.filter((x) => x.viewerId === u.id).map((x) => [x.profileId, x])),
+            shortlisted: new Set(db.shortlists.filter((x) => x.userId === u.id).map((x) => x.profileId)),
+            activeRequests: active,
+            prefs: mine?.biodata.preferences,
+            cfg: { ...DEFAULT_FEED_CONFIG, impressionCooldownDays: db.pricing.feedImpressionCooldownDays, viewCooldownDays: db.pricing.feedViewCooldownDays },
+          };
+        },
+        loadSnapshot: async (key) => db.feedStates.find((x) => x.userId === u.id && x.key === key),
+        saveSnapshot: async (snap) => {
+          db.feedStates = [{ ...snap, userId: u.id }, ...db.feedStates.filter((x) => !(x.userId === u.id && x.key === snap.key))];
+          // Keep the 20 most recent filter sets per member.
+          const mineStates = db.feedStates.filter((x) => x.userId === u.id);
+          if (mineStates.length > 20) {
+            const drop = new Set(mineStates.slice(20).map((x) => x.key));
+            db.feedStates = db.feedStates.filter((x) => x.userId !== u.id || !drop.has(x.key));
+          }
+        },
+        newSessionId: () => uid('fs_'),
+        now: () => this.now(),
+      });
+    }, true);
+  }
+
+  recordImpressions(profileIds: string[]) {
+    return this.run((db) => {
+      const u = this.me(db);
+      if (!Array.isArray(profileIds) || profileIds.length > 100) throw new AppError('validation');
+      const nowMs = this.now().getTime();
+      for (const id of new Set(profileIds)) {
+        if (typeof id !== 'string') continue;
+        const p = db.profiles.find((x) => x.id === id && !x.deletedAt && x.status === 'published');
+        if (!p || p.userId === u.id) continue;
+        const row = db.seen.find((x) => x.viewerId === u.id && x.profileId === id);
+        // The same card seen again within 30 minutes is one impression, not many.
+        if (row?.impressedAt && nowMs - new Date(row.impressedAt).getTime() < VIEW_DEDUPE_MS) continue;
+        this.markSeen(db, u.id, id, { impressedAt: this.iso() }, true);
+      }
+    }, true);
+  }
+
   getProfile(profileId: string) {
     return this.run((db) => {
       const u = this.me(db);
@@ -1159,6 +1258,7 @@ export class DemoBackend implements Backend {
         const recent = db.views.some((v) => v.profileId === p.id && v.viewerUserId === u.id && nowMs - new Date(v.at).getTime() < VIEW_DEDUPE_MS);
         if (!recent) {
           db.views.push({ profileId: p.id, viewerUserId: u.id, at: this.iso() });
+          this.markSeen(db, u.id, p.id, { viewedAt: this.iso() });
           this.noticeViews(db, p);
         }
       }
@@ -1263,6 +1363,7 @@ export class DemoBackend implements Backend {
         return false;
       }
       db.shortlists.push({ userId: u.id, profileId, createdAt: this.iso() });
+      this.markSeen(db, u.id, profileId, { interaction: 'shortlist', interactedAt: this.iso() });
       // Anonymous "someone shortlisted you" — once per person, ever (un-/re-shortlisting never re-notifies).
       const key = `${u.id}:${profileId}`;
       const target = db.profiles.find((x) => x.id === profileId);
@@ -1308,6 +1409,7 @@ export class DemoBackend implements Backend {
         expiresAt: new Date(this.now().getTime() + db.pricing.requestExpiryDays * 86400000).toISOString(), pokes: [],
       };
       db.requests.unshift(req);
+      this.markSeen(db, u.id, target.id, { interaction: 'interest', interactedAt: this.iso() });
       if (input.offerPhone) {
         db.phoneOffers.push({ id: uid('po_'), requestId: req.id, fromUserId: u.id, toUserId: target.userId, status: 'offered', withInterest: true, consentText: PHONE_CONSENT_TEXT, consentAt: this.iso(), createdAt: this.iso() });
         this.audit(db, u.id, 'phone.offered', req.id, { withInterest: true });

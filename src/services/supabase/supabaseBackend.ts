@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { pokeEligibility } from '@/domain/connections';
 import { randomToken } from '@/domain/crypto';
+import type { FeedPage, FeedRequest } from '@/domain/feed';
 import { maskPhone } from '@/domain/format';
 import { dashboardMetrics } from '@/domain/metrics';
 import { normalizePhone } from '@/domain/phone';
@@ -412,6 +413,18 @@ export class SupabaseBackend implements Backend {
     const start = page * pageSize;
     const items = await this.signPhotos(sorted.slice(start, start + pageSize));
     return { items, total: sorted.length, page, hasMore: start + pageSize < sorted.length };
+  }
+
+  /** Discover rotation: ordered and stored server-side by the discover-feed function (shared engine). */
+  async getDiscoverFeed(filters: SearchFilters, req: FeedRequest): Promise<FeedPage> {
+    const r = await this.functionCall<{ items: Row[]; nextCursor?: string; remaining: number; newSinceLastVisit: number; caughtUp: boolean }>('discover-feed', { filters, ...req });
+    if (!r.ok) throw new AppError(String(r.data.error ?? 'invalid_state') as AppError['code']);
+    return { ...r.data, items: await this.publicProfiles(r.data.items ?? []) };
+  }
+
+  async recordImpressions(profileIds: string[]) {
+    const ids = [...new Set(profileIds)].slice(0, 100);
+    if (ids.length) await this.rpc('record_impressions', { p_ids: ids });
   }
 
   async getProfile(profileId: string) {
