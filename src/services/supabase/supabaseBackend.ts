@@ -4,8 +4,13 @@ import { randomToken } from '@/domain/crypto';
 import { maskPhone } from '@/domain/format';
 import { dashboardMetrics } from '@/domain/metrics';
 import { normalizePhone } from '@/domain/phone';
+import type { AnnouncementStats } from '@/domain/metrics';
+import { syncBoostSummary, validatePricing } from '@/domain/pricing';
 import { matchesFilters, sortProfiles, type SearchFilters } from '@/domain/search';
 import type {
+  AdminMember,
+  Announcement,
+  AnnouncementSegment,
   Biodata,
   ConsentScopes,
   ContactRequest,
@@ -14,15 +19,34 @@ import type {
   Order,
   PhoneOffer,
   Photo,
+  PricingChange,
   PricingConfig,
   Profile,
+  ProfileStatus,
   PublicProfile,
   PushPrefs,
+  SecurityStatus,
   User,
 } from '@/domain/types';
-import { AppError, type Backend, type NotificationView, type OtpRequestResult, type Page, type PushSettings, type RequestView, type SendInterestInput } from '../backend';
+import {
+  AppError,
+  type AdminMemberDraft,
+  type AdminPhoneCheck,
+  type AdminStats,
+  type Backend,
+  type MemberDetail,
+  type MemberRow,
+  type NotificationView,
+  type OtpRequestResult,
+  type Page,
+  type PushSettings,
+  type RecipientRow,
+  type RequestView,
+  type SendInterestInput,
+  type TrashItem,
+} from '../backend';
 import type { KV } from '../storage';
-import { mapNotification, mapOffer, mapOrder, mapPricing, mapProfile, mapPublicProfile, mapRequest, mapUser, toAppError } from './map';
+import { mapAdminRequest, mapAnnouncement, mapNotification, mapOffer, mapOrder, mapPricing, mapProfile, mapPublicProfile, mapReport, mapRequest, mapUser, toAppError } from './map';
 
 type Row = Record<string, unknown>;
 
@@ -557,54 +581,221 @@ export class SupabaseBackend implements Backend {
     return cfg;
   }
 
-  // ---------- admin & master: next phase ----------
-  private notYet(): never {
-    throw new AppError('forbidden', 'Admin console is not connected to the live backend yet');
+  // ---------- admin console (every call re-checked by the database: is_admin / is_master) ----------
+  private async adminRows(fn: string, args: Record<string, unknown> = {}): Promise<Row[]> {
+    return (await this.rpc<Row[] | null>(fn, args)) ?? [];
   }
-  adminStats(): never { return this.notYet(); }
-  adminListProfiles(): never { return this.notYet(); }
-  adminSetProfileStatus(): never { return this.notYet(); }
-  adminListUsers(): never { return this.notYet(); }
-  adminSetUserDeactivated(): never { return this.notYet(); }
-  adminUpdatePricing(): never { return this.notYet(); }
-  adminPricingHistory(): never { return this.notYet(); }
-  adminListOrders(): never { return this.notYet(); }
-  adminListReports(): never { return this.notYet(); }
-  adminResolveReport(): never { return this.notYet(); }
-  adminListAnnouncements(): never { return this.notYet(); }
-  adminSaveAnnouncement(): never { return this.notYet(); }
-  adminPublishAnnouncement(): never { return this.notYet(); }
-  adminArchiveAnnouncement(): never { return this.notYet(); }
-  adminAudiencePreview(): never { return this.notYet(); }
-  adminRecipientReport(): never { return this.notYet(); }
-  adminAuditLog(): never { return this.notYet(); }
-  adminSearch(): never { return this.notYet(); }
-  adminGetMember(): never { return this.notYet(); }
-  adminCheckPhone(): never { return this.notYet(); }
-  adminCreateMember(): never { return this.notYet(); }
-  adminSaveMemberBiodata(): never { return this.notYet(); }
-  adminGetMemberDraft(): never { return this.notYet(); }
-  adminPublishMember(): never { return this.notYet(); }
-  adminSetRequireApproval(): never { return this.notYet(); }
-  adminApproveAllPending(): never { return this.notYet(); }
-  adminDeleteProfile(): never { return this.notYet(); }
-  adminRemovePhoto(): never { return this.notYet(); }
-  adminDeleteUser(): never { return this.notYet(); }
-  adminListRequests(): never { return this.notYet(); }
-  adminDeleteRequest(): never { return this.notYet(); }
-  adminDeleteReport(): never { return this.notYet(); }
-  adminDeleteAnnouncement(): never { return this.notYet(); }
-  adminCancelOrder(): never { return this.notYet(); }
-  adminListTrash(): never { return this.notYet(); }
-  masterRestore(): never { return this.notYet(); }
-  masterPurge(): never { return this.notYet(); }
-  masterListAdmins(): never { return this.notYet(); }
-  masterAddSubAdmin(): never { return this.notYet(); }
-  masterRemoveSubAdmin(): never { return this.notYet(); }
-  masterTransfer(): never { return this.notYet(); }
-  masterSecurityStatus(): never { return this.notYet(); }
-  masterGenerateRecoveryCodes(): never { return this.notYet(); }
-  masterSetBackupPhone(): never { return this.notYet(); }
-  masterCancelRecovery(): never { return this.notYet(); }
-  recoverMaster(): never { return this.notYet(); }
+  private async teamDraft(profileRow: Row): Promise<AdminMemberDraft> {
+    const profile = mapProfile(profileRow);
+    const { data: u } = await this.sb.from('app_users').select('country_code, phone, claimed_at').eq('id', profile.userId).maybeSingle();
+    return { profile, userId: profile.userId, phoneMasked: u ? `${u.country_code} ${maskPhone(String(u.phone))}` : '', claimed: !!u?.claimed_at };
+  }
+  /** Team-added biodata: photos are added by the member after they log in (Storage folders are per owner). */
+  private teamBiodata(b: Biodata): Biodata {
+    return { ...b, photos: (b.photos ?? []).filter((ph) => PHOTO_PATH.test(ph.uri)) };
+  }
+  /** Sensitive master actions need a fresh login: verifying the code sent to the caller's own phone refreshes it. */
+  private async stepUp(otp: string) {
+    const me = await this.currentUser();
+    if (!me) throw new AppError('unauthenticated');
+    const { error } = await this.sb.auth.verifyOtp({ phone: `${me.countryCode}${me.phone}`, token: String(otp), type: 'sms' });
+    if (error) throw new AppError('invalid_otp', error.message);
+  }
+
+  async adminStats() {
+    return this.rpc<AdminStats>('admin_stats');
+  }
+  async adminListProfiles(status?: ProfileStatus) {
+    return (await this.adminRows('admin_list_profiles', { p_status: status ?? null })).map((r) => ({ ...mapProfile(r), phoneMasked: String(r.phone_masked ?? '') }));
+  }
+  async adminSetProfileStatus(profileId: string, status: ProfileStatus, note?: string) {
+    return mapProfile(await this.rpc<Row>('admin_set_profile_status', { p_id: profileId, p_status: status, p_note: note ?? null }));
+  }
+  async adminListUsers() {
+    return (await this.adminRows('admin_list_users')).map((r) => ({ ...mapUser(r), profileStatus: (r.profile_status as ProfileStatus) ?? undefined, profileCode: (r.profile_code as string) ?? undefined }));
+  }
+  async adminSetUserDeactivated(userId: string, deactivated: boolean) {
+    await this.rpc('admin_set_user_deactivated', { p_id: userId, p_on: deactivated });
+  }
+  async adminUpdatePricing(cfg: PricingConfig) {
+    const errors = validatePricing(cfg);
+    if (errors.length) throw new AppError('validation', errors.join('; '));
+    const synced = syncBoostSummary(cfg);
+    const config = { publication: synced.publication, boost: synced.boost, boostPlans: synced.boostPlans };
+    const row = await this.rpc<Row>('admin_update_pricing', {
+      p_config: config, p_boost_days: synced.boostDays, p_require_approval: synced.requireApproval,
+      p_request_expiry_days: synced.requestExpiryDays, p_poke_wait_hours: synced.pokeWaitHours, p_poke_max_per_7_days: synced.pokeMaxPer7Days,
+    });
+    this.pricing = undefined;
+    return mapPricing(row);
+  }
+  async adminPricingHistory(): Promise<PricingChange[]> {
+    const { data, error } = await this.sb.from('pricing_history').select('*').order('at', { ascending: false }).limit(100);
+    if (error) throw toAppError(error);
+    return (data ?? []).map((r) => ({ id: String(r.id), adminId: String(r.admin_id ?? ''), before: mapPricing(r.before as Row), after: mapPricing(r.after as Row), at: String(r.at) }));
+  }
+  async adminListOrders() {
+    return (await this.adminRows('admin_list_orders')).map((r) => ({ ...mapOrder(r), profileCode: String(r.profile_code ?? '—') }));
+  }
+  async adminListReports() {
+    return (await this.adminRows('admin_list_reports')).map((r) => ({ ...mapReport(r), profileName: String(r.profile_name ?? '—'), profileCode: String(r.profile_code ?? '—'), profileUserId: (r.profile_user_id as string) ?? undefined }));
+  }
+  async adminResolveReport(reportId: string, status: 'resolved' | 'dismissed', pauseProfile?: boolean) {
+    await this.rpc('admin_resolve_report', { p_id: reportId, p_status: status, p_pause: !!pauseProfile });
+  }
+  async adminListAnnouncements() {
+    return (await this.adminRows('admin_list_announcements')).map((r) => ({ ...mapAnnouncement(r), stats: r.stats as AnnouncementStats }));
+  }
+  async adminSaveAnnouncement(a: Partial<Announcement> & Pick<Announcement, 'title' | 'body' | 'segment'>) {
+    return mapAnnouncement(await this.rpc<Row>('admin_save_announcement', { p: a }));
+  }
+  async adminPublishAnnouncement(id: string, scheduledAt?: string) {
+    return mapAnnouncement(await this.rpc<Row>('admin_publish_announcement', { p_id: id, p_at: scheduledAt ?? null }));
+  }
+  async adminArchiveAnnouncement(id: string) {
+    return mapAnnouncement(await this.rpc<Row>('admin_archive_announcement', { p_id: id }));
+  }
+  async adminAudiencePreview(segment: AnnouncementSegment) {
+    return this.rpc<number>('admin_audience_count', { p_segment: segment });
+  }
+  async adminRecipientReport(id: string): Promise<RecipientRow[]> {
+    return (await this.adminRows('admin_recipient_report', { p_announcement: id })).map((r) => ({
+      userId: String(r.user_id),
+      maskedPhone: String(r.masked_phone ?? ''),
+      delivery: { announcementId: id, userId: String(r.user_id), inAppAt: String(r.in_app_at), pushStatus: r.push_status as RecipientRow['delivery']['pushStatus'], viewedAt: (r.viewed_at as string) ?? undefined, clickedAt: (r.clicked_at as string) ?? undefined },
+    }));
+  }
+  async adminAuditLog() {
+    return (await this.adminRows('admin_audit_log')).map((r) => ({
+      id: String(r.id), actorId: String(r.actor_id ?? ''), action: String(r.action), target: (r.target as string) ?? undefined,
+      meta: (r.meta as Record<string, unknown>) ?? undefined, at: String(r.at), targetLabel: (r.target_label as string) ?? undefined,
+    }));
+  }
+  async adminSearch(query: string): Promise<MemberRow[]> {
+    const q = String(query ?? '').trim();
+    if (q.length < 2 || q.length > 100) return [];
+    return (await this.adminRows('admin_search', { p_query: q })).map((r) => ({
+      userId: String(r.user_id), profileId: (r.profile_id as string) ?? undefined, code: (r.code as string) ?? undefined, name: (r.name as string) ?? undefined,
+      phoneMasked: String(r.phone_masked ?? ''), role: r.role as MemberRow['role'], profileStatus: (r.profile_status as ProfileStatus) ?? undefined,
+      city: (r.city as string) ?? undefined, deactivatedAt: (r.deactivated_at as string) ?? undefined, deletedAt: (r.deleted_at as string) ?? undefined,
+    }));
+  }
+  async adminGetMember(userId: string): Promise<MemberDetail> {
+    const d = await this.rpc<Row>('admin_get_member', { p_user: userId });
+    const u = d.user as Row;
+    const { phone: _p, ...user } = mapUser({ ...u, phone: '' });
+    return {
+      member: d.member as unknown as MemberRow,
+      user: { ...user, phoneMasked: String(u.phone_masked ?? '') },
+      profile: d.profile ? mapProfile(d.profile as Row) : undefined,
+      requests: ((d.requests as Row[]) ?? []).map(mapAdminRequest),
+      reportsAbout: ((d.reportsAbout as Row[]) ?? []).map(mapReport),
+      reportsBy: ((d.reportsBy as Row[]) ?? []).map(mapReport),
+      orders: ((d.orders as Row[]) ?? []).map(mapOrder),
+    };
+  }
+  async adminCheckPhone(countryCode: string, phone: string): Promise<AdminPhoneCheck> {
+    const n = this.e164(countryCode, phone);
+    const r = await this.rpc<{ available: boolean; existingUserId?: string | null }>('admin_check_phone', { p_cc: n.countryCode, p_phone: n.phone });
+    return { available: !!r.available, countryCode: n.countryCode, phone: n.phone, existingUserId: r.existingUserId ?? undefined };
+  }
+  async adminCreateMember(input: { countryCode: string; phone: string; biodata: Biodata; lastStep: number }): Promise<AdminMemberDraft> {
+    const n = this.e164(input.countryCode, input.phone);
+    const r = await this.functionCall<{ profile: Row; userId: string }>('admin-create-member', {
+      countryCode: n.countryCode, phone: n.phone, biodata: this.teamBiodata(input.biodata), lastStep: input.lastStep,
+    });
+    if (!r.ok) throw new AppError(String(r.data.error ?? 'invalid_state') as AppError['code']);
+    return this.teamDraft(r.data.profile);
+  }
+  async adminSaveMemberBiodata(profileId: string, biodata: Biodata, lastStep: number) {
+    return this.teamDraft(await this.rpc<Row>('admin_save_member_biodata', { p_profile: profileId, p_biodata: this.teamBiodata(biodata), p_last_step: lastStep }));
+  }
+  async adminGetMemberDraft(profileId: string) {
+    const { data, error } = await this.sb.from('profiles').select('*').eq('id', profileId).is('deleted_at', null).maybeSingle();
+    if (error) throw toAppError(error);
+    if (!data || !data.created_by_admin) throw new AppError('not_found');
+    return this.teamDraft(data);
+  }
+  async adminPublishMember(profileId: string) {
+    return this.teamDraft(await this.rpc<Row>('admin_publish_member', { p_profile: profileId }));
+  }
+  async adminSetRequireApproval(requireApproval: boolean) {
+    const pending = await this.rpc<number>('admin_set_require_approval', { p_on: requireApproval });
+    this.pricing = undefined;
+    return { requireApproval, pending: Number(pending ?? 0) };
+  }
+  async adminApproveAllPending() {
+    return Number(await this.rpc<number>('admin_approve_all_pending'));
+  }
+  async adminDeleteProfile(profileId: string, reason: string) {
+    await this.rpc('admin_delete_profile', { p_id: profileId, p_reason: reason });
+  }
+  async adminRemovePhoto(profileId: string, photoId: string) {
+    await this.rpc('admin_remove_photo', { p_profile: profileId, p_photo: photoId });
+  }
+  async adminDeleteUser(userId: string, reason: string) {
+    await this.rpc('admin_delete_user', { p_id: userId, p_reason: reason });
+  }
+  async adminListRequests() {
+    return (await this.adminRows('admin_list_requests')).map(mapAdminRequest);
+  }
+  async adminDeleteRequest(requestId: string) {
+    await this.rpc('admin_delete', { p_kind: 'request', p_id: requestId });
+  }
+  async adminDeleteReport(reportId: string) {
+    await this.rpc('admin_delete', { p_kind: 'report', p_id: reportId });
+  }
+  async adminDeleteAnnouncement(id: string) {
+    await this.rpc('admin_delete', { p_kind: 'announcement', p_id: id });
+  }
+  async adminCancelOrder(orderId: string) {
+    await this.rpc('admin_cancel_order', { p_id: orderId });
+  }
+  async adminListTrash() {
+    return (await this.adminRows('admin_list_trash')) as unknown as TrashItem[];
+  }
+
+  // ---------- masters ----------
+  async masterRestore(kind: 'user' | 'profile', id: string) {
+    await this.rpc('master_restore', { p_kind: kind, p_id: id });
+  }
+  async masterPurge(kind: 'user' | 'profile', id: string) {
+    await this.rpc('master_purge', { p_kind: kind, p_id: id });
+  }
+  async masterListAdmins() {
+    return (await this.adminRows('master_list_admins')) as unknown as AdminMember[];
+  }
+  async masterAddSubAdmin(countryCode: string, phone: string) {
+    const n = this.e164(countryCode, phone);
+    await this.rpc('master_add_sub_admin', { p_cc: n.countryCode, p_phone: n.phone });
+    const r = await this.rpc<{ existingUserId?: string | null }>('admin_check_phone', { p_cc: n.countryCode, p_phone: n.phone });
+    return { id: r.existingUserId ?? '' };
+  }
+  async masterRemoveSubAdmin(userId: string) {
+    await this.rpc('master_remove_sub_admin', { p_id: userId });
+  }
+  async masterTransfer(toUserId: string, otp: string) {
+    await this.stepUp(otp);
+    await this.rpc('master_transfer', { p_to: toUserId });
+  }
+  async masterSecurityStatus() {
+    return this.rpc<SecurityStatus>('master_security_status');
+  }
+  async masterGenerateRecoveryCodes(otp: string) {
+    await this.stepUp(otp);
+    return this.rpc<string[]>('master_generate_recovery_codes');
+  }
+  /** Verifying a second phone needs a server-side code check that does not sign that phone in (next phase). */
+  async masterSetBackupPhone(_countryCode: string, _phone: string, _otp: string): Promise<void> {
+    throw new AppError('invalid_state', 'Backup phone setup is not available on the live backend yet');
+  }
+  async masterCancelRecovery() {
+    await this.rpc('master_cancel_recovery');
+  }
+  /** Logged out: prove the phone you have now with its code, then use a recovery code. */
+  async recoverMaster(countryCode: string, phone: string, otp: string, code: string) {
+    await this.verifyOtp(countryCode, phone, otp);
+    const r = await this.rpc<{ status: 'completed' | 'pending'; completesAt?: string }>('recover_master', { p_code: code });
+    return { status: r.status, completesAt: r.completesAt };
+  }
 }

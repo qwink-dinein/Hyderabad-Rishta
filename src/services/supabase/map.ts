@@ -1,5 +1,6 @@
 import { DEFAULT_PRICING, withBoostPlans } from '@/domain/pricing';
 import type {
+  Announcement,
   AppNotification,
   ContactRequest,
   Order,
@@ -10,7 +11,7 @@ import type {
   Report,
   User,
 } from '@/domain/types';
-import { AppError, type ErrorCode, type NotificationView } from '../backend';
+import { AppError, type AdminRequestRow, type ErrorCode, type NotificationView } from '../backend';
 
 /**
  * Database rows (snake_case) → the app's domain types (camelCase), and Postgres/Supabase errors →
@@ -93,6 +94,30 @@ export function mapRequest(r: Row): ContactRequest {
     respondedAt: s(r.responded_at),
     expiresAt: String(r.expires_at),
     pokes: ((r.pokes as string[] | null) ?? []).map(String),
+  };
+}
+
+export function mapAdminRequest(r: Row): AdminRequestRow {
+  return { ...mapRequest(r), fromName: String(r.from_name ?? '—'), toName: String(r.to_name ?? '—'), fromCode: String(r.from_code ?? '—'), toCode: String(r.to_code ?? '—') };
+}
+
+export function mapAnnouncement(r: Row): Announcement {
+  return {
+    id: String(r.id),
+    title: r.title as Announcement['title'],
+    body: r.body as Announcement['body'],
+    imageUrl: s(r.image_url),
+    priority: (r.priority as Announcement['priority']) ?? 'normal',
+    deepLink: s(r.deep_link),
+    segment: r.segment as Announcement['segment'],
+    status: r.status as Announcement['status'],
+    pushEnabled: Boolean(r.push_enabled),
+    scheduledAt: s(r.scheduled_at),
+    expiresAt: s(r.expires_at),
+    publishedAt: s(r.published_at),
+    createdBy: String(r.created_by ?? ''),
+    createdAt: String(r.created_at),
+    updatedAt: String(r.updated_at),
   };
 }
 

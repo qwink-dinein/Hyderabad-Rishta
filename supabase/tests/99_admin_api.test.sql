@@ -53,6 +53,14 @@ do $$ declare pid uuid; begin
   assert (select jsonb_array_length(x #> '{biodata,photos}') from admin_list_profiles(null) x where (x ->> 'id')::uuid = pid) = 0, 'photo removed';
 end $$;
 
+-- 3b. Pricing saves the connection rules too, within the allowed ranges.
+do $$ declare c pricing_config; begin
+  select * into c from pricing_config limit 1;
+  c := admin_update_pricing(c.config, c.boost_days, c.require_approval, 21, 24, 3);
+  assert c.request_expiry_days = 21 and c.poke_wait_hours = 24 and c.poke_max_per_7_days = 3, 'rules saved';
+  begin perform admin_update_pricing(c.config, c.boost_days, c.require_approval, 500, 24, 3); assert false, 'out-of-range expiry'; exception when check_violation then null; end;
+end $$;
+
 -- 4. Announcements: validation, publish now (fan-out to the right audience), schedule + job, archive, stats.
 do $$ declare a announcements; n int; begin
   begin perform admin_save_announcement('{"title":{"en":""},"body":{"en":"x"},"segment":"all"}'); assert false, 'empty title'; exception when invalid_parameter_value then null; end;
