@@ -1,8 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
-import { router } from 'expo-router';
+import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ProfileCard, ProfileCardSkeleton } from '@/components/ProfileCard';
+import { ProfileRail } from '@/components/ProfileRail';
 import { ShortlistButton, TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
 import { Banner, EmptyState, ErrorView, Loading } from '@/components/ui/feedback';
@@ -12,9 +13,9 @@ import { Row } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { formatHeight } from '@/domain/format';
 import { activeFilterCount, EMPTY_FILTERS, filtersFromPreferences, type SearchFilters } from '@/domain/search';
-import type { FeedView } from '@/domain/feed';
+import { rotationApplies, type FeedView } from '@/domain/feed';
 import type { PublicProfile } from '@/domain/types';
-import { useFeatured, useMyProfile, useShortlistIds, useToggleShortlist } from '@/hooks/queries';
+import { useDiscoverSections, useMyProfile, useShortlistIds, useToggleShortlist } from '@/hooks/queries';
 import { useDiscoverFeed, useImpressions } from '@/hooks/useDiscoverFeed';
 import { useOptions } from '@/hooks/useOptions';
 import { backendInfo } from '@/services';
@@ -31,6 +32,9 @@ type Chip = { key: string; label: string; remove: () => void };
  * Discovery list with removable filter chips and incremental loading (PRD §9), on the persistent rotation
  * feed (owner Mini PRD 2026-10-31): continues past what was really seen, never moves loaded cards, offers the
  * profiles new since the last visit, and says so when everything has been seen.
+ * Above the list (owner Mini PRD "Boost Visibility", 2026-10-31): A · Featured (boosted profiles matching the
+ * filters), B · Recommended for you, C · Recently published, then D · Discover all. A–C are hidden during an
+ * explicit search (keyword / shortlisted only) and in the "new since your last visit" list.
  */
 export default function Discover() {
   const { t } = useTranslation();
@@ -38,7 +42,8 @@ export default function Discover() {
   const { width } = useWindowDimensions();
   const { filters, setFilters, patch } = useFilters();
   const { data: me } = useMyProfile();
-  const [view, setView] = useState<FeedView>('all');
+  const params = useLocalSearchParams<{ view?: string; at?: string }>();
+  const [view, setView] = useState<FeedView>(params.view === 'new' ? 'new' : 'all');
   const search = useDiscoverFeed(filters, view);
   const impressions = useImpressions();
   // Changing filters starts that filter set's own feed (and leaves the "new" list).
@@ -48,7 +53,15 @@ export default function Discover() {
     setViewSig(filtersSig);
     setView('all');
   }
-  const featured = useFeatured();
+  // Opened from Home's "New since your last visit → View all" (the tab may already be mounted).
+  const [openedAt, setOpenedAt] = useState(params.at);
+  if (openedAt !== params.at) {
+    setOpenedAt(params.at);
+    if (params.view === 'new') setView('new');
+  }
+  const showSections = view === 'all' && rotationApplies(filters);
+  const sections = useDiscoverSections(filters, showSections);
+  const sec = showSections ? sections.data : undefined;
   const { data: shortIds } = useShortlistIds();
   const toggle = useToggleShortlist();
   const { label } = useOptions();
@@ -112,6 +125,7 @@ export default function Discover() {
 
   const onOpen = useCallback((id: string) => router.push(`/profile/${id}`), []);
   const onToggle = useCallback((id: string) => toggle.mutate(id), [toggle]);
+  const rail = { shortlisted: shortSet, onToggleShortlist: onToggle, onOpen } as const;
   const renderItem = useCallback(
     ({ item }: { item: PublicProfile }) => (
       <View style={{ flex: 1 / columns, padding: space.sm }} testID={`discover-card-${item.id}`}>
@@ -170,20 +184,6 @@ export default function Discover() {
         </Pressable>
       </Row>
       {backendInfo.kind === 'demo' ? <Banner tone="warning" icon="sparkle">{t('discover.demoData')}</Banner> : null}
-      {featured.data?.length ? (
-        // Shown to every eligible member whatever their filters or sort (paid placement, clearly labelled).
-        <View style={{ gap: space.sm }} testID="featured-strip">
-          <Row style={{ justifyContent: 'space-between' }}>
-            <Text variant="h3">★ {t('discover.featuredTitle')}</Text>
-            <Text variant="caption">{t('discover.featuredLabel')}</Text>
-          </Row>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.md, paddingBottom: space.xs }}>
-            {featured.data.map((p) => (
-              <ProfileCard key={p.id} profile={p} variant="featured" shortlisted={shortSet.has(p.id)} onToggleShortlist={onToggle} onOpen={onOpen} />
-            ))}
-          </ScrollView>
-        </View>
-      ) : null}
       {me?.status !== 'published' ? (
         <Banner icon="user">
           <Text variant="caption" color={colors.emerald}>
@@ -191,6 +191,32 @@ export default function Discover() {
           </Text>
           <Button label={t('discover.completeBiodata')} size="sm" kind="secondary" onPress={() => router.push(me ? '/dashboard' : '/biodata')} style={{ alignSelf: 'flex-start', marginTop: space.sm }} />
         </Banner>
+      ) : null}
+      {showSections ? (
+        <View style={{ gap: space.xl, marginHorizontal: -space.sm, paddingTop: space.sm }}>
+          <ProfileRail
+            title={`★ ${t('discover.featuredTitle')}`}
+            note={t('discover.featuredHint')}
+            items={sec?.featured ?? []}
+            loading={sections.isLoading}
+            inset={space.sm * 2}
+            testID="featured-strip"
+            {...rail}
+          />
+          <ProfileRail title={t('home.recommended')} note={t('home.recommendedNote')} items={sec?.recommended ?? []} inset={space.sm * 2} testID="discover-recommended" {...rail} />
+          <ProfileRail
+            title={t('home.recent')}
+            action={filters.sort === 'recent' ? undefined : t('home.viewAll')}
+            onAction={() => patch({ sort: 'recent' })}
+            items={sec?.recent ?? []}
+            inset={space.sm * 2}
+            testID="discover-recent"
+            {...rail}
+          />
+          <Text variant="h2" accessibilityRole="header" style={{ paddingHorizontal: space.sm * 2 }} testID="discover-all-title">
+            {t('discover.allTitle')}
+          </Text>
+        </View>
       ) : null}
       <Row gap={space.sm} wrap>
         <Button

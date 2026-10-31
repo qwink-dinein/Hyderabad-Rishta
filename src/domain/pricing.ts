@@ -27,8 +27,27 @@ export const DEFAULT_PRICING: PricingConfig = {
   pokeMaxPer7Days: 2,
   feedImpressionCooldownDays: 3,
   feedViewCooldownDays: 7,
+  boostEnabled: true,
+  boostRequirePhoto: false,
+  featuredEnabled: true,
+  featuredMaxCards: 12,
+  featuredCapDaysPer7: 3,
   updatedAt: new Date(0).toISOString(),
 };
+
+/** Fields added after configs were first saved: older saved configs get the defaults. */
+export function withPricingDefaults(cfg: PricingConfig): PricingConfig {
+  const d = DEFAULT_PRICING;
+  return {
+    ...cfg,
+    boostEnabled: typeof cfg.boostEnabled === 'boolean' ? cfg.boostEnabled : d.boostEnabled,
+    boostRequirePhoto: typeof cfg.boostRequirePhoto === 'boolean' ? cfg.boostRequirePhoto : d.boostRequirePhoto,
+    featuredEnabled: typeof cfg.featuredEnabled === 'boolean' ? cfg.featuredEnabled : d.featuredEnabled,
+    featuredMaxCards: Number.isInteger(cfg.featuredMaxCards) ? cfg.featuredMaxCards : d.featuredMaxCards,
+    featuredCapDaysPer7: Number.isInteger(cfg.featuredCapDaysPer7) ? cfg.featuredCapDaysPer7 : d.featuredCapDaysPer7,
+  };
+}
+export const MAX_PROMO_LABEL = 24;
 
 export interface ResolvedPlan {
   id: string;
@@ -36,6 +55,8 @@ export interface ResolvedPlan {
   fee: Fee;
   label: string;
   popular: boolean;
+  /** Admin's promotional label, if any (shown instead of "Popular"). */
+  promoLabel?: string;
 }
 
 export interface ResolvedPricing {
@@ -59,9 +80,14 @@ export function feeLabel(fee: Fee, currency: string): string {
 /** The ONLY way screens should read prices (PRD §8 — never hardcode). */
 /** The plans a member of `type` can buy, shortest first. */
 export function boostPlansFor(cfg: PricingConfig, type: ProfileType): ResolvedPlan[] {
+  // Boost switched off by the admin: no option can be started (running boosts are unaffected).
+  if (cfg.boostEnabled === false) return [];
   return (cfg.boostPlans ?? [])
     .filter((p) => p.enabled && p.fee[type].mode !== 'disabled')
-    .map((p) => ({ id: p.id, days: p.days, fee: p.fee[type], label: feeLabel(p.fee[type], cfg.currency), popular: p.popular }))
+    .map((p) => ({
+      id: p.id, days: p.days, fee: p.fee[type], label: feeLabel(p.fee[type], cfg.currency), popular: p.popular,
+      promoLabel: p.promoLabel?.trim() || undefined,
+    }))
     .sort((a, b) => a.days - b.days);
 }
 
@@ -135,6 +161,14 @@ export function validatePricing(cfg: PricingConfig): string[] {
     }
   }
   if (plans.filter((p) => p?.popular).length > 1) errors.push('Only one option can be marked Popular');
+  for (const p of plans) {
+    if (p?.promoLabel == null) continue;
+    if (typeof p.promoLabel !== 'string' || p.promoLabel.length > MAX_PROMO_LABEL || /[\u0000-\u001f<>]/.test(p.promoLabel))
+      errors.push(`Boost ${p?.days ?? '?'} days: label must be up to ${MAX_PROMO_LABEL} characters, no < or >`);
+  }
+  if (typeof cfg.boostEnabled !== 'boolean' || typeof cfg.boostRequirePhoto !== 'boolean' || typeof cfg.featuredEnabled !== 'boolean') errors.push('Boost switches are missing');
+  if (!Number.isInteger(cfg.featuredMaxCards) || cfg.featuredMaxCards < 1 || cfg.featuredMaxCards > 30) errors.push('Featured cards must be 1–30');
+  if (!Number.isInteger(cfg.featuredCapDaysPer7) || cfg.featuredCapDaysPer7 < 1 || cfg.featuredCapDaysPer7 > 7) errors.push('Featured days per member must be 1–7 in any 7 days');
   if (!Number.isInteger(cfg.requestExpiryDays) || cfg.requestExpiryDays < 1 || cfg.requestExpiryDays > 90) errors.push('Request expiry must be 1–90 days');
   if (!Number.isInteger(cfg.pokeWaitHours) || cfg.pokeWaitHours < 1 || cfg.pokeWaitHours > 336) errors.push('Reminder wait must be 1–336 hours');
   if (!Number.isInteger(cfg.pokeMaxPer7Days) || cfg.pokeMaxPer7Days < 0 || cfg.pokeMaxPer7Days > 7) errors.push('Reminders per person per 7 days must be 0–7');
@@ -156,7 +190,8 @@ export function syncBoostSummary(cfg: PricingConfig): PricingConfig {
 
 /** Older saved configs (before boost options existed) get the default options. */
 export function withBoostPlans(cfg: PricingConfig): PricingConfig {
-  return Array.isArray(cfg.boostPlans) && cfg.boostPlans.length ? cfg : syncBoostSummary({ ...cfg, boostPlans: DEFAULT_BOOST_PLANS.map((p) => ({ ...p, fee: { ...p.fee } })) });
+  const c = withPricingDefaults(cfg);
+  return Array.isArray(c.boostPlans) && c.boostPlans.length ? c : syncBoostSummary({ ...c, boostPlans: DEFAULT_BOOST_PLANS.map((p) => ({ ...p, fee: { ...p.fee } })) });
 }
 
 /** One boost option only (e.g. "7 days, free for everyone") — used by tests and quick admin setups. */

@@ -174,7 +174,7 @@ export const ProfileCard = memo(function ProfileCard({ profile, shortlisted, onT
 
   const featured = variant === 'featured';
   return (
-    <Animated.View style={[styles.card, featured && styles.cardFeatured, { transform: [{ scale: press }] }]}>
+    <Animated.View style={[styles.card, featured && styles.cardFeatured, profile.boosted && styles.cardBoosted, { transform: [{ scale: press }] }]}>
       <Pressable
         onPress={() => onOpen(profile.id)}
         onPressIn={() => animate(0.985)}
@@ -209,7 +209,8 @@ export const ProfileCard = memo(function ProfileCard({ profile, shortlisted, onT
             <Meta icon="mapPin" text={place} />
           </View>
           <View style={styles.metaRow}>
-            <Meta icon="cap" text={edu} />
+            {/* Rail cards keep one line: "Bachelor's · IT" (same height for every card). */}
+            {featured ? <Meta icon="cap" text={[edu, prof].filter(Boolean).join(' · ')} /> : <Meta icon="cap" text={edu} />}
             {!featured ? <Meta icon="briefcase" text={prof} /> : null}
           </View>
           {!featured ? (
@@ -272,6 +273,8 @@ export function ProfileCardSkeleton() {
 const styles = StyleSheet.create({
   card: { backgroundColor: colors.white, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden', ...shadow.card },
   cardFeatured: { width: 230 },
+  // Boosted cards: a subtle gold edge (with the ★ Boosted badge), never a louder card.
+  cardBoosted: { borderColor: colors.gold, borderWidth: 1.5 },
   photo: { width: '100%', aspectRatio: 4 / 5, maxHeight: 400, backgroundColor: colors.sage },
   body: { padding: space.lg, gap: 6 },
   relation: { flexDirection: 'row', marginVertical: 2 },

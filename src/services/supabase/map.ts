@@ -189,6 +189,12 @@ export function mapPricing(r: Row): PricingConfig {
     publication: cfg.publication ?? DEFAULT_PRICING.publication,
     boost: cfg.boost ?? DEFAULT_PRICING.boost,
     boostPlans: cfg.boostPlans ?? DEFAULT_PRICING.boostPlans,
+    // Boost / Featured rules live in the config document (read by SQL get_featured and start_boost too).
+    boostEnabled: cfg.boostEnabled ?? DEFAULT_PRICING.boostEnabled,
+    boostRequirePhoto: cfg.boostRequirePhoto ?? DEFAULT_PRICING.boostRequirePhoto,
+    featuredEnabled: cfg.featuredEnabled ?? DEFAULT_PRICING.featuredEnabled,
+    featuredMaxCards: cfg.featuredMaxCards ?? DEFAULT_PRICING.featuredMaxCards,
+    featuredCapDaysPer7: cfg.featuredCapDaysPer7 ?? DEFAULT_PRICING.featuredCapDaysPer7,
     version: Number(r.version ?? 1),
     currency: String(r.currency ?? 'INR'),
     boostDays: Number(r.boost_days ?? DEFAULT_PRICING.boostDays),
@@ -207,7 +213,7 @@ const CODES: ErrorCode[] = [
   'unauthenticated', 'forbidden', 'not_found', 'validation', 'rate_limited', 'invalid_otp', 'otp_expired', 'blocked', 'duplicate',
   'phone_taken', 'fee_disabled', 'not_accepting', 'incomplete_biodata', 'profile_removed', 'boost_active', 'invalid_pin', 'pin_locked',
   'pin_not_set', 'device_not_trusted', 'otp_required', 'invalid_state', 'account_removed', 'account_suspended', 'invalid_recovery_code',
-  'declined_recently', 'consent_required', 'poke_wait', 'poke_used', 'poke_limit', 'poke_optout', 'expired',
+  'declined_recently', 'consent_required', 'poke_wait', 'poke_used', 'poke_limit', 'poke_optout', 'expired', 'photo_required',
 ];
 
 /**

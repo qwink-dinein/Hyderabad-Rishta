@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { pokeEligibility } from '@/domain/connections';
 import { randomToken } from '@/domain/crypto';
-import type { FeedPage, FeedRequest } from '@/domain/feed';
+import type { DiscoverSections, FeedPage, FeedRequest } from '@/domain/feed';
 import { maskPhone } from '@/domain/format';
 import { dashboardMetrics } from '@/domain/metrics';
 import { normalizePhone } from '@/domain/phone';
@@ -420,6 +420,23 @@ export class SupabaseBackend implements Backend {
     const r = await this.functionCall<{ items: Row[]; nextCursor?: string; remaining: number; newSinceLastVisit: number; caughtUp: boolean }>('discover-feed', { filters, ...req });
     if (!r.ok) throw new AppError(String(r.data.error ?? 'invalid_state') as AppError['code']);
     return { ...r.data, items: await this.publicProfiles(r.data.items ?? []) };
+  }
+
+  async getDiscoverSections(filters: SearchFilters): Promise<DiscoverSections> {
+    type Lists = Record<keyof DiscoverSections, Row[]>;
+    const r = await this.functionCall<Lists & { error?: string }>('discover-feed', { mode: 'sections', filters });
+    if (!r.ok) throw new AppError(String(r.data.error ?? 'invalid_state') as AppError['code']);
+    const keys = ['featured', 'recommended', 'recent', 'newSince'] as const;
+    // One photo-signing round for all four lists.
+    const all = await this.publicProfiles(keys.flatMap((k) => r.data[k] ?? []));
+    const out = {} as DiscoverSections;
+    let i = 0;
+    for (const k of keys) {
+      const n = (r.data[k] ?? []).length;
+      out[k] = all.slice(i, i + n);
+      i += n;
+    }
+    return out;
   }
 
   async recordImpressions(profileIds: string[]) {

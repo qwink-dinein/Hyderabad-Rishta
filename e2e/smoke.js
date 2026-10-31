@@ -55,7 +55,7 @@ const step = async (name, fn) => {
   });
   await step('open a profile', async () => {
     await page.getByRole('button', { name: /^View profile/ }).first().click();
-    await page.getByText('Partner preferences').waitFor();
+    await page.getByText('Partner preferences', { exact: true }).first().waitFor();
     await shot('06-profile');
     await page.goBack();
   });

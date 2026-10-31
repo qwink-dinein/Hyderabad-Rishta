@@ -8,7 +8,7 @@ import { ChipGroup, Field, TextField, ToggleRow } from '@/components/ui/forms';
 import { Card, Header, Row, Screen, Section } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { formatDate } from '@/domain/format';
-import { boostPlansFor, feeLabel, MAX_BOOST_PLANS, pricingCopy, validatePricing } from '@/domain/pricing';
+import { boostPlansFor, feeLabel, MAX_BOOST_PLANS, MAX_PROMO_LABEL, pricingCopy, validatePricing } from '@/domain/pricing';
 import type { BoostPlan, Fee, PricingConfig, ProfileType } from '@/domain/types';
 import { qk, usePricing } from '@/hooks/queries';
 import { backend } from '@/services';
@@ -93,6 +93,41 @@ export default function AdminPricing() {
           </Row>
         </Card>
       </Section>
+      <Section title="Boost & Featured">
+        <Card style={{ gap: space.sm }}>
+          <ToggleRow
+            label="Boost available to members"
+            value={cfg.boostEnabled}
+            onChange={(v) => setCfg({ ...cfg, boostEnabled: v })}
+            hint="Off: nobody can start a new boost. Boosts already running keep their dates and stay featured."
+            testID="pricing-boostEnabled"
+          />
+          <ToggleRow
+            label="Require at least one photo to boost"
+            value={cfg.boostRequirePhoto}
+            onChange={(v) => setCfg({ ...cfg, boostRequirePhoto: v })}
+            hint="Eligibility rule for new boosts. Members can still keep their photos private."
+            testID="pricing-boostRequirePhoto"
+          />
+          <ToggleRow
+            label="Show the Featured section (Home and Discover)"
+            value={cfg.featuredEnabled}
+            onChange={(v) => setCfg({ ...cfg, featuredEnabled: v })}
+            hint="Off: the section is hidden. Boosted profiles still get their share of the Discover feed."
+            testID="pricing-featuredEnabled"
+          />
+          {(
+            [
+              ['featuredMaxCards', 'Cards in the Featured section', '1–30. Featured only shows boosted profiles that match the member’s filters.'],
+              ['featuredCapDaysPer7', 'Show the same boosted profile to a member on at most (days in any 7)', '1–7 (7 = every day). Spreads exposure fairly; Boost never guarantees views.'],
+            ] as const
+          ).map(([key, label, hint]) => (
+            <Field key={key} label={label} hint={hint}>
+              <TextField value={String(cfg[key] ?? '')} onChangeText={(v) => setCfg({ ...cfg, [key]: Number(v.replace(/\D/g, '')) || 0 })} keyboardType="number-pad" accessibilityLabel={label} testID={`pricing-${key}`} />
+            </Field>
+          ))}
+        </Card>
+      </Section>
       <Section title="Boost options">
         <View style={{ gap: space.md }}>
           <Text variant="caption">Members choose one of these on the Boost screen; the shortest available option is pre-selected. Free options skip payment. Set a type to Disabled to hide that option from brides or grooms.</Text>
@@ -116,6 +151,14 @@ export default function AdminPricing() {
                 onChange={(v) => setCfg({ ...cfg, boostPlans: cfg.boostPlans.map((x, j) => ({ ...x, popular: j === i ? v : v ? false : x.popular })) })}
                 hint="Use only when it is true (e.g. most chosen). At most one option."
               />
+              <Field label="Promotional label (optional)" hint={`Up to ${MAX_PROMO_LABEL} characters, e.g. “Best value”. Shown on this option instead of “Popular”.`}>
+                <TextField
+                  value={p.promoLabel ?? ''}
+                  onChangeText={(v) => setPlan(i, { promoLabel: v.slice(0, MAX_PROMO_LABEL) || undefined })}
+                  accessibilityLabel={`Option ${i + 1} promotional label`}
+                  testID={`plan-label-${i}`}
+                />
+              </Field>
             </Card>
           ))}
           {cfg.boostPlans.length < MAX_BOOST_PLANS ? <Button label="Add a boost option" kind="secondary" onPress={addPlan} testID="plan-add" /> : null}

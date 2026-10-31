@@ -16,15 +16,17 @@ const step = async (name, fn) => {
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 300)); });
   const login = (phone) => loginWithOtp(page, BASE, phone);
 
-  await step('boosted profile stays featured even when filters exclude it', async () => {
+  await step('Featured follows the filters: boosted profile featured, hidden when a search excludes it', async () => {
     await login('9000000001');
     await page.goto(BASE + '/discover');
-    await page.getByTestId('featured-strip').waitFor({ timeout: 10000 });
+    await page.getByTestId('featured-strip').getByText('HR-10003').waitFor({ timeout: 10000 });
     await page.getByTestId('discover-search').fill('zzzz-no-match');
     await page.getByTestId('discover-search').press('Enter');
     await page.getByText('0 profiles').waitFor({ timeout: 8000 });
-    await page.getByTestId('featured-strip').getByText('HR-10003').waitFor();
-    await page.screenshot({ path: `${SHOTS}/50-featured-despite-filter.png` });
+    if (await page.getByTestId('featured-strip').count()) throw new Error('Featured shown for a search that excludes every boosted profile');
+    await page.screenshot({ path: `${SHOTS}/50-featured-follows-filters.png` });
+    await page.getByTestId('discover-search').fill('');
+    await page.getByTestId('discover-search').press('Enter');
   });
   await step('settings: phone notifications explain web, and preferences persist', async () => {
     await page.goto(BASE + '/settings');

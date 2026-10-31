@@ -20,17 +20,17 @@ const step = async (name, fn) => {
   await step('cards show history badges (interest sent / sent you interest / connected)', async () => {
     await login('9000000001');
     await page.goto(BASE + '/discover');
-    await page.getByTestId('featured-strip').waitFor({ timeout: 10000 }).catch(() => undefined);
-    // Cards render lazily as you scroll (virtualised list) — scroll like a user until it appears.
-    for (let i = 0; i < 12 && !(await page.getByTestId('relation-p_6').count()); i++) {
-      await page.mouse.move(200, 600);
-      await page.mouse.wheel(0, 700);
-      await page.waitForTimeout(300);
+    await page.getByTestId('discover-search').waitFor();
+    // Profiles with an active interest leave the Discover rotation (they live in Requests), but a search
+    // still finds them — with their history badge.
+    for (const [name, id, badge] of [['Bengaluru', 'p_6', 'Interest sent'], ['A. K.', 'p_0', 'Sent you interest']]) {
+      await page.getByTestId('discover-search').fill(name);
+      await page.getByTestId('discover-search').press('Enter');
+      await page.getByTestId(`relation-${id}`).getByText(badge).waitFor({ timeout: 8000 });
     }
-    await page.getByTestId('relation-p_6').waitFor();
-    await page.getByTestId('relation-p_6').getByText('Interest sent').waitFor();
-    await page.getByTestId('relation-p_0').getByText('Sent you interest').waitFor();
     await page.screenshot({ path: `${SHOTS}/40-relation-badges.png` });
+    await page.getByTestId('discover-search').fill('');
+    await page.getByTestId('discover-search').press('Enter');
   });
   await step('profile shows its ID (HR-…)', async () => {
     await page.goto(BASE + '/profile/p_2');

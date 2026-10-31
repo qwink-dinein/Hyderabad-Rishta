@@ -16,6 +16,7 @@ const CANDIDATES = Array.from({ length: 23 }, (_, i) => prof(`p${String(i).padSt
 function fakeDb(seen: { profileId: string; impressedAt?: string }[] = []) {
   const snapshots: Record<string, unknown> = {};
   const calls: string[] = [];
+  const featuredArgs: Record<string, unknown>[] = [];
   let n = 0;
   const deps: FeedEdgeDeps = {
     now: () => now,
@@ -30,10 +31,14 @@ function fakeDb(seen: { profileId: string; impressedAt?: string }[] = []) {
         snapshots[args.p_key as string] = { key: args.p_key, sessionId: args.p_session, ids: args.p_ids, createdAt: args.p_created, openedAt: args.p_opened, lastVisitAt: args.p_last_visit ?? undefined };
         return null;
       }
+      if (fn === 'get_featured') {
+        featuredArgs.push(args);
+        return CANDIDATES.filter((c) => (args.p_only as string[]).includes(c.id)).slice(0, 2);
+      }
       throw new Error(`unexpected ${fn}`);
     },
   };
-  return { deps, snapshots, calls };
+  return { deps, snapshots, calls, featuredArgs };
 }
 
 it('orders with the shared engine, excludes shortlisted/requested, and pages by cursor without repeats', async () => {
@@ -64,4 +69,21 @@ it('ignores unknown or oversized filter fields from the client', () => {
   expect(f.sort).toBe('recommended');
   expect(f.show).toBeUndefined();
   expect((f as unknown as Record<string, unknown>).evil).toBeUndefined();
+});
+
+it('sections mode: Featured limited to boosted filter matches (cap applied by the database), no repeats, feed untouched', async () => {
+  const db = fakeDb();
+  const r = await discoverFeed(db.deps, { mode: 'sections', filters: { ...EMPTY_FILTERS, recentDays: 30 } });
+  expect(r.status).toBe(200);
+  const ids = (k: string) => (r.body[k] as { id: string }[]).map((p) => p.id);
+  // Only boosted profiles that match the filters (published within 30 days) are offered to get_featured.
+  expect(db.featuredArgs[0].p_only).toEqual(CANDIDATES.filter((c) => c.boosted && 2 * Number(c.id.slice(1)) <= 30).map((c) => c.id));
+  const all = [...ids('featured'), ...ids('recommended'), ...ids('recent'), ...ids('newSince')];
+  expect(new Set(all).size).toBe(all.length);
+  expect(ids('recent')).not.toContain('p01'); // shortlisted
+  expect(ids('recent')).not.toContain('p02'); // active interest
+  expect(db.calls).not.toContain('save_feed_state'); // the browsing position is not touched
+  // Explicit search: plain results only.
+  const kw = await discoverFeed(db.deps, { mode: 'sections', filters: { ...EMPTY_FILTERS, keyword: 'p1' } });
+  expect(kw.body).toEqual({ featured: [], recommended: [], recent: [], newSince: [] });
 });

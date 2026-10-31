@@ -48,6 +48,20 @@ export function useSearch(filters: SearchFilters) {
 }
 
 /** Boosted profiles every eligible viewer sees, independent of their filters (see domain/featured). */
+/**
+ * Home / Discover sections (Featured, Recommended, Recently Published, New since last visit). Keyed under
+ * `featured`, so everything that refreshes Featured (boosts, interests, moderation) refreshes these too.
+ */
+export function useDiscoverSections(filters: SearchFilters, enabled = true) {
+  return useQuery({
+    queryKey: [...qk.featured, 'sections', filters],
+    queryFn: () => backend.getDiscoverSections(filters),
+    enabled: useAuthed() && enabled,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+}
+
 export function useFeatured() {
   return useQuery({ queryKey: qk.featured, queryFn: () => backend.getFeatured(12), enabled: useAuthed(), staleTime: 60_000 });
 }

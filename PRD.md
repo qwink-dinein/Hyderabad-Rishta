@@ -349,4 +349,24 @@ Design decision (not in the feature PRD, flagged for owner review): after a **de
 - **Ranking:** ~40 % new · 30 % matching the member's partner preferences · 20 % other unseen · 10 % boosted, per ten cards, adjusting when a group runs out. Boost never bypasses filters, privacy or eligibility.
 - **New profiles:** "N new profiles since your last visit" opens a separate list without moving the main browsing position.
 - **Refresh and empty states:** Refresh Discover rebuilds the feed (new eligible profiles in, seen ones out). When everything is seen: "You've caught up with all available profiles for now. New profiles will appear here as they are published."
-- **Scope of rotation:** explicit keyword searches and "shortlisted only" show every match. The Featured strip keeps its own fair daily rotation.
+- **Scope of rotation:** explicit keyword searches and "shortlisted only" show every match. Featured has its own fair daily rotation and frequency cap (15.13).
+
+### 15.13 Boost visibility, Featured profiles & Discover sections (owner Mini PRD, 2026-10-31)
+- **Home:** Featured carousel near the top (photo or persona, name + age, city/state, education · profession, gold "★ Boosted" badge and gold edge, shortlist heart, tap to open), then the member's own cards (completion, activity, Boost), then **Recommended for you**, **Recently published** and **New since your last visit**, each with "View all".
+- **Discover:** A · Featured (boosted profiles that **match the member's current filters**), B · Recommended for you, C · Recently published (unseen first, "View all" = Newest), D · Discover all (the persistent rotation feed of 15.12). A–C are hidden during an explicit search (keyword or shortlisted only) and in the "new since your last visit" list.
+- **No repeats:** a card in Featured or an earlier section is not repeated in a later one while other profiles are available; a section repeats a card only when it would otherwise be empty. Profiles with an active interest or on the shortlist stay out of the sections.
+- **Recommended** = matches the member's stated partner preferences. It is labelled as such and never shown as a compatibility score.
+- **Fair exposure (replaces the 2026-10-28 "every viewer sees every boost" rule):**
+  - Featured rotates per member per day among eligible boosts.
+  - Frequency cap: the same boosted profile is featured to the same member on at most N days in any 7 (admin, default 3). A card already shown today stays for the rest of the day.
+  - At most M cards (admin, default 12). No guaranteed views. Boost also keeps its ~10 % share of the Discover feed, never more.
+  - Expired boosts lose all priority immediately (not featured, no badge, no feed share).
+- **Boost purchase screen:** 7 / 14 / 30-day options from the live config (availability, duration, price, free/paid, optional **promotional label** such as "Best value", shown instead of "Popular"). It shows the benefits, the selected length and exact price, and when it starts and ends. The button reads **"Activate Free Boost"** (free, no payment step) or **"Boost Now · ₹price"** ("Boost Again · ₹price" after an earlier boost). Never auto-renews.
+- **Home Boost card:** "Give your profile more visibility" / "Help more families discover your biodata with a profile boost." / **"Boost My Profile"** (or "Activate Free Boost" when free). While a boost runs it shows the status instead.
+- **My Boost:** status, length, start and expiry, **days remaining**, and "Boost Again" once it has ended. Analytics are real counts only: views during the boost (before/during only when the profile was live for the whole comparison window), total views, shortlisted you and interests received (all-time, labelled as such).
+- **Admin (Pricing & boosts → Boost & Featured), effective immediately with no redeploy:**
+  - Boost on/off (off: no new boosts; running boosts keep their terms and stay featured).
+  - Eligibility: require at least one photo to boost (server-enforced, error `photo_required`).
+  - Featured section on/off, number of cards (1–30), frequency cap (1–7 days in any 7).
+  - Per option: availability, duration, bride/groom price or free, Popular, promotional label (≤ 24 characters, no markup).
+  - Orders already placed keep their price and length.

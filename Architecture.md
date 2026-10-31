@@ -481,3 +481,18 @@ Normal returning login never sends one.
   - `__tests__/discoverFeedEdge.test.ts`
   - SQL `99_discover_rotation`
   - e2e `rotation.js`
+
+## 26. Boost visibility and Discover sections (2026-10-31)
+- **Settings** live in the existing pricing document (`pricing_config.config`): `boostEnabled`, `boostRequirePhoto`, `featuredEnabled`, `featuredMaxCards`, `featuredCapDaysPer7`, `boostPlans[].promoLabel`. Missing keys mean the defaults (`withPricingDefaults`; the demo backfills through `withBoostPlans` in `load()`). Validated by `validatePricing` and, in the database, by the check constraint `pricing_boost_rules_ok`.
+- **Featured:** `domain/featured.ts#pickFeatured` (demo) and SQL `get_featured(p_limit, p_only uuid[])` (live) apply the same rules:
+  - eligibility (`is_featurable`, blocks, looking-for side);
+  - optional `p_only` narrowing to the member's filter matches (never widening);
+  - the per-viewer cap from `boost_impressions` (distinct days in the last 7; today's card stays);
+  - a per-viewer daily rotation, at most `featuredMaxCards`, nothing when switched off.
+  - The day's Featured impression is recorded for each card returned (the owner's "reach").
+- **Sections:** `domain/feed.ts#buildSections` (shared, synced to `_shared/feed.ts`) builds Recommended / Recently published / New since last visit from the same eligible, filtered candidates as the Discover feed and removes repeats against Featured and between sections. `lastVisitOf` reads the last visit from the main feed snapshot without moving it.
+  - **Backend:** `getDiscoverSections(filters)` → `{ featured, recommended, recent, newSince }`. Demo: in-process. Live: `discover-feed` with `{ mode: 'sections' }` → `search_profiles` (member JWT) → `get_featured(p_only = boosted matches)` → `buildSections`; the adapter signs all photos in one round.
+  - **App:** `useDiscoverSections` (query key under `featured`, so every Featured refresh also refreshes the sections); `ProfileRail` (shared carousel, fixed 230 px cards, snap scrolling); boosted `ProfileCard`s get a gold edge.
+  - Carousel cards do not record Discover impressions (no reliable on-screen measure inside a horizontal rail); opening a profile from one records a view as usual.
+- **Boost rules on the server:** `boost_plan_terms` (used by `start_boost` and the order-insert trigger) refuses new boosts when Boost is off (`fee_disabled`) or when a photo is required and missing (`photo_required`). Orders already placed are never re-checked.
+- **Tests:** `__tests__/boostVisibility.test.ts` (cap, rotation fairness over 600 viewers, sections dedupe, settings validation, multi-boost × multi-viewer journey on the demo backend), `__tests__/discoverFeedEdge.test.ts` (sections mode), `supabase/tests/99_boost_visibility.test.sql`, `e2e/boostvisibility.js`.

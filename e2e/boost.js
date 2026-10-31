@@ -83,19 +83,19 @@ const setDb = (page, fn) => page.evaluate((src) => {
     for (const [id, price] of [['d7', '₹100'], ['d14', '₹200'], ['d30', '₹350']]) await page.getByTestId(`plan-price-${id}`).getByText(price).waitFor();
     if ((await page.getByTestId('plan-d7').getAttribute('aria-checked')) !== 'true') throw new Error('7 days not pre-selected');
     await page.getByText('Popular').waitFor();
-    await page.getByRole('button', { name: /^Continue · \W*₹100\W*$/ }).waitFor();
+    await page.getByRole('button', { name: /^Boost Now · \W*₹100\W*$/ }).waitFor();
     await page.screenshot({ path: `${SHOTS}/p2-boost-options.png`, fullPage: true });
   });
 
-  await step('choose 14 days → checkout shows ₹200 → pay → My Boost (14 days left, no re-buy); Home + Profile follow', '9000000001', async (page) => {
+  await step('choose 14 days → checkout shows ₹200 → pay → My Boost (14 days remaining, no re-buy); Home + Profile follow', '9000000001', async (page) => {
     await page.goto(BASE + '/boost');
     await page.getByTestId('plan-d14').click();
-    await page.getByRole('button', { name: /^Continue · \W*₹200\W*$/ }).click();
+    await page.getByRole('button', { name: /^Boost Now · \W*₹200\W*$/ }).click();
     await page.getByText('₹200').last().waitFor();
     await page.getByRole('button', { name: 'Simulate successful payment' }).click();
     await page.getByTestId('boost-status').waitFor({ timeout: 8000 });
     await page.getByText('My Boost').first().waitFor();
-    await page.getByTestId('boost-days-left').getByText('14 days left').waitFor();
+    await page.getByTestId('boost-days-left').getByText('14 days remaining').waitFor();
     await page.getByText('14-day boost').first().waitFor();
     await page.getByTestId('boost-again-after').waitFor();
     if (await page.getByTestId('boost-cta').count()) throw new Error('can buy again while active');
@@ -143,9 +143,9 @@ const setDb = (page, fn) => page.evaluate((src) => {
   await step('a free option skips payment: bride activates the free 7-day boost', '9000000104', async (page) => {
     await page.goto(BASE + '/boost');
     await page.getByTestId('plan-price-d7').getByText('FREE').waitFor();
-    await page.getByRole('button', { name: 'Activate free boost' }).click();
+    await page.getByRole('button', { name: 'Activate Free Boost' }).click();
     await page.getByTestId('boost-status').waitFor({ timeout: 8000 });
-    await page.getByTestId('boost-days-left').getByText('7 days left').waitFor();
+    await page.getByTestId('boost-days-left').getByText('7 days remaining').waitFor();
     const o = (await db(page)).orders.find((x) => x.kind === 'boost' && x.profileId === 'p_4');
     if (!o || o.status !== 'free' || o.amount !== 0) throw new Error(JSON.stringify(o));
   });

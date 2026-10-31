@@ -1,5 +1,6 @@
 // Supabase Edge Function: discover-feed (Deno). Called by the app with the member's JWT (verify_jwt = true):
 // { filters, cursor?, refresh?, view?, pageSize? } → { items, nextCursor?, remaining, newSinceLastVisit, caughtUp }.
+// { mode: 'sections', filters } → { featured, recommended, recent, newSince } (Home / Discover sections).
 // Every database call runs AS THE MEMBER (anon key + their JWT), so RLS and the privacy projection apply.
 // Secrets: SUPABASE_URL, SUPABASE_ANON_KEY.
 import { discoverFeed } from './handler.ts';

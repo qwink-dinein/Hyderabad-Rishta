@@ -291,3 +291,72 @@ export async function serveFeed(filters: SearchFilters, req: FeedRequest, deps: 
     total: eligible.size,
   };
 }
+
+/** Home and Discover sections (owner Mini PRD 2026-10-31, "Boost Visibility, Featured Profiles"). */
+export interface DiscoverSections<T = PublicProfile> {
+  /** Active boosts matching the viewer's filters, rotated fairly with a per-viewer frequency cap. */
+  featured: T[];
+  /** Matches the viewer's partner preferences (a match on stated preferences — not a compatibility score). */
+  recommended: T[];
+  /** Recently published, unseen first. */
+  recent: T[];
+  /** Published since the viewer's last visit and not seen yet. */
+  newSince: T[];
+}
+
+export const SECTION_SIZE = 6;
+
+/** The viewer's last visit as Discover's main feed records it (an opening longer ago than the visit gap). */
+export function lastVisitOf(main: FeedSnapshot | undefined, now: Date): string | undefined {
+  if (!main) return undefined;
+  return now.getTime() - new Date(main.openedAt).getTime() > VISIT_GAP_MS ? main.openedAt : main.lastVisitAt;
+}
+
+/**
+ * Builds the Recommended / Recently Published / New-since-last-visit lists from the same filtered,
+ * eligible candidates as Discover (so no section can bypass filters, privacy or eligibility).
+ * Cards in Featured or an earlier section are not repeated while other profiles are available; a section
+ * repeats cards only when it would otherwise be empty. Profiles with an active interest stay out (they
+ * live in Requests), shortlisted ones too (they live in Shortlist).
+ */
+export function buildSections(
+  candidates: PublicProfile[],
+  filters: SearchFilters,
+  ctx: FeedContext,
+  featuredIds: string[],
+  size = SECTION_SIZE,
+): Omit<DiscoverSections<string>, 'featured'> {
+  const pool = candidates.filter((p, i, a) => a.findIndex((x) => x.id === p.id) === i && !ctx.shortlisted.has(p.id) && !ctx.activeRequests.has(p.id));
+  const used = new Set(featuredIds);
+  const unseen = (p: PublicProfile) => !ctx.seen.get(p.id)?.impressedAt && !ctx.seen.get(p.id)?.viewedAt;
+  const byRecent = (a: PublicProfile, b: PublicProfile) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? '') || a.id.localeCompare(b.id);
+  const take = (list: PublicProfile[]) => {
+    const fresh = list.filter((p) => !used.has(p.id));
+    const out = (fresh.length ? fresh : list).slice(0, size).map((p) => p.id);
+    out.forEach((id) => used.add(id));
+    return out;
+  };
+
+  const since = ctx.lastVisitAt ? new Date(ctx.lastVisitAt).getTime() : null;
+  const newSince = since == null ? [] : take(pool.filter((p) => p.publishedAt && new Date(p.publishedAt).getTime() > since && unseen(p)).sort(byRecent));
+
+  const prefFilters = ctx.prefs ? filtersFromPreferences(ctx.prefs, filters.show) : null;
+  const day = ctx.now.toISOString().slice(0, 10);
+  const rotate = (p: PublicProfile) => hash(`${ctx.viewerId}:${day}:${p.id}`);
+  const recommended = prefFilters
+    ? take(
+        pool
+          .filter((p) => matchesFilters(p, prefFilters, { now: ctx.now }))
+          // Not cooling down first, then a daily per-viewer rotation (no fixed "top" list).
+          .sort((a, b) => Number(inCooldown(ctx.seen.get(a.id), ctx.cfg, ctx.now)) - Number(inCooldown(ctx.seen.get(b.id), ctx.cfg, ctx.now)) || rotate(a).localeCompare(rotate(b)) || a.id.localeCompare(b.id)),
+      )
+    : [];
+
+  const recentFrom = ctx.now.getTime() - ctx.cfg.newDays * DAY;
+  const recent = take(
+    pool
+      .filter((p) => p.publishedAt && new Date(p.publishedAt).getTime() >= recentFrom)
+      .sort((a, b) => Number(!unseen(a)) - Number(!unseen(b)) || byRecent(a, b)),
+  );
+  return { recommended, recent, newSince };
+}

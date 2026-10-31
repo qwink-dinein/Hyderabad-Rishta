@@ -5,10 +5,10 @@ import { DECLINE_COOLDOWN_DAYS, isActiveRequest, PHONE_CONSENT_TEXT, pokeEligibi
 import { displayNameFor, maskPhone, uid } from '@/domain/format';
 import { announcementStats, audienceFor, dashboardMetrics, isAnnouncementLive } from '@/domain/metrics';
 import { DEFAULT_PRICING, resolvePricing, syncBoostSummary, validatePricing, withBoostPlans } from '@/domain/pricing';
-import { DEFAULT_FEED_CONFIG, serveFeed, type FeedPage, type FeedRequest, type FeedSnapshot, type SeenRecord } from '@/domain/feed';
+import { buildSections, DEFAULT_FEED_CONFIG, filtersKey, lastVisitOf, rotationApplies, serveFeed, type DiscoverSections, type FeedContext, type FeedPage, type FeedRequest, type FeedSnapshot, type SeenRecord } from '@/domain/feed';
 import { isBoostActive, mergeScopes, NO_CONSENT, profileTypeOf, projectProfile } from '@/domain/privacy';
 import { matchesFilters, sortProfiles, type SearchFilters } from '@/domain/search';
-import { boostNoticeDue, BOOST_ENDING_NOTICE_MS, boostReminderDue, dayKey, isFeaturable, rotateFeatured } from '@/domain/featured';
+import { boostNoticeDue, BOOST_ENDING_NOTICE_MS, boostReminderDue, dayKey, featuredRulesOf, isFeaturable, pickFeatured } from '@/domain/featured';
 import { isRateLimitExempt, prefsOf, PUSH_HOURLY_CAP, pushAllowed, pushContent, CATEGORY, VIEW_NOTICE_WINDOW_MS } from '@/domain/push';
 import type {
   Announcement,
@@ -1055,6 +1055,8 @@ export class DemoBackend implements Backend {
       if (isBoostActive(p, this.now())) throw new AppError('boost_active', undefined, { until: p.boostUntil });
       const pricing = resolvePricing(db.pricing, profileTypeOf(p));
       if (!pricing.plans.length) throw new AppError('fee_disabled');
+      // Admin eligibility rule: a boosted profile must have a photo.
+      if (db.pricing.boostRequirePhoto && !p.biodata.photos?.length) throw new AppError('photo_required');
       if (planId !== undefined && (typeof planId !== 'string' || planId.length > 20)) throw new AppError('validation');
       // Price and length always come from the live config, never from the client.
       const plan = planId ? pricing.plans.find((x) => x.id === planId) : pricing.plans[0];
@@ -1196,25 +1198,7 @@ export class DemoBackend implements Backend {
       const f = { ...filters, show: filters.show ?? this.myProfile(db, u.id)?.biodata.basic.lookingFor };
       return serveFeed(f, req, {
         candidates: async () => this.discoverCandidates(db, u, f),
-        context: async () => {
-          const mine = this.myProfile(db, u.id);
-          const active = new Set<string>();
-          if (mine) {
-            for (const r of db.requests) {
-              if (r.status !== 'pending' && r.status !== 'accepted') continue;
-              if (r.fromProfileId === mine.id) active.add(r.toProfileId);
-              else if (r.toProfileId === mine.id) active.add(r.fromProfileId);
-            }
-          }
-          return {
-            viewerId: u.id,
-            seen: new Map(db.seen.filter((x) => x.viewerId === u.id).map((x) => [x.profileId, x])),
-            shortlisted: new Set(db.shortlists.filter((x) => x.userId === u.id).map((x) => x.profileId)),
-            activeRequests: active,
-            prefs: mine?.biodata.preferences,
-            cfg: { ...DEFAULT_FEED_CONFIG, impressionCooldownDays: db.pricing.feedImpressionCooldownDays, viewCooldownDays: db.pricing.feedViewCooldownDays },
-          };
-        },
+        context: async () => this.feedContext(db, u),
         loadSnapshot: async (key) => db.feedStates.find((x) => x.userId === u.id && x.key === key),
         saveSnapshot: async (snap) => {
           db.feedStates = [{ ...snap, userId: u.id }, ...db.feedStates.filter((x) => !(x.userId === u.id && x.key === snap.key))];
@@ -1228,6 +1212,67 @@ export class DemoBackend implements Backend {
         newSessionId: () => uid('fs_'),
         now: () => this.now(),
       });
+    }, true);
+  }
+
+  private feedContext(db: DemoDb, u: User): Omit<FeedContext, 'lastVisitAt' | 'now'> {
+    const mine = this.myProfile(db, u.id);
+    const active = new Set<string>();
+    if (mine) {
+      for (const r of db.requests) {
+        if (r.status !== 'pending' && r.status !== 'accepted') continue;
+        if (r.fromProfileId === mine.id) active.add(r.toProfileId);
+        else if (r.toProfileId === mine.id) active.add(r.fromProfileId);
+      }
+    }
+    return {
+      viewerId: u.id,
+      seen: new Map(db.seen.filter((x) => x.viewerId === u.id).map((x) => [x.profileId, x])),
+      shortlisted: new Set(db.shortlists.filter((x) => x.userId === u.id).map((x) => x.profileId)),
+      activeRequests: active,
+      prefs: mine?.biodata.preferences,
+      cfg: { ...DEFAULT_FEED_CONFIG, impressionCooldownDays: db.pricing.feedImpressionCooldownDays, viewCooldownDays: db.pricing.feedViewCooldownDays },
+    };
+  }
+
+  /**
+   * Featured cards for this viewer (domain/featured.ts#pickFeatured): eligible active boosts, optionally
+   * limited to `only` (the profiles matching the viewer's filters), with the frequency cap. Records the
+   * day's Featured impression for each card returned.
+   */
+  private featuredFor(db: DemoDb, u: User, only?: Set<string>, limit = 50) {
+    const ctx = this.viewerContext(db, u);
+    const lookingFor = ctx.mine?.biodata.basic.lookingFor;
+    const now = this.now();
+    const eligible = db.profiles.filter((p) => {
+      if (p.userId === u.id || (only && !only.has(p.id))) return false;
+      if (!isFeaturable(p, ctx.users.get(p.userId), now)) return false;
+      if (ctx.blocked(p)) return false;
+      return !lookingFor || profileTypeOf(p) === lookingFor; // matrimony rule: people looking for this type
+    });
+    const history = db.boostImpressions.filter((i) => i.viewerUserId === u.id);
+    const shown = pickFeatured(eligible, u.id, history, featuredRulesOf(db.pricing), now).slice(0, Math.max(1, Math.min(limit, 50)));
+    const day = dayKey(now);
+    const seenToday = new Set(history.filter((i) => i.day === day).map((i) => i.profileId));
+    for (const p of shown) if (!seenToday.has(p.id)) db.boostImpressions.push({ profileId: p.id, viewerUserId: u.id, day });
+    return shown.map((p) => ({ ...ctx.project(p), contact: undefined, relation: ctx.relation(p) }));
+  }
+
+  getDiscoverSections(filters: SearchFilters): Promise<DiscoverSections> {
+    return this.run((db) => {
+      const u = this.me(db);
+      const f = { ...filters, show: filters.show ?? this.myProfile(db, u.id)?.biodata.basic.lookingFor };
+      const candidates = this.discoverCandidates(db, u, f);
+      // An explicit search (keyword / shortlist only) shows plain results: no sections.
+      if (!rotationApplies(f)) return { featured: [], recommended: [], recent: [], newSince: [] };
+      const featured = this.featuredFor(db, u, new Set(candidates.filter((p) => p.boosted).map((p) => p.id)));
+      const now = this.now();
+      const main = db.feedStates.find((x) => x.userId === u.id && x.key === filtersKey(f, 'all'));
+      const ctx: FeedContext = { ...this.feedContext(db, u), now, lastVisitAt: lastVisitOf(main, now) };
+      const ids = buildSections(candidates, f, ctx, featured.map((p) => p.id));
+      const byId = new Map(candidates.map((p) => [p.id, p]));
+      const pick = (list: string[]) => list.map((id) => byId.get(id)!).filter(Boolean);
+      return { featured, recommended: pick(ids.recommended), recent: pick(ids.recent), newSince: pick(ids.newSince) };
     }, true);
   }
 
@@ -1277,23 +1322,7 @@ export class DemoBackend implements Backend {
   }
 
   getFeatured(limit = 12) {
-    return this.run((db) => {
-      const u = this.me(db);
-      const ctx = this.viewerContext(db, u);
-      const lookingFor = ctx.mine?.biodata.basic.lookingFor;
-      const now = this.now();
-      const eligible = db.profiles.filter((p) => {
-        if (p.userId === u.id) return false;
-        if (!isFeaturable(p, ctx.users.get(p.userId), now)) return false;
-        if (ctx.blocked(p)) return false;
-        return !lookingFor || profileTypeOf(p) === lookingFor; // matrimony rule: people looking for this type
-      });
-      const shown = rotateFeatured(eligible, u.id, now).slice(0, Math.max(1, Math.min(limit, 50)));
-      const day = dayKey(now);
-      const seenToday = new Set(db.boostImpressions.filter((i) => i.viewerUserId === u.id && i.day === day).map((i) => i.profileId));
-      for (const p of shown) if (!seenToday.has(p.id)) db.boostImpressions.push({ profileId: p.id, viewerUserId: u.id, day });
-      return shown.map((p) => ({ ...ctx.project(p), contact: undefined, relation: ctx.relation(p) }));
-    }, true);
+    return this.run((db) => this.featuredFor(db, this.me(db), undefined, limit), true);
   }
 
   // ---------- push (phones) ----------

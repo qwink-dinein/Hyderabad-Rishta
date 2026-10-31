@@ -309,7 +309,7 @@ export function Select({ options, value, onChange, placeholder, multiple, allowC
   );
 }
 
-export function ToggleRow({ label, value, onChange, hint }: { label: string; value: boolean; onChange: (v: boolean) => void; hint?: string }) {
+export function ToggleRow({ label, value, onChange, hint, testID }: { label: string; value: boolean; onChange: (v: boolean) => void; hint?: string; testID?: string }) {
   return (
     <Pressable
       accessibilityRole="switch"
@@ -318,6 +318,7 @@ export function ToggleRow({ label, value, onChange, hint }: { label: string; val
       accessibilityLabel={label}
       onPress={() => onChange(!value)}
       style={styles.toggleRow}
+      testID={testID}
     >
       <View style={{ flex: 1, gap: 2 }}>
         <Text variant="label">{label}</Text>

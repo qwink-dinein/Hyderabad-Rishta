@@ -89,8 +89,12 @@ export function Header({ title, right, onBack, back = true, home = true, onHome 
   );
 }
 
-export const Card = memo(function Card({ children, style, padded = true }: { children: ReactNode; style?: StyleProp<ViewStyle>; padded?: boolean }) {
-  return <View style={[styles.card, padded && { padding: space.lg }, style]}>{children}</View>;
+export const Card = memo(function Card({ children, style, padded = true, testID }: { children: ReactNode; style?: StyleProp<ViewStyle>; padded?: boolean; testID?: string }) {
+  return (
+    <View style={[styles.card, padded && { padding: space.lg }, style]} testID={testID}>
+      {children}
+    </View>
+  );
 });
 
 export function Section({ title, children, right }: { title: string; children: ReactNode; right?: ReactNode }) {

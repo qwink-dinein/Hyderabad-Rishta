@@ -18,6 +18,8 @@ export interface BoostStatus {
   until?: string;
   /** The member's profile status (to tell "paused" and "waiting for approval" from "not published"). */
   status?: ProfileStatus;
+  /** The admin requires a photo to boost and this profile has none yet. */
+  needsPhoto: boolean;
 }
 
 /** One place that turns profile + live admin pricing + dashboard into what Home, Profile and Boost show. */
@@ -38,5 +40,6 @@ export function useBoostStatus(): BoostStatus {
     fromPrice: cheapest != null && pricing ? bidiIsolate(formatMoney(cheapest, pricing.currency)) : undefined,
     status: profile?.status,
     until: m?.boostUntil,
+    needsPhoto: !!pricing?.boostRequirePhoto && !!profile && !profile.biodata.photos?.length,
   };
 }

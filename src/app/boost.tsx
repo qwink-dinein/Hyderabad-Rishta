@@ -39,7 +39,7 @@ export default function BoostScreen() {
 
   const active = s.nudge === 'active';
   const plan = s.plans.find((p) => p.id === picked) ?? s.plans[0];
-  const canBuy = s.nudge === 'ready' && !!plan;
+  const canBuy = s.nudge === 'ready' && !!plan && !s.needsPhoto;
 
   const start = async () => {
     if (!plan || busy) return; // one request at a time; the backend also reuses an open order
@@ -73,7 +73,11 @@ export default function BoostScreen() {
 
   const footer = canBuy ? (
     <Button
-      label={plan.fee.mode === 'free' ? t('myBoost.activateFree') : t('myBoost.continuePrice', { price: bidiIsolate(plan.label) })}
+      label={
+        plan.fee.mode === 'free'
+          ? t('myBoost.activateFree')
+          : t(s.expired ? 'myBoost.boostAgainPrice' : 'myBoost.boostNow', { price: bidiIsolate(plan.label) })
+      }
       kind="gold"
       onPress={start}
       loading={busy}
@@ -118,6 +122,13 @@ export default function BoostScreen() {
             )
           ) : null}
           {s.nudge === 'disabled' ? <Banner icon="info">{t('boost.disabled')}</Banner> : null}
+          {s.nudge === 'ready' && s.needsPhoto ? (
+            <Card style={styles.notice} testID="boost-needs-photo">
+              <Text variant="h3">{t('myBoost.photoTitle')}</Text>
+              <Text variant="body">{t('myBoost.photoBody')}</Text>
+              <Button label={t('myBoost.photoCta')} onPress={() => router.push({ pathname: '/biodata', params: { step: '0' } })} testID="boost-add-photo" />
+            </Card>
+          ) : null}
           {active ? (
             <View style={styles.again} testID="boost-again-after">
               <Icon name="clock" size={18} color={colors.emerald} />
@@ -147,10 +158,11 @@ export default function BoostScreen() {
                       style={[styles.plan, on && styles.planOn]}
                       testID={`plan-${p.id}`}
                     >
-                      {p.popular ? (
-                        <View style={styles.popular}>
+                      {p.promoLabel || p.popular ? (
+                        // The admin's promotional label (e.g. "Best value"), else "Popular" when set.
+                        <View style={styles.popular} testID={`plan-badge-${p.id}`}>
                           <Text variant="caption" color={colors.white} style={{ fontSize: 11 }}>
-                            {t('myBoost.popular')}
+                            {p.promoLabel ?? t('myBoost.popular')}
                           </Text>
                         </View>
                       ) : null}
@@ -179,6 +191,7 @@ export default function BoostScreen() {
                   );
                 })}
               </View>
+              {plan && s.nudge === 'ready' ? <PlanSummary days={plan.days} price={plan.fee.mode === 'free' ? t('myBoost.free') : bidiIsolate(plan.label)} free={plan.fee.mode === 'free'} /> : null}
               <Text variant="caption">{t('myBoost.honest')}</Text>
             </View>
           ) : null}
@@ -196,6 +209,20 @@ export default function BoostScreen() {
         }}
       />
     </Screen>
+  );
+}
+
+/** Exactly what the member gets before they tap: length, price, when it starts and ends, no renewal. */
+function PlanSummary({ days, price, free }: { days: number; price: string; free: boolean }) {
+  const { t } = useTranslation();
+  const [openedAt] = useState(() => Date.now()); // "if activated now", fixed while the screen is open
+  const ends = formatDate(new Date(openedAt + days * 86400000).toISOString());
+  return (
+    <Card style={{ gap: space.xs, backgroundColor: colors.sage }} testID="boost-summary">
+      <Text variant="bodyStrong">{t('myBoost.selected', { plan: t('myBoost.planDays', { count: days }), price })}</Text>
+      <Text variant="caption">{free ? t('myBoost.startsFree', { date: ends }) : t('myBoost.startsPaid', { date: ends })}</Text>
+      <Text variant="caption">{t('myBoost.benefitNoRenew')}</Text>
+    </Card>
   );
 }
 
@@ -251,7 +278,7 @@ function BoostStatusCard({ m, active, fetchedAt }: { m?: DashboardMetrics; activ
           </View>
           <View style={[styles.pill, !active && { backgroundColor: colors.sage }]}>
             <Text variant="label" color={active ? colors.goldDeep : colors.muted} testID="boost-days-left">
-              {active ? t('boost.daysLeft', { count: daysLeft }) : t('myBoost.statusExpired')}
+              {active ? t('myBoost.daysRemaining', { count: daysLeft }) : t('myBoost.statusExpired')}
             </Text>
           </View>
         </Row>
@@ -314,6 +341,28 @@ function BoostStatusCard({ m, active, fetchedAt }: { m?: DashboardMetrics; activ
           <Text variant="caption">{t('myBoost.viewsNote')}</Text>
         </Card>
       ) : null}
+      {/* Real counts only (DashboardMetrics); no trends or comparisons we cannot back up. */}
+      <Card style={{ gap: space.md }} testID="boost-stats">
+        <Text variant="h3">{t('myBoost.statsTitle')}</Text>
+        <View style={styles.tiles}>
+          {(
+            [
+              ['eye', t('myBoost.statViews'), m.views, 'views'],
+              ['heart', t('myBoost.statShortlists'), m.shortlistedBy, 'shortlists'],
+              ['mail', t('myBoost.statInterests'), m.requestsReceived, 'interests'],
+            ] as const
+          ).map(([icon, label, value, id]) => (
+            <View key={id} style={styles.tile} accessible accessibilityLabel={`${label}: ${value}`} testID={`boost-stat-${id}`}>
+              <Icon name={icon} size={16} color={colors.goldDeep} />
+              <Text variant="h3">{value}</Text>
+              <Text variant="caption" numberOfLines={2}>
+                {label}
+              </Text>
+            </View>
+          ))}
+        </View>
+        <Text variant="caption">{t('myBoost.statsNote')}</Text>
+      </Card>
     </View>
   );
 }
@@ -337,4 +386,6 @@ const styles = StyleSheet.create({
   chart: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', gap: space.lg, paddingTop: space.sm },
   barCol: { flex: 1, alignItems: 'center', gap: 4 },
   bar: { width: 48, borderRadius: radius.sm },
+  tiles: { flexDirection: 'row', gap: space.sm },
+  tile: { flex: 1, minWidth: 0, padding: space.md, gap: 2, borderRadius: radius.md, backgroundColor: colors.ivory, borderWidth: 1, borderColor: colors.border },
 });

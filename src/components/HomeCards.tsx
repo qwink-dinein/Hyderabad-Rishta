@@ -154,14 +154,20 @@ export function BoostPromoCard() {
           <Icon name="crown" size={20} color={colors.white} />
         </View>
         <View style={{ flex: 1, gap: 2 }}>
-          <Text variant="bodyStrong">{t('home.boostTitle')}</Text>
-          <Text variant="caption">{t('home.boostBody')}</Text>
-          <Text variant="label" color={colors.goldDeep} testID="boost-price">
-            {s.free ? t('me.boostHintFree') : s.fromPrice ? t('me.boostHintFrom', { price: s.fromPrice }) : ''}
-          </Text>
+          <Text variant="bodyStrong">{s.needsPhoto ? t('myBoost.photoTitle') : t('home.boostTitle')}</Text>
+          <Text variant="caption">{s.needsPhoto ? t('myBoost.photoBody') : t('home.boostBody')}</Text>
+          {!s.needsPhoto ? (
+            <Text variant="label" color={colors.goldDeep} testID="boost-price">
+              {s.free ? t('me.boostHintFree') : s.fromPrice ? t('me.boostHintFrom', { price: s.fromPrice }) : ''}
+            </Text>
+          ) : null}
         </View>
       </Row>
-      <Button label={s.free ? t('myBoost.activateFree') : t('me.boostMy')} kind="gold" size="sm" arrow onPress={() => router.push('/boost')} style={{ alignSelf: 'flex-start' }} testID="boost-reminder-cta" />
+      {s.needsPhoto ? (
+        <Button label={t('myBoost.photoCta')} kind="secondary" size="sm" arrow onPress={() => router.push({ pathname: '/biodata', params: { step: '0' } })} style={{ alignSelf: 'flex-start' }} testID="boost-photo-cta" />
+      ) : (
+        <Button label={s.free ? t('myBoost.activateFree') : t('home.boostCta')} kind="gold" size="sm" arrow onPress={() => router.push('/boost')} style={{ alignSelf: 'flex-start' }} testID="boost-reminder-cta" />
+      )}
     </View>
   );
 }

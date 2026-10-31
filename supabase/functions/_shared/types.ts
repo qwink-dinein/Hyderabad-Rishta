@@ -283,6 +283,8 @@ export interface BoostPlan {
   enabled: boolean;
   /** "Popular" label — only when the admin deliberately sets it. */
   popular: boolean;
+  /** Optional promotional label set by the admin (e.g. "Best value"); shown instead of "Popular". */
+  promoLabel?: string;
 }
 
 export interface PricingConfig {
@@ -302,6 +304,15 @@ export interface PricingConfig {
   /** Discover rotation: days a seen card stays out of normal Discover, and an opened profile. */
   feedImpressionCooldownDays: number;
   feedViewCooldownDays: number;
+  /** Boost master switch. Off: nobody can start a new boost; boosts already bought keep their terms. */
+  boostEnabled: boolean;
+  /** Boost eligibility: the profile must have at least one photo before it can be boosted. */
+  boostRequirePhoto: boolean;
+  /** Featured section (Home and Discover) on/off, its size, and the per-viewer frequency cap. */
+  featuredEnabled: boolean;
+  featuredMaxCards: number;
+  /** A boosted profile is featured to the same member on at most this many days in any 7 (7 = no cap). */
+  featuredCapDaysPer7: number;
   updatedAt: string;
   updatedBy?: string;
 }

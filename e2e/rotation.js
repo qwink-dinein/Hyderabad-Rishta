@@ -32,8 +32,11 @@ const BASE = 'http://localhost:8081';
       await page.getByTestId('discover-count').waitFor();
       const allBefore = (await cards()).map((c) => c.id);
       // The header (search, Featured, filters) is tall: bring the list's first card fully on screen.
-      await page.locator('[data-testid^="discover-card-"]').first().scrollIntoViewIfNeeded();
-      await page.mouse.wheel(0, 150);
+      // The header (search, Featured / Recommended / Recent carousels, filters) is tall: put the list's first
+      // card's top just under the screen header.
+      await page.locator('[data-testid^="discover-card-"]').first().evaluate((e) => e.scrollIntoView({ block: 'start' }));
+      await page.mouse.move(200, 500);
+      await page.mouse.wheel(0, -90);
       await page.waitForTimeout(300);
       seenBefore = await visible();
       if (!seenBefore.length) throw new Error('no card visible');
@@ -49,8 +52,11 @@ const BASE = 'http://localhost:8081';
     });
 
     await step('Refresh brings profiles that were not on top before, and the feed never repeats a profile', async () => {
-      await page.locator('[data-testid^="discover-card-"]').first().scrollIntoViewIfNeeded();
-      await page.mouse.wheel(0, 150);
+      // The header (search, Featured / Recommended / Recent carousels, filters) is tall: put the list's first
+      // card's top just under the screen header.
+      await page.locator('[data-testid^="discover-card-"]').first().evaluate((e) => e.scrollIntoView({ block: 'start' }));
+      await page.mouse.move(200, 500);
+      await page.mouse.wheel(0, -90);
       await page.waitForTimeout(300);
       const top = await visible();
       if (!top.length) throw new Error('no card visible');

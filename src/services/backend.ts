@@ -1,4 +1,4 @@
-import type { FeedPage, FeedRequest } from '@/domain/feed';
+import type { DiscoverSections, FeedPage, FeedRequest } from '@/domain/feed';
 import type { SearchFilters } from '@/domain/search';
 import type { AnnouncementStats } from '@/domain/metrics';
 import type {
@@ -58,7 +58,8 @@ export type ErrorCode =
   | 'poke_used'
   | 'poke_limit'
   | 'poke_optout'
-  | 'expired';
+  | 'expired'
+  | 'photo_required';
 
 /** All backend failures carry a stable code; the UI maps it to `err.<code>`. */
 export class AppError extends Error {
@@ -283,14 +284,20 @@ export interface Backend {
    * set, resumed on reopen and shared across devices; seen profiles cool down (see domain/feed.ts).
    */
   getDiscoverFeed(filters: SearchFilters, req: FeedRequest): Promise<FeedPage>;
+  /**
+   * Home and Discover sections (owner Mini PRD 2026-10-31): Featured boosts matching these filters (fair
+   * rotation, per-viewer frequency cap, records Featured impressions), Recommended, Recently Published and
+   * New since the last visit — all from the same eligible candidates as Discover, without repeats.
+   */
+  getDiscoverSections(filters: SearchFilters): Promise<DiscoverSections>;
   /** Cards that were really seen (≥ 50 % visible for ≥ 1 s). Duplicates within 30 minutes are ignored. */
   recordImpressions(profileIds: string[]): Promise<void>;
   getProfile(profileId: string): Promise<PublicProfile>;
   getShortlistIds(): Promise<string[]>;
   getShortlist(): Promise<PublicProfile[]>;
   /**
-   * Boosted profiles for the Featured section: every active, published boost the viewer is eligible
-   * to see, regardless of the viewer's filters, in a fair per-viewer daily rotation. Records impressions.
+   * Boosted profiles for the Featured section without filters: active, published boosts the viewer is
+   * eligible to see, in a fair per-viewer daily rotation with the admin's frequency cap. Records impressions.
    */
   getFeatured(limit?: number): Promise<PublicProfile[]>;
   toggleShortlist(profileId: string): Promise<boolean>;

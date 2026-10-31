@@ -115,7 +115,7 @@ const setDb = (page, src) => page.evaluate((s) => { const d = JSON.parse(localSt
     await setDb(page, "const p = d.profiles.find((x) => x.id === 'p_1'); p.boostUntil = new Date(Date.now() + 4 * 864e5).toISOString(); delete p.boostStartedAt;");
     await page.goto(BASE + '/boost');
     await page.getByText('Your profile is boosted').waitFor();
-    await page.getByTestId('boost-days-left').getByText(/days? left/).waitFor();
+    await page.getByTestId('boost-days-left').getByText(/days? remaining/).waitFor();
     await shot(page, 'b1-legacy-boost');
   });
 

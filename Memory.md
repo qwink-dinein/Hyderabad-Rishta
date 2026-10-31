@@ -56,7 +56,7 @@ npx jest                                # all suites incl. simulation (400 steps
 SIM_STEPS=3000 SIM_SEEDS=5 SIM_REPORT=1 npx jest simulation   # long expert-team hunt (background); prints timings and refusals
 pg_ctlcluster 16 main start; su postgres -c "cd /home/user/Hyderabad-Rishta && ./scripts/test-db.sh"   # 16 PASSED lines (one per test file)
 EXPO_OFFLINE=1 npx expo export --platform web && node e2e/serve.js "$(pwd)/dist" 8081 &   # then:
-for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boost personas livestate explore teammember badgecount rotation clickthrough csp crawl; do node e2e/$s.js; done   # 21 suites; crawl must report 0 high issues
+for s in smoke journey admin interest console boostpush home photos onebiodata pin transitions boost personas livestate explore teammember badgecount rotation boostvisibility clickthrough csp crawl; do node e2e/$s.js; done   # 22 suites; crawl must report 0 high issues
 node scripts/sync-shared.js            # after editing src/domain/push.ts or src/domain/phone.ts
 ```
 - e2e suites sign in through `e2e/auth.js` (`loginWithOtp`), which also creates the test PIN **4827** when asked.
@@ -128,6 +128,7 @@ Reset everything: Settings → “Reset demo data”.
 | 2026-10-28 | Boost reminders: red dot + halo, Home card (3-day snooze), weekly notification (not within 2 days of publish or 7 days after a boost; promotional category) | Owner: "keep reminding if they haven't boosted". |
 | 2026-10-28 | One boost at a time; boosts no longer extend | Owner: "must not allow them to boost again if the current boost is in progress". |
 | 2026-10-28 | Checkpoint V3 pinned at the "Checkpoint V3" docs commit (code = `ae8776f`) | Owner: "checkpoint this as V3". |
+| 2026-10-31 | Featured follows the viewer's filters, rotates daily per viewer, caps one boost to N days in any 7 per viewer (default 3), at most M cards (default 12); no guaranteed views. Replaces the 2026-10-28 "every viewer sees every boost" rule. Boost/Featured settings live in `pricing_config.config` | Owner Mini PRD "Boost Visibility, Featured Profiles & Discover Rotation". |
 | 2026-10-31 | Discover = persistent rotation feed (domain/feed.ts, shared by demo + discover-feed function); keyword search and shortlisted-only bypass rotation; Featured strip unchanged. Edge Functions deploy `_shared/types.ts` as a type-only placeholder (all imports of it are `import type`) | Owner Mini PRD "Persistent Profile Rotation in Discover". |
 | 2026-10-31 | App uses `SupabaseBackend` whenever the public Supabase env vars are set (eas.json); demo otherwise. Paid checkout stays off until a payment provider is chosen (`completePayment` → fee_disabled). New SQL is verified live by function-definition hashes vs the tested local DB | Owner: "proceed" (full backend). |
 | 2026-10-29 | Two master admins allowed (max 2; trigger `app_users_max_two_masters`); live invites = 2 masters + 1 sub-admin (data only — never commit real numbers or PINs). Masters cannot manage each other; recovery replaces the master team | Owner: "I want to have two master admins" (+ corrected a mistyped digit). PINs are never stored — each admin sets their own (advised to choose different ones). |

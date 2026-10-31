@@ -5,29 +5,29 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { BrandMark } from '@/components/art/Illustrations';
-import { ProfileCard, ProfileCardSkeleton } from '@/components/ProfileCard';
+import { ProfileRail } from '@/components/ProfileRail';
 import { ActivityStats, BoostPromoCard, CompletionCard, TeamCreatedNote } from '@/components/HomeCards';
 import { PushPrompt } from '@/components/PushSettings';
 import { TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
-import { Banner, EmptyState, useErrorMessage, useToast } from '@/components/ui/feedback';
+import { Banner, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { Icon } from '@/components/ui/Icon';
 import { Row } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
-import { EMPTY_FILTERS } from '@/domain/search';
+import { EMPTY_FILTERS, filtersFromPreferences } from '@/domain/search';
 import { isRTL } from '@/i18n';
-import { useFeatured, useInvalidateProfileState, useMyProfile, useRequests, useSearch, useShortlistIds, useToggleShortlist } from '@/hooks/queries';
+import { useDiscoverSections, useInvalidateProfileState, useMyProfile, useRequests, useShortlistIds, useToggleShortlist } from '@/hooks/queries';
 import { backend, backendInfo } from '@/services';
 import { useFilters } from '@/state/filters';
 import { useSession } from '@/state/session';
 import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
 import { fontFamily } from '@/theme/fonts';
 
-const RECENT = { ...EMPTY_FILTERS, sort: 'recent' as const };
-
 /**
- * Home (Design PRD §10–11): where you stand, what needs your attention, featured and recent profiles.
- * Built entirely from existing queries — no new backend behaviour.
+ * Home (Design PRD §10–11; owner Mini PRD 2026-10-31): where you stand and what needs your attention, the
+ * Featured carousel near the top, then Recommended for you, Recently published and New since your last
+ * visit — one server call (getDiscoverSections) that applies the same eligibility, privacy and
+ * no-repeat rules as Discover.
  */
 export default function Home() {
   const { t } = useTranslation();
@@ -38,8 +38,7 @@ export default function Home() {
   const toast = useToast((s) => s.show);
   const errMsg = useErrorMessage();
   const { data: requests } = useRequests();
-  const featured = useFeatured();
-  const recent = useSearch(RECENT);
+  const sections = useDiscoverSections(EMPTY_FILTERS);
   const { data: shortIds } = useShortlistIds();
   const toggle = useToggleShortlist();
   const { setFilters, filters } = useFilters();
@@ -48,8 +47,13 @@ export default function Home() {
   const onOpen = useCallback((id: string) => router.push(`/profile/${id}`), []);
   const onToggle = useCallback((id: string) => toggle.mutate(id), [toggle]);
 
-  const featuredItems = featured.data ?? [];
-  const recentItems = (recent.data?.pages[0]?.items ?? []).slice(0, 4);
+  const sec = sections.data;
+  const loading = sections.isLoading;
+  const rail = { shortlisted: shortSet, onToggleShortlist: onToggle, onOpen } as const;
+  const toDiscover = (f: typeof filters, view?: 'new') => {
+    setFilters(f);
+    router.push(view ? { pathname: '/discover', params: { view, at: String(Date.now()) } } : '/discover');
+  };
   const newInterests = requests?.filter((r) => r.direction === 'received' && r.request.status === 'pending').length ?? 0;
   const firstName = me?.biodata.basic.fullName.split(' ')[0];
 
@@ -127,13 +131,6 @@ export default function Home() {
             </LinearGradient>
           ) : null}
 
-          {/* Owner PRD 2026-10-29: completion, then real activity, then Boost (when it applies). */}
-          <TeamCreatedNote />
-          <CompletionCard />
-          <ActivityStats />
-          <BoostPromoCard />
-          <PushPrompt />
-
           {newInterests ? (
             <Pressable onPress={() => router.push('/requests')} accessibilityRole="button" style={styles.attention} testID="home-interests">
               <View style={styles.attentionIcon}>
@@ -149,56 +146,63 @@ export default function Home() {
 
         </View>
 
-        {featuredItems.length || featured.isLoading ? (
-          <>
-            <SectionHead title={t('home.featured')} action={t('home.viewAll')} onAction={() => {
-              setFilters({ ...EMPTY_FILTERS, boostedOnly: true });
-              router.push('/discover');
-            }} />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
-              {featured.isLoading
-                ? [0, 1].map((i) => (
-                    <View key={i} style={{ width: 230 }}>
-                      <ProfileCardSkeleton />
-                    </View>
-                  ))
-                : featuredItems.map((p) => <ProfileCard key={p.id} profile={p} variant="featured" shortlisted={shortSet.has(p.id)} onToggleShortlist={onToggle} onOpen={onOpen} />)}
-            </ScrollView>
-            <View style={styles.column}>
-              <Text variant="caption">{t('discover.boostedNote')}</Text>
-            </View>
-          </>
-        ) : null}
+        <View style={styles.sections}>
+          {/* Featured near the top (owner Mini PRD 2026-10-31): boosted profiles in a fair rotation. */}
+          <ProfileRail
+            title={t('home.featured')}
+            note={t('home.featuredNote')}
+            action={t('home.viewAll')}
+            onAction={() => toDiscover({ ...EMPTY_FILTERS, boostedOnly: true })}
+            items={sec?.featured ?? []}
+            loading={loading}
+            testID="home-featured"
+            {...rail}
+          />
+        </View>
 
-        <SectionHead title={t('home.recent')} action={t('home.viewAll')} onAction={() => {
-          setFilters({ ...EMPTY_FILTERS, sort: 'recent' });
-          router.push('/discover');
-        }} />
-        <View style={[styles.column, { gap: space.lg }]}>
-          {recent.isLoading ? (
-            <ProfileCardSkeleton />
-          ) : recentItems.length ? (
-            recentItems.map((p) => <ProfileCard key={p.id} profile={p} shortlisted={shortSet.has(p.id)} onToggleShortlist={onToggle} onOpen={onOpen} />)
-          ) : (
-            <EmptyState icon="search" title={t('discover.empty')} body={t('discover.emptyHint')} />
-          )}
-          {recentItems.length ? <Button label={t('home.browseAll')} kind="secondary" arrow onPress={() => router.push('/discover')} /> : null}
+        <View style={styles.column}>
+          {/* Owner PRD 2026-10-29: completion, then real activity, then Boost (when it applies). */}
+          <TeamCreatedNote />
+          <CompletionCard />
+          <ActivityStats />
+          <BoostPromoCard />
+          <PushPrompt />
+        </View>
+
+        <View style={styles.sections}>
+          <ProfileRail
+            title={t('home.recommended')}
+            note={t('home.recommendedNote')}
+            action={me ? t('home.viewAll') : undefined}
+            onAction={() => me && toDiscover({ ...filtersFromPreferences(me.biodata.preferences), sort: 'recommended' })}
+            items={sec?.recommended ?? []}
+            testID="home-recommended"
+            {...rail}
+          />
+          <ProfileRail
+            title={t('home.recent')}
+            action={t('home.viewAll')}
+            onAction={() => toDiscover({ ...EMPTY_FILTERS, sort: 'recent' })}
+            items={sec?.recent ?? []}
+            loading={loading}
+            testID="home-recent"
+            {...rail}
+          />
+          <ProfileRail
+            title={t('home.newSince')}
+            action={t('home.viewAll')}
+            onAction={() => toDiscover({ ...EMPTY_FILTERS }, 'new')}
+            items={sec?.newSince ?? []}
+            testID="home-new"
+            {...rail}
+          />
+        </View>
+        <View style={[styles.column, { marginTop: space.lg, gap: space.sm }]}>
+          <Text variant="caption">{t('discover.boostedNote')}</Text>
+          <Button label={t('home.browseAll')} kind="secondary" arrow onPress={() => router.push('/discover')} testID="home-browse-all" />
         </View>
       </ScrollView>
     </View>
-  );
-}
-
-function SectionHead({ title, action, onAction }: { title: string; action: string; onAction: () => void }) {
-  return (
-    <Row style={[styles.column, { justifyContent: 'space-between', marginTop: space.xl, marginBottom: space.md }]}>
-      <Text variant="h2" accessibilityRole="header">
-        {title}
-      </Text>
-      <Text variant="label" color={colors.emerald} onPress={onAction} accessibilityRole="link" accessibilityLabel={`${action}: ${title}`} style={{ paddingVertical: space.sm }}>
-        {action}
-      </Text>
-    </Row>
   );
 }
 
@@ -213,5 +217,5 @@ const styles = StyleSheet.create({
   statusMark: { position: 'absolute', right: -24, top: -24, opacity: 0.25 },
   attention: { marginTop: space.md, flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.gold },
   attentionIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.goldSoft, alignItems: 'center', justifyContent: 'center' },
-  rail: { gap: space.md, paddingHorizontal: space.lg, paddingBottom: space.sm },
+  sections: { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center', marginTop: space.xl, gap: space.xl },
 });
