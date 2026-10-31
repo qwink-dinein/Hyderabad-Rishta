@@ -452,3 +452,13 @@ Normal returning login never sends one.
 - **App:** login text says WhatsApp (EN/UR/TE); after the 60 s countdown `auth.whatsappHint` explains the number must use WhatsApp. Demo backend resend cooldown is 60 s to match.
 - **Reviewers:** `[auth.sms.test_otp]` 919000000001 = 123456 (no message sent).
 - Owner guide: `docs/whatsapp-otp-setup.md`. Tests: `__tests__/whatsappOtp.test.ts`.
+
+## 24. Supabase adapter (Phase 2, 2026-10-31)
+- **Selection:** `src/services/index.ts` → `SupabaseBackend` when the public Supabase env vars are set (EAS profiles in `eas.json`), else `DemoBackend`.
+- **Auth:** `requestOtp` → `auth.signInWithOtp` (delivered on WhatsApp by the Send SMS hook); `verifyOtp` → `auth.verifyOtp(type 'sms')`, then `ensure_account` (account + invites), `reactivate_self`, `claim_account`, `trust_device` (device key in secure storage) and `get_pin_status`. `pinLogin` → Edge Function `pin-login` → `auth.setSession`. Session stored in chunked secure storage on phones (`client.ts`), `processLock`, foreground-only refresh.
+- **Members:** profile rows read/written under RLS (owners edit biodata only); status changes via `submit_for_publication`, `set_paused`, `start_boost`; Requests via `get_requests` (poke eligibility computed with `domain/connections.ts`); dashboard via `get_my_activity` (anonymised) + `domain/metrics.ts`; Discover = coarse `search_profiles` + the app's full `matchesFilters` (cached 60 s); notifications via `get_notifications`.
+- **Photos:** uploaded to `profile-photos/<uid>/<id>.jpg`; biodata stores the path; every screen gets 1-hour links from `photo-urls`, which signs only what `photo_paths_for` (privacy projection + consent, blocks) allows.
+- **Admin:** `admin_*` / `master_*` RPCs (phones masked server-side); sensitive master actions verify an OTP on the master's own phone first (fresh session for `assert_recent_login`).
+- **Errors:** SQL raises the app's error codes as messages; `map.ts#toAppError` maps them (and SQLSTATEs) to `AppError`.
+- **Gaps:** `completePayment` throws `fee_disabled` until the payment provider; backup-phone verification; team-added photos.
+- **Tests:** `supabaseMap.test.ts` (mapping, errors, chunked storage), Edge Function cores (`photoUrlsEdge`, `deleteAccountEdge`, …), SQL suites `99_member_api`, `99_admin_api`, live `__tests__/live/supabaseLive.test.ts`.
