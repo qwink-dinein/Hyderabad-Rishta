@@ -638,6 +638,7 @@ export class SupabaseBackend implements Backend {
     const row = await this.rpc<Row>('admin_update_pricing', {
       p_config: config, p_boost_days: synced.boostDays, p_require_approval: synced.requireApproval,
       p_request_expiry_days: synced.requestExpiryDays, p_poke_wait_hours: synced.pokeWaitHours, p_poke_max_per_7_days: synced.pokeMaxPer7Days,
+      p_feed_impression_cooldown_days: synced.feedImpressionCooldownDays, p_feed_view_cooldown_days: synced.feedViewCooldownDays,
     });
     this.pricing = undefined;
     return mapPricing(row);

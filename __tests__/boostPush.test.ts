@@ -320,6 +320,6 @@ describe('dispatcher (edge function core)', () => {
   it('the Deno copy of the push policy is in sync with src/domain/push.ts', () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { FILES, build } = require('../scripts/sync-shared.js');
-    for (const [src, dest] of FILES) expect(fs.readFileSync(path.join(__dirname, '..', dest), 'utf8')).toBe(build(src));
+    for (const [src, dest, mode] of FILES) expect(fs.readFileSync(path.join(__dirname, '..', dest), 'utf8')).toBe(build(src, mode));
   });
 });
