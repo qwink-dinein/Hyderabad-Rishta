@@ -10,7 +10,7 @@ import { Text } from '@/components/ui/Text';
 import { formatDate } from '@/domain/format';
 import { COUNTRY_CODES } from '@/domain/options';
 import { qk } from '@/hooks/queries';
-import { backend } from '@/services';
+import { backend, backendInfo } from '@/services';
 import { useSession } from '@/state/session';
 import { colors, space } from '@/theme/tokens';
 
@@ -245,7 +245,7 @@ export default function Team() {
                   style={{ alignSelf: 'flex-start' }}
                   disabled={bphone.length < 6}
                   onPress={async () => {
-                    if (await run(() => backend.requestOtp(bcc, bphone), 'Code sent to the backup phone (demo: 123456).')) setBotpSent(true);
+                    if (await run(() => backend.masterSendBackupPhoneCode(bcc, bphone), backendInfo.kind === 'demo' ? 'Code sent to the backup phone (demo: 123456).' : 'Code sent to the backup phone on WhatsApp.')) setBotpSent(true);
                   }}
                   testID="backup-send"
                 />

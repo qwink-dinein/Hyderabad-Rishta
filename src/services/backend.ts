@@ -393,6 +393,11 @@ export interface Backend {
   masterTransfer(toUserId: string, otp: string): Promise<void>;
   masterSecurityStatus(): Promise<SecurityStatus>;
   masterGenerateRecoveryCodes(otp: string): Promise<string[]>;
+  /**
+   * Sends a one-time code to a prospective backup phone (WhatsApp on the live backend). It never signs that
+   * number in. Refused for the master's own login number or another admin's number; rate-limited.
+   */
+  masterSendBackupPhoneCode(countryCode: string, phone: string): Promise<void>;
   masterSetBackupPhone(countryCode: string, phone: string, otp: string): Promise<void>;
   masterCancelRecovery(): Promise<void>;
 

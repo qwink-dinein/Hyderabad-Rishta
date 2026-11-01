@@ -35,6 +35,7 @@ import {
   type AdminPhoneCheck,
   type AdminStats,
   type Backend,
+  type ErrorCode,
   type MemberDetail,
   type MemberRow,
   type NotificationView,
@@ -816,9 +817,23 @@ export class SupabaseBackend implements Backend {
     await this.stepUp(otp);
     return this.rpc<string[]>('master_generate_recovery_codes');
   }
-  /** Verifying a second phone needs a server-side code check that does not sign that phone in (next phase). */
-  async masterSetBackupPhone(_countryCode: string, _phone: string, _otp: string): Promise<void> {
-    throw new AppError('invalid_state', 'Backup phone setup is not available on the live backend yet');
+  /**
+   * Backup phone: the master-backup-phone function sends its own WhatsApp code and checks it, so the
+   * backup number is never signed in (a Supabase Auth OTP would create a session for it).
+   */
+  private async backupPhoneCall(body: Record<string, unknown>) {
+    const r = await this.functionCall<Row>('master-backup-phone', body);
+    if (r.ok) return;
+    const code = String(r.data.error ?? 'invalid_state');
+    const known: ErrorCode[] = ['unauthenticated', 'forbidden', 'validation', 'rate_limited', 'not_found', 'otp_expired', 'invalid_otp', 'invalid_state'];
+    const retryAt = typeof r.data.retryAfter === 'number' ? new Date(this.now().getTime() + r.data.retryAfter * 1000).toISOString() : undefined;
+    throw new AppError(known.includes(code as ErrorCode) ? (code as ErrorCode) : 'invalid_state', typeof r.data.message === 'string' ? r.data.message : undefined, retryAt ? { retryAt } : undefined);
+  }
+  async masterSendBackupPhoneCode(countryCode: string, phone: string) {
+    await this.backupPhoneCall({ action: 'send', countryCode, phone });
+  }
+  async masterSetBackupPhone(countryCode: string, phone: string, otp: string) {
+    await this.backupPhoneCall({ action: 'verify', countryCode, phone, code: otp });
   }
   async masterCancelRecovery() {
     await this.rpc('master_cancel_recovery');

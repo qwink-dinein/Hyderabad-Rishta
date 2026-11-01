@@ -2330,14 +2330,26 @@ export class DemoBackend implements Backend {
     }, true);
   }
 
+  /** Same number rules for sending and verifying a backup-phone code. */
+  private backupPhoneTarget(db: DemoDb, countryCode: string, phone: string) {
+    const m = this.master(db);
+    ({ countryCode, phone } = this.normPhone(countryCode, phone));
+    if (countryCode === m.countryCode && phone === m.phone) throw new AppError('invalid_state', 'Use a different number from your login phone');
+    const owner = this.findUserByPhone(db, countryCode, phone);
+    if (owner && isAdminRole(owner.role)) throw new AppError('invalid_state', 'That number belongs to another admin');
+    return { m, countryCode, phone };
+  }
+
+  async masterSendBackupPhoneCode(countryCode: string, phone: string) {
+    await this.run((db) => void this.backupPhoneTarget(db, countryCode, phone));
+    await this.requestOtp(countryCode, phone); // demo: the fixed demo code; nobody is signed in by it
+  }
+
   /** Verifies possession of the backup phone with an OTP sent to it. */
   masterSetBackupPhone(countryCode: string, phone: string, otp: string) {
     return this.run((db) => {
-      const m = this.master(db);
-      ({ countryCode, phone } = this.normPhone(countryCode, phone));
-      if (countryCode === m.countryCode && phone === m.phone) throw new AppError('invalid_state', 'Use a different number from your login phone');
-      const owner = this.findUserByPhone(db, countryCode, phone);
-      if (owner && isAdminRole(owner.role)) throw new AppError('invalid_state', 'That number belongs to another admin');
+      let m: User;
+      ({ m, countryCode, phone } = this.backupPhoneTarget(db, countryCode, phone));
       this.consumeOtp(db, countryCode, phone, otp);
       db.security.backupPhone = { countryCode, phone, verifiedAt: this.iso() };
       this.audit(db, m.id, 'master.backup_phone_set');

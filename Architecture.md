@@ -496,3 +496,8 @@ Normal returning login never sends one.
   - Carousel cards do not record Discover impressions (no reliable on-screen measure inside a horizontal rail); opening a profile from one records a view as usual.
 - **Boost rules on the server:** `boost_plan_terms` (used by `start_boost` and the order-insert trigger) refuses new boosts when Boost is off (`fee_disabled`) or when a photo is required and missing (`photo_required`). Orders already placed are never re-checked.
 - **Tests:** `__tests__/boostVisibility.test.ts` (cap, rotation fairness over 600 viewers, sections dedupe, settings validation, multi-boost × multi-viewer journey on the demo backend), `__tests__/discoverFeedEdge.test.ts` (sections mode), `supabase/tests/99_boost_visibility.test.sql`, `e2e/boostvisibility.js`.
+
+## 27. Master backup phone on the live backend (2026-11-01)
+- A Supabase Auth OTP would sign the backup number in, so the Edge Function `master-backup-phone` (master's JWT) issues its own code: `send` → 6 random digits, only `HMAC-SHA256(BACKUP_CODE_SECRET or the service key, master:number:code)` stored via `backup_code_issue`, code delivered on WhatsApp with the login template (`send-whatsapp-otp/send.ts#sendOtp`); `verify` → `backup_code_verify` (right: `set_master_backup_phone`, code forgotten; wrong: attempt counted and kept).
+- Rules (database): caller must be the master; not their own login number or another admin's; 10-minute expiry, 5 attempts, ≥ 60 s between codes, ≤ 5 codes per hour; table `backup_phone_codes` and both functions are service-role only.
+- App: `masterSendBackupPhoneCode` + `masterSetBackupPhone` (demo keeps its fixed demo code). Tests: `__tests__/masterBackupPhone.test.ts`, `supabase/tests/99_backup_phone_codes.test.sql`.
