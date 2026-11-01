@@ -19,7 +19,7 @@ export let lastPath = '/';
 export const setLastPath = (p: string) => {
   lastPath = p;
 };
-const NO_RETURN = /^\/($|login|pin|language|recover)/;
+const NO_RETURN = /^\/($|login|pin|language|recover|start)/;
 
 export const useSession = create<SessionState>((set) => ({
   ready: false,

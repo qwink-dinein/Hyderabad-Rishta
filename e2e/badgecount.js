@@ -17,7 +17,7 @@ const SENDERS = ['9000000102', '9000000108', '9000000110', '9000000114'];
   const logout = async () => {
     await page.goto(BASE + '/settings');
     await page.getByTestId('logout').click();
-    await page.getByTestId('cta-find').waitFor();
+    await page.getByTestId('welcome-member-login').waitFor();
   };
   const badge = async (expected) => {
     // The tab's accessible name carries the count ("Requests, 3 new interests"); the visible badge shows the number.

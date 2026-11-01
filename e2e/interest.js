@@ -15,7 +15,7 @@ const step = async (name, fn) => {
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 300)); });
   const login = (phone) => loginWithOtp(page, BASE, phone);
-  const logout = async () => { await page.goto(BASE + '/settings'); await page.getByTestId('logout').click(); await page.getByTestId('cta-find').waitFor(); };
+  const logout = async () => { await page.goto(BASE + '/settings'); await page.getByTestId('logout').click(); await page.getByTestId('welcome-member-login').waitFor(); };
   const confirmDialog = (label) => page.getByRole('button', { name: label, exact: true }).last().click();
 
   await step('photo picker shows three labelled slots', async () => {

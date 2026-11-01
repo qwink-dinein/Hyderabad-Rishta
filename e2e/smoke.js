@@ -17,23 +17,23 @@ const step = async (name, fn) => {
   const shot = (n) => page.screenshot({ path: `${SHOTS}/${n}.png`, fullPage: false });
   const login = (phone) => loginWithOtp(page, BASE, phone);
 
-  await step('app opens on login (blank number + PIN), new-member options below', async () => {
+  await step('app opens on the welcome screen: find a rishta (gold) + member log in', async () => {
     await page.goto(BASE + '/');
-    await page.getByText('Assalamu alaikum, please log in').waitFor({ timeout: 15000 });
-    await page.getByTestId('login-phone').waitFor();
-    await page.getByTestId('cta-create').waitFor();
+    await page.getByText('Assalamu alaikum.').first().waitFor({ timeout: 15000 });
+    await page.getByTestId('welcome-find-rishta').waitFor();
+    await page.getByTestId('welcome-member-login').waitFor();
     await shot('01-landing');
   });
   await step('switch to Urdu (RTL) instantly', async () => {
     await page.getByRole('radio', { name: 'اردو' }).first().click();
-    await page.getByText('السلام علیکم، براہِ کرم لاگ اِن کریں').waitFor();
+    await page.getByText('السلام علیکم۔').first().waitFor();
     const dir = await page.evaluate(() => document.documentElement.dir);
     if (dir !== 'rtl') throw new Error('dir=' + dir);
     await shot('02-landing-urdu');
   });
   await step('switch to Telugu', async () => {
     await page.getByRole('radio', { name: 'తెలుగు' }).first().click();
-    await page.getByText('అస్సలాము అలైకుమ్').first().waitFor();
+    await page.getByText('అస్సలాము అలైకుమ్.').first().waitFor();
     await shot('03-landing-telugu');
     await page.getByRole('radio', { name: 'English' }).first().click();
   });
@@ -83,7 +83,7 @@ const step = async (name, fn) => {
   await step('logout', async () => {
     await page.goto(BASE + '/settings');
     await page.getByTestId('logout').click();
-    await page.getByText('Find a rishta with dignity').waitFor();
+    await page.getByTestId('welcome-find-rishta').waitFor(); // back on the welcome screen
   });
   await step('new user → wizard → validation', async () => {
     await login('9123456789');

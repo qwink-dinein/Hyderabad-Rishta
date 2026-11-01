@@ -178,8 +178,8 @@ const styles = StyleSheet.create({
   emptyMain: { backgroundColor: '#FFFDF8', gap: space.xs },
   plus: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.sage, alignItems: 'center', justifyContent: 'center' },
   plusMain: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.goldSoft },
-  labelPill: { position: 'absolute', top: 6, left: 6, paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.pill, backgroundColor: 'rgba(11,48,40,0.65)' },
+  labelPill: { position: 'absolute', top: 6, left: 6, paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.pill, backgroundColor: 'rgba(42,11,19,0.65)' },
   actions: { position: 'absolute', bottom: 6, left: 6, right: 6, flexDirection: 'row', justifyContent: 'space-between' },
-  actionBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(11,48,40,0.75)', alignItems: 'center', justifyContent: 'center' },
+  actionBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(42,11,19,0.75)', alignItems: 'center', justifyContent: 'center' },
   reassure: { flexDirection: 'row', alignItems: 'center', gap: space.sm, padding: space.md, borderRadius: radius.md, backgroundColor: colors.goldSoft },
 });

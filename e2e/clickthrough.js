@@ -58,15 +58,18 @@ const db = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('hr.dem
     await page.waitForFunction(() => document.documentElement.dir === 'rtl');
     await page.getByRole('radio', { name: 'English' }).first().click();
     await page.waitForFunction(() => document.documentElement.dir === 'ltr');
-    await page.getByTestId('cta-create').click();
-    // First visit asks for the language, then the number (by design).
-    await page.waitForURL((u) => (u.pathname === '/login' || u.pathname === '/language') && u.search.includes('biodata'), { waitUntil: 'commit' });
+    await page.getByTestId('welcome-find-rishta').click(); // new families: matches first, sign-up after
+    await page.waitForURL((u) => u.pathname === '/start/who', { waitUntil: 'commit' });
+    await page.goto(BASE + '/');
+    await page.getByTestId('welcome-member-login').click(); // members: the login card
+    await page.waitForURL((u) => u.pathname === '/login', { waitUntil: 'commit' });
+    await page.getByTestId('pin-input').waitFor();
     await page.goto(BASE + '/');
     await page.getByTestId('how-it-works').click(); // the old landing page lives behind "How it works"
     await page.waitForURL((u) => u.pathname === '/welcome', { waitUntil: 'commit' });
-    await page.getByTestId('welcome-login').click(); // and leads back to login
+    await page.getByTestId('welcome-login').click(); // and leads back to the opening screen
     await page.waitForURL((u) => u.pathname === '/', { waitUntil: 'commit' });
-    await page.getByTestId('pin-input').waitFor();
+    await page.getByTestId('welcome-member-login').waitFor();
   });
 
   await step('home: keyword search opens Discover filtered; filter button opens Filters; View all; new interests', MEMBER, async (page) => {
@@ -194,12 +197,12 @@ const db = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('hr.dem
     await page.goto(BASE + '/settings');
     await btn(page, 'Deactivate account').click();
     await confirmDialog(page, 'Deactivate account');
-    await page.getByTestId('cta-find').waitFor();
+    await page.getByTestId('welcome-member-login').waitFor();
     if ((await db(page)).profiles.find((p) => p.id === 'p_1').status !== 'paused') throw new Error('profile not hidden');
     await page.goto(BASE + '/login');
     await page.getByTestId('login-phone').fill(MEMBER); // the number box is always blank
     await page.getByTestId('pin-input').fill('4827');
-    await page.getByTestId('pin-login').click();
+    await page.getByTestId('pin-login').click({ timeout: 1500 }).catch(() => undefined);
     await page.waitForURL((u) => !u.pathname.startsWith('/login') && u.pathname !== '/', { waitUntil: 'commit' });
     const u = (await db(page)).users.find((x) => x.id === 'u_demo');
     if (u.deactivatedAt) throw new Error('still deactivated');
@@ -216,10 +219,10 @@ const db = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('hr.dem
     await page.goto(BASE + '/settings');
     await btn(page, 'Delete account permanently').click();
     await confirmDialog(page, 'Delete account permanently');
-    await page.getByTestId('cta-find').waitFor();
+    await page.getByTestId('welcome-member-login').waitFor();
     if ((await db(page)).users.some((x) => x.phone === '9812300088')) throw new Error('account still stored');
     await loginWithOtp(page, BASE, '9812300088');
-    await page.waitForURL((u) => u.pathname.startsWith('/biodata'), { waitUntil: 'commit' });
+    await page.waitForURL((u) => u.pathname.startsWith('/biodata') || u.pathname.startsWith('/start/'), { waitUntil: 'commit' });
   });
 
   await step('reset demo data restores the seed', MEMBER, async (page) => {

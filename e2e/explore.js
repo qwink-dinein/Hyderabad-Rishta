@@ -137,7 +137,7 @@ const setDb = (page, src) => page.evaluate((s) => { const d = JSON.parse(localSt
 
   await step('admin switches off every bride option → brides see "not available"; no Boost card', '9000000000', async (page) => {
     await setDb(page, "d.pricing.boostPlans.forEach((p) => { p.fee.bride = { mode: 'disabled', amount: 0 }; });");
-    await page.goto(BASE + '/settings'); await page.getByTestId('logout').click(); await page.getByTestId('cta-find').waitFor();
+    await page.goto(BASE + '/settings'); await page.getByTestId('logout').click(); await page.getByTestId('welcome-member-login').waitFor();
     await loginWithOtp(page, BASE, '9000000104');
     await page.goto(BASE + '/boost'); await page.waitForTimeout(1000); await shot(page, 'a1-boost-off');
     if (await page.getByTestId('boost-cta').count()) throw new Error('bride can still buy');

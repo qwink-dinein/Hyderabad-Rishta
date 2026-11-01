@@ -48,6 +48,8 @@ export function projectProfile(
     heightCm: basic.heightCm,
     maritalStatus: basic.maritalStatus,
     children: basic.maritalStatus !== 'never_married' ? basic.children : undefined,
+    childrenLiveWith: basic.maritalStatus !== 'never_married' && (basic.children ?? 0) > 0 ? basic.childrenLiveWith : undefined,
+    childrenNote: basic.maritalStatus !== 'never_married' && (basic.children ?? 0) > 0 ? basic.childrenNote : undefined,
     motherTongue: basic.motherTongue,
     aboutMe: basic.aboutMe,
     createdFor: basic.createdFor,

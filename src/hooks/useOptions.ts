@@ -4,9 +4,10 @@ import * as O from '@/domain/options';
 import { formatHeight } from '@/domain/format';
 import type { Option } from '@/components/ui/forms';
 
-type Group = 'createdFor' | 'lookingFor' | 'marital' | 'tongue' | 'education' | 'profession' | 'employment' | 'income' | 'relocate' | 'maslak' | 'subMaslak' | 'practice' | 'yesNo' | 'importance' | 'familyType' | 'familyValues' | 'visibility' | 'displayName' | 'report';
+type Group = 'childrenLive' | 'createdFor' | 'lookingFor' | 'marital' | 'tongue' | 'education' | 'profession' | 'employment' | 'income' | 'relocate' | 'maslak' | 'subMaslak' | 'practice' | 'yesNo' | 'importance' | 'familyType' | 'familyValues' | 'visibility' | 'displayName' | 'report';
 
 const SOURCES: Record<Group, readonly string[]> = {
+  childrenLive: O.CHILDREN_LIVE,
   createdFor: O.CREATED_FOR,
   lookingFor: ['bride', 'groom'],
   marital: O.MARITAL_STATUS,

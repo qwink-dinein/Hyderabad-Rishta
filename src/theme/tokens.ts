@@ -2,28 +2,33 @@
  * Design tokens — single source of truth for the visual system (see design.md, Design PRD v1.0 §2).
  * Never hardcode colours or spacing in screens; import from here.
  */
+/**
+ * Palette: Lac, Pearl & Antique Gold (owner decision 2026-11-01; docs/design/palette.md).
+ * Token NAMES are kept from the first palette so every screen recolours from here; read them as roles:
+ * `emerald` = lac maroon (brand, primary buttons, headings), `ivory` = pearl, `gold` = antique gold.
+ */
 export const colors = {
-  emerald: '#123D32', // Deep Emerald — primary buttons, headings, nav highlights
-  emeraldSoft: '#1D5546',
-  forest: '#0B3028', // Dark Forest — hero overlays, premium dark sections
-  ivory: '#F8F4EB', // Warm Ivory — app background
-  gold: '#C6A66B', // Champagne Gold — decorative accents, selected highlights (never small text on light)
-  goldMuted: '#A98543', // Muted Gold — icons and large text on light backgrounds (3.1:1)
-  goldDeep: '#8A6A30', // gold-toned SMALL text on ivory/white (AA 4.6:1)
-  goldSoft: '#F4EBD8', // gold-tinted surface (badges, selected chips)
-  sage: '#E6EEE7', // Sage Mist — secondary cards, icon backgrounds
-  white: '#FFFFFF', // Porcelain — inputs, cards, sheets
-  charcoal: '#24342D', // body text
-  muted: '#65736D', // Muted Grey — secondary text (4.5:1 on ivory)
-  border: '#E2D7C1', // Border Beige
-  danger: '#B65345', // Error Terracotta — borders, icons, destructive buttons
+  emerald: '#4A0E1F', // Lac maroon — primary buttons, headings, nav highlights
+  emeraldSoft: '#5A1628', // raised lac (panels on maroon)
+  forest: '#330915', // deep lac — hero gradients, premium dark sections
+  ivory: '#FAF6F1', // Pearl — app background
+  gold: '#C9A05A', // Antique gold — the one main action on maroon, Boosted, emblem (never small text on light)
+  goldMuted: '#9C7634', // pressed gold; icons and large text on light (3.9:1)
+  goldDeep: '#7E5F26', // gold-toned SMALL text on pearl/white (AA 5.5:1)
+  goldSoft: '#F6ECDD', // gold-tinted surface (badges, selected chips)
+  sage: '#F4E9E5', // Rose mist — secondary cards, icon backgrounds; soft text on maroon
+  white: '#FFFFFF', // cards, inputs, sheets
+  charcoal: '#2A0B13', // Kohl ink — body text (16.9:1 on pearl)
+  muted: '#6B5A5D', // secondary text (6.0:1 on pearl)
+  border: '#EADFD6',
+  danger: '#B65345', // Error terracotta — borders, icons, destructive buttons
   dangerText: '#9A4335', // terracotta for small text on tinted backgrounds (AA)
   dangerBg: '#F8E6E1',
-  success: '#267653', // Success Green
-  successBg: '#E1EFE6',
+  success: '#1E6B52', // Emerald — only "yes": accepted, sent, success (6.0:1 on pearl)
+  successBg: '#E6F1EC',
   warningBg: '#F6EDD8',
-  overlay: 'rgba(11, 48, 40, 0.55)',
-  skeleton: '#EDE6D6',
+  overlay: 'rgba(51, 9, 21, 0.55)',
+  skeleton: '#EFE5DF',
 } as const;
 
 /** 4-pt spacing scale. */
@@ -32,14 +37,14 @@ export const radius = { sm: 10, md: 14, lg: 20, xl: 26, pill: 999 } as const;
 
 export const shadow = {
   card: {
-    shadowColor: '#123D32',
+    shadowColor: '#4A0E1F',
     shadowOpacity: 0.07,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 6 },
     elevation: 2,
   },
   soft: {
-    shadowColor: '#123D32',
+    shadowColor: '#4A0E1F',
     shadowOpacity: 0.05,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 3 },

@@ -108,6 +108,8 @@ export function ProfileDetails({ profile, contactSlot }: { profile: PublicProfil
         <Card>
           <InfoRow label={t('f.maritalStatus')} value={label('marital', p.maritalStatus)} />
           <InfoRow label={t('f.children')} value={p.children} />
+          <InfoRow label={t('f.childrenLiveWith')} value={label('childrenLive', p.childrenLiveWith)} />
+          <InfoRow label={t('f.childrenNote')} value={p.childrenNote} />
           <InfoRow label={t('f.height')} value={formatHeight(p.heightCm)} />
           <InfoRow label={t('f.motherTongue')} value={label('tongue', p.motherTongue)} />
           <InfoRow label={t('f.createdFor')} value={label('createdFor', p.createdFor)} />
@@ -166,6 +168,8 @@ export function ProfileDetails({ profile, contactSlot }: { profile: PublicProfil
             <InfoRow label={t('f.siblings')} value={p.family.siblings} />
             <InfoRow label={t('f.brothers')} value={p.family.brothers} />
             <InfoRow label={t('f.sisters')} value={p.family.sisters} />
+            <InfoRow label={t('f.marriedBrothers')} value={p.family.marriedBrothers} />
+            <InfoRow label={t('f.marriedSisters')} value={p.family.marriedSisters} />
             <InfoRow label={t('f.residence')} value={p.family.residence} />
             {p.family.description ? <Text variant="body" style={{ marginTop: space.sm }}>{p.family.description}</Text> : null}
           </Card>
@@ -198,7 +202,7 @@ export function ProfileDetails({ profile, contactSlot }: { profile: PublicProfil
 
 const styles = StyleSheet.create({
   gallery: { width: '100%', aspectRatio: 4 / 5, maxHeight: 460, backgroundColor: colors.sage },
-  counter: { position: 'absolute', top: space.md, right: space.md, paddingHorizontal: space.sm, paddingVertical: 2, borderRadius: 999, backgroundColor: 'rgba(11,48,40,0.6)' },
+  counter: { position: 'absolute', top: space.md, right: space.md, paddingHorizontal: space.sm, paddingVertical: 2, borderRadius: 999, backgroundColor: 'rgba(42,11,19,0.6)' },
   thumbs: { flexDirection: 'row', gap: space.sm, paddingHorizontal: space.lg, paddingTop: space.md },
   thumb: { width: 64, height: 80, borderRadius: 10, overflow: 'hidden', borderWidth: 2, borderColor: 'transparent' },
   thumbOn: { borderColor: colors.gold },

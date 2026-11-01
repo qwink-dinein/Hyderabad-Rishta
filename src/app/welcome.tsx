@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Redirect, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,7 +12,8 @@ import { Icon, type IconName } from '@/components/ui/Icon';
 import { Card, Row, Screen } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { isAdminRole } from '@/domain/types';
-import { hasChosenLanguage, isRTL } from '@/i18n';
+import { isRTL } from '@/i18n';
+import { useOnboarding } from '@/state/onboarding';
 import { backendInfo } from '@/services';
 import { useSession } from '@/state/session';
 import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
@@ -30,15 +30,15 @@ export default function Welcome() {
   const { width: screenW, height: screenH } = useWindowDimensions();
   const narrow = screenW < 360;
   const short = screenH < 800 || narrow;
-  const [langChosen, setLangChosen] = useState(true);
-  useEffect(() => {
-    hasChosenLanguage().then(setLangChosen);
-  }, []);
   if (user) return <Redirect href={isAdminRole(user.role) ? '/admin' : '/home'} />;
 
-  // Registration journey: choose language (only if never chosen) → mobile → OTP → biodata.
-  const create = () => (langChosen ? router.push({ pathname: '/login', params: { next: 'biodata' } }) : router.push({ pathname: '/language', params: { next: 'biodata' } }));
-  const find = () => router.push({ pathname: '/login', params: { next: 'discover' } });
+  // Both lead into the guided onboarding: see matches first, sign up after (owner request 2026-11-01).
+  const startOnboarding = () => {
+    if (!useOnboarding.getState().active) useOnboarding.getState().start();
+    router.push('/start/who');
+  };
+  const create = startOnboarding;
+  const find = startOnboarding;
 
   const trust: { icon: IconName; key: 'privacy' | 'family' | 'consent' }[] = [
     { icon: 'lock', key: 'privacy' },
@@ -189,7 +189,7 @@ export default function Welcome() {
         <View style={styles.final}>
           <View style={StyleSheet.absoluteFill} pointerEvents="none">
             <HeroScene kind="connect" width={720} height={260} />
-            <LinearGradient colors={['rgba(11,48,40,0.35)', 'rgba(11,48,40,0.92)']} style={StyleSheet.absoluteFill} />
+            <LinearGradient colors={['rgba(42,11,19,0.35)', 'rgba(42,11,19,0.92)']} style={StyleSheet.absoluteFill} />
           </View>
           <Text variant="h1" color={colors.ivory} center>
             {t('landing.finalTitle')}

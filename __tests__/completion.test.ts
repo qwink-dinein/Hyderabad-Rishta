@@ -62,8 +62,23 @@ describe('exactly what is missing (owner report 2026-11-01: "99 % even when I fi
     }
   });
 
+  const PHOTO = { id: 'ph_1', uri: 'https://example.org/p.jpg' };
+
+  it('a photo counts toward 100 % (owner decision 2026-11-01) but never blocks publishing', () => {
+    const b = bio('p_9');
+    b.religion.namaz = 'regularly';
+    b.photos = [];
+    const c = profileCompletion(b);
+    expect(c.percent).toBe(99);
+    expect(c.fields).toEqual([{ step: 0, field: 'photos', label: 'completion.field.photo', required: false }]);
+    expect(firstInvalidStep(b)).toBe(-1); // still publishable without a photo
+    b.photos = [PHOTO];
+    expect(profileCompletion(b)).toMatchObject({ percent: 100, complete: true, fields: [] });
+  });
+
   it('a stuck-at-99 % profile points at the one recommended field, and filling it reaches 100 %', () => {
     const b = bio('p_9'); // seed: everything but namaz
+    b.photos = [PHOTO];
     const c = profileCompletion(b);
     expect(c.percent).toBe(99);
     expect(c.fields).toEqual([{ step: 3, field: 'namaz', label: 'f.namaz', required: false }]);
@@ -73,6 +88,7 @@ describe('exactly what is missing (owner report 2026-11-01: "99 % even when I fi
 
   it('family: family type and a parent occupation are listed separately, in form order', () => {
     const b = bio('p_1');
+    b.photos = [PHOTO];
     b.family.familyType = undefined as never;
     b.family.fatherOccupation = '';
     b.family.motherOccupation = '';
@@ -83,6 +99,7 @@ describe('exactly what is missing (owner report 2026-11-01: "99 % even when I fi
 
   it('a short "About me" is named with the 20-character rule; required fields come first', () => {
     const b = bio('p_1');
+    b.photos = [PHOTO];
     b.basic.aboutMe = 'Hi';
     b.basic.fullName = '';
     const f = profileCompletion(b).fields;

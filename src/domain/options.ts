@@ -29,6 +29,7 @@ export const SUB_MASLAK: Record<string, readonly string[]> = {
 };
 export const ALL_SUB_MASLAK = [...new Set(Object.values(SUB_MASLAK).flat())];
 export const MAX_CHILDREN = 15;
+export const CHILDREN_LIVE = ['yes', 'no', 'sometimes'] as const;
 export const PRACTICE = ['regularly', 'mostly', 'sometimes', 'learning', 'prefer_not'] as const;
 export const YES_NO_PNS = ['yes', 'no', 'prefer_not'] as const;
 export const IMPORTANCE = ['very', 'somewhat', 'not_much', 'prefer_not'] as const;

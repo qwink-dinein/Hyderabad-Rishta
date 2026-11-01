@@ -20,11 +20,11 @@ const step = async (name, fn) => {
     await page.getByRole('radio', { name: option, exact: true }).last().click();
   };
   const next = () => page.getByTestId('wizard-next').click();
-  const logout = async () => { await page.goto(BASE + '/settings'); await page.getByTestId('logout').click(); await page.getByTestId('cta-find').waitFor(); };
+  const logout = async () => { await page.goto(BASE + '/settings'); await page.getByTestId('logout').click(); await page.getByTestId('welcome-member-login').waitFor(); };
 
   await step('register new user', async () => {
     await page.goto(BASE + '/');
-    await login('9876500001');
+    await login('9876500001'); // new members continue in the full biodata form here (onboarding: e2e/onboarding.js)
     await page.getByText('Step 1 of 7').waitFor();
   });
   await step('step 1 basic', async () => {

@@ -21,7 +21,7 @@ const errors = [];
     await page.getByRole('radio', { name: option, exact: true }).last().click();
   };
   const next = () => page.getByTestId('wizard-next').click();
-  const logout = async () => { await page.goto(BASE + '/settings'); await page.getByTestId('logout').click(); await page.getByTestId('cta-find').waitFor(); };
+  const logout = async () => { await page.goto(BASE + '/settings'); await page.getByTestId('logout').click(); await page.getByTestId('welcome-member-login').waitFor(); };
   const db = () => page.evaluate(() => JSON.parse(localStorage.getItem('hr.demo.db')));
 
   await step('admin: "Add a member" refuses a number that already has an account', async () => {

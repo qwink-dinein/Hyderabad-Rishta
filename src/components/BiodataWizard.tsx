@@ -243,7 +243,10 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
         <ChipGroup
           options={opts('marital')}
           value={b.maritalStatus}
-          onChange={(v) => setBd({ ...bd, basic: { ...b, maritalStatus: v ?? '', children: v && v !== 'never_married' ? b.children : undefined } })}
+          onChange={(v) => {
+            const before = v && v !== 'never_married';
+            setBd({ ...bd, basic: { ...b, maritalStatus: v ?? '', children: before ? b.children : undefined, childrenLiveWith: before ? b.childrenLiveWith : undefined, childrenNote: before ? b.childrenNote : undefined } });
+          }}
           accessibilityLabel={t('f.maritalStatus')}
         />
       </Field>
@@ -261,6 +264,16 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
             testID="children-input"
           />
         </Field>
+        {(b.children ?? 0) > 0 ? (
+          <Reveal>
+            <Field label={t('f.childrenLiveWith')} optional>
+              <ChipGroup options={opts('childrenLive')} value={b.childrenLiveWith} onChange={(v) => set('basic', 'childrenLiveWith', (v || undefined) as typeof b.childrenLiveWith)} accessibilityLabel={t('f.childrenLiveWith')} />
+            </Field>
+            <Field label={t('f.childrenNote')} optional hint={t('f.childrenNoteHint')} error={err('childrenNote')}>
+              <TextField value={b.childrenNote} onChangeText={(v) => set('basic', 'childrenNote', v)} multiline maxLength={300} accessibilityLabel={t('f.childrenNote')} testID="children-note" />
+            </Field>
+          </Reveal>
+        ) : null}
         </Reveal>
       ) : null}
       <Field label={t('f.motherTongue')} required error={err('motherTongue')}>
@@ -446,6 +459,20 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
           </Row>
         </View>
       </Field>
+      {(fam.brothers ?? 0) > 0 || (fam.sisters ?? 0) > 0 ? (
+        <Reveal>
+          <Field label={t('f.marriedSiblings')} optional error={err('marriedBrothers') || err('marriedSisters')}>
+            <Row gap={space.sm}>
+              {(['marriedBrothers', 'marriedSisters'] as const).map((k) => (
+                <View key={k} style={{ flex: 1, gap: 6 }}>
+                  <Text variant="caption">{t(`f.${k}`)}</Text>
+                  <TextField value={fam[k] != null ? String(fam[k]) : ''} onChangeText={(v) => set('family', k, num(v))} keyboardType="number-pad" inputMode="numeric" maxLength={2} accessibilityLabel={t(`f.${k}`)} error={!!err(k)} testID={`family-${k}`} />
+                </View>
+              ))}
+            </Row>
+          </Field>
+        </Reveal>
+      ) : null}
       <Field label={t('f.residence')} optional>
         <TextField value={fam.residence} onChangeText={(v) => set('family', 'residence', v)} accessibilityLabel={t('f.residence')} maxLength={80} />
       </Field>

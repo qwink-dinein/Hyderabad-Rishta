@@ -22,7 +22,7 @@ const step = async (name, fn) => {
     await page.goto(BASE + '/legal/help');
     await home();
     await at('/');
-    await page.getByTestId('cta-create').waitFor();
+    await page.getByTestId('welcome-find-rishta').waitFor();
   });
   await step('member: profile → Home', async () => {
     await login('9000000001');
@@ -56,7 +56,7 @@ const step = async (name, fn) => {
   await step('new member: wizard → Home keeps the draft', async () => {
     await page.goto(BASE + '/settings');
     await page.getByTestId('logout').click();
-    await page.getByTestId('cta-find').waitFor();
+    await page.getByTestId('welcome-member-login').waitFor();
     await login('9333000123');
     await page.waitForURL((u) => u.pathname === '/biodata');
     await page.getByLabel('Full name').fill('Draft Keeper');
@@ -68,7 +68,7 @@ const step = async (name, fn) => {
   await step('admin: any admin screen → admin dashboard', async () => {
     await page.goto(BASE + '/settings');
     await page.getByTestId('logout').click();
-    await page.getByTestId('cta-find').waitFor();
+    await page.getByTestId('welcome-member-login').waitFor();
     await login('9000000000');
     await page.goto(BASE + '/admin/audit');
     await home();

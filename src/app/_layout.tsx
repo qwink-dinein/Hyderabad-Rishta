@@ -22,6 +22,7 @@ import { backend } from '@/services';
 import { loadFeedbackPrefs } from '@/services/feedback';
 import { AppError } from '@/services/backend';
 import { setLastPath, lastPath, useSession } from '@/state/session';
+import { useOnboarding } from '@/state/onboarding';
 import { baseFontAssets } from '@/theme/fonts';
 import { colors } from '@/theme/tokens';
 
@@ -71,6 +72,7 @@ export default function RootLayout() {
   useEffect(() => {
     (async () => {
       loadFeedbackPrefs(); // sound/haptics preferences (fire-and-forget)
+      await useOnboarding.getState().load(); // a sign-up left halfway continues where it stopped
       const l = await restoreLanguage();
       setLang(l);
       try {
@@ -114,6 +116,8 @@ export default function RootLayout() {
             <StatusBar style="dark" />
             <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.ivory }, ...transitions }} screenLayout={webScreenLayout}>
               <Stack.Screen name="filters" options={{ presentation: 'modal', ...modalTransition }} />
+              {/* Members log in on a card that rises over the welcome screen. */}
+              <Stack.Screen name="login" options={{ presentation: 'modal', ...modalTransition }} />
             </Stack>
             <PushBridge />
             <ToastHost />

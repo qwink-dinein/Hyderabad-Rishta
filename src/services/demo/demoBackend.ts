@@ -8,6 +8,7 @@ import { DEFAULT_PRICING, resolvePricing, syncBoostSummary, validatePricing, wit
 import { buildSections, DEFAULT_FEED_CONFIG, filtersKey, lastVisitOf, rotationApplies, serveFeed, type DiscoverSections, type FeedContext, type FeedPage, type FeedRequest, type FeedSnapshot, type SeenRecord } from '@/domain/feed';
 import { isBoostActive, mergeScopes, NO_CONSENT, profileTypeOf, projectProfile } from '@/domain/privacy';
 import { matchesFilters, sortProfiles, type SearchFilters } from '@/domain/search';
+import { computeMatchPreview, type MatchPreview, type MatchPreviewInput } from '@/domain/onboarding';
 import { boostNoticeDue, BOOST_ENDING_NOTICE_MS, boostReminderDue, dayKey, featuredRulesOf, isFeaturable, pickFeatured } from '@/domain/featured';
 import { isRateLimitExempt, prefsOf, PUSH_HOURLY_CAP, pushAllowed, pushContent, CATEGORY, VIEW_NOTICE_WINDOW_MS } from '@/domain/push';
 import type {
@@ -1140,6 +1141,11 @@ export class DemoBackend implements Backend {
   }
 
   // ---------- discovery ----------
+  /** Pre-sign-up preview (no login): same rules as SQL match_preview. */
+  getMatchPreview(input: MatchPreviewInput): Promise<MatchPreview> {
+    return this.run((db) => computeMatchPreview(db.profiles, new Map(db.users.map((u) => [u.id, u])), input, this.now()));
+  }
+
   searchProfiles(filters: SearchFilters, page: number, pageSize = 10): Promise<Page<ReturnType<typeof projectProfile>>> {
     return this.run((db) => {
       const u = this.me(db);

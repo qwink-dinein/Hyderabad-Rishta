@@ -99,6 +99,10 @@ export interface BasicInfo {
   maritalStatus: string;
   /** Required when marital status is anything other than never married. */
   children?: number;
+  /** Only when previously married with children (owner request 2026-11-01). Optional. */
+  childrenLiveWith?: 'yes' | 'no' | 'sometimes';
+  /** Short optional note for families about the children. */
+  childrenNote?: string;
   motherTongue: string;
   aboutMe?: string;
 }
@@ -150,6 +154,9 @@ export interface FamilyInfo {
   siblings?: number;
   brothers?: number;
   sisters?: number;
+  /** How many of the brothers / sisters are married (optional, owner request 2026-11-01). */
+  marriedBrothers?: number;
+  marriedSisters?: number;
   residence?: string;
   description?: string;
 }
@@ -239,6 +246,8 @@ export interface PublicProfile {
   heightCm: number;
   maritalStatus: string;
   children?: number;
+  childrenLiveWith?: 'yes' | 'no' | 'sometimes';
+  childrenNote?: string;
   motherTongue: string;
   aboutMe?: string;
   createdFor: string;

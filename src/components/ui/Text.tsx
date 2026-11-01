@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Text as RNText, type TextProps, type TextStyle } from 'react-native';
+import { Text as RNText, StyleSheet, type TextProps, type TextStyle } from 'react-native';
 import { colors } from '@/theme/tokens';
 import { fontFamily, lineHeightScale, type FontRole } from '@/theme/fonts';
 import { isRTL } from '@/i18n';
@@ -51,7 +51,7 @@ export const Text = memo(function Text({ variant = 'body', color, center, style,
   const v = VARIANTS[variant];
   // Latin display font only for English; other scripts use their own families.
   const size = lang === 'ur' && v.role !== 'display' ? v.size + 1 : v.size;
-  const base: TextStyle = {
+  const base: { -readonly [K in keyof TextStyle]: TextStyle[K] } = {
     fontFamily: fontFamily(lang, v.role),
     fontSize: size,
     // Serif headings read better tight; scripts with tall glyphs keep their own scale.
@@ -61,5 +61,8 @@ export const Text = memo(function Text({ variant = 'body', color, center, style,
     writingDirection: strongDir(rest.children) ?? (isRTL(lang) ? 'rtl' : 'ltr'),
     ...(v.upper && lang === 'en' ? { textTransform: 'uppercase', letterSpacing: v.spacing } : null),
   };
+  // A caller-set size without its own line height keeps the script's spacing (Nastaliq needs ~2×).
+  const custom = style ? (StyleSheet.flatten(style) as TextStyle) : null;
+  if (custom?.fontSize && custom.lineHeight == null) base.lineHeight = Math.round(custom.fontSize * (v.role === 'display' && lang === 'en' ? 1.24 : lineHeightScale[lang]));
   return <RNText {...rest} style={[base, style]} />;
 });

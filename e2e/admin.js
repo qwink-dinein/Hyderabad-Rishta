@@ -17,7 +17,7 @@ const step = async (name, fn) => {
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 300)); });
   const login = (phone) => loginWithOtp(page, BASE, phone);
   const confirmDialog = (label) => page.getByRole('button', { name: label, exact: true }).last().click();
-  const logoutAdmin = async () => { await page.goto(BASE + '/admin'); await page.getByRole('button', { name: 'Log out' }).click(); await page.getByTestId('cta-find').waitFor(); };
+  const logoutAdmin = async () => { await page.goto(BASE + '/admin'); await page.getByRole('button', { name: 'Log out' }).click(); await page.getByTestId('welcome-member-login').waitFor(); };
   let codes = [];
 
   await step('master sees dashboard with approval toggle + recovery warning', async () => {

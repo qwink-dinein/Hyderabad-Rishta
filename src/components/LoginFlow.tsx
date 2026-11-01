@@ -3,8 +3,6 @@ import { StyleSheet, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BrandMark, DomeArt } from '@/components/art/Illustrations';
 import { LanguageSwitcher, changeLanguage } from '@/components/LanguageSwitcher';
 import { Button } from '@/components/ui/Button';
@@ -18,11 +16,11 @@ import { cleanPin, PIN_LENGTH } from '@/domain/auth';
 import { COUNTRY_CODES } from '@/domain/options';
 import { isAdminRole, type User } from '@/domain/types';
 import { otpSchema, phoneSchema } from '@/domain/validation';
-import { hasChosenLanguage } from '@/i18n';
 import { backend, backendInfo } from '@/services';
 import { AppError } from '@/services/backend';
 import { isMemberOnlyPath } from '@/hooks/useGoHome';
 import { takeReturnTo, useSession } from '@/state/session';
+import { useOnboarding } from '@/state/onboarding';
 import { colors, radius, space } from '@/theme/tokens';
 
 /**
@@ -38,7 +36,6 @@ type Purpose = 'login' | 'reset' | 'setup';
 
 export function LoginFlow() {
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ next?: string; purpose?: string }>();
   const next = params.next;
   const qc = useQueryClient();
@@ -49,7 +46,8 @@ export function LoginFlow() {
   const [cc, setCc] = useState(setup?.countryCode ?? '+91');
   const [phone, setPhone] = useState(setup?.phone ?? '');
   const [code, setCode] = useState('');
-  const [pin, setPin] = useState('');
+  const [pinValue, setPin] = useState('');
+  const pin = pinValue;
   const registering = params.next === 'biodata' || params.next === 'discover';
   const [stage, setStage] = useState<Stage>(params.purpose === 'setup' || registering ? 'phone' : 'login');
   const [phoneError, setPhoneError] = useState<string | null>(null);
@@ -102,7 +100,11 @@ export function LoginFlow() {
     // Admins only ever go back to admin screens (never a member screen left from before).
     if (isAdminRole(user.role)) return back && !isMemberOnlyPath(back) ? (back as '/admin') : '/admin';
     if (back && !isNew) return back as '/home';
-    if (isNew || next === 'biodata') return '/biodata';
+    // No biodata yet: the guided onboarding (pre-sign-up answers, if any, are already on this phone).
+    if (isNew || next === 'biodata') {
+      if (!useOnboarding.getState().active) useOnboarding.getState().start();
+      return '/start/who';
+    }
     return next === 'discover' ? '/discover' : '/home';
   };
 
@@ -125,7 +127,8 @@ export function LoginFlow() {
     }
   };
 
-  const pinLogin = async () => {
+  const pinLogin = async (typed?: string) => {
+    const pin = typed ?? pinValue;
     setError(null);
     setPhoneError(null);
     if (!phoneSchema.safeParse(digits).success) return setPhoneError(t('v.phone'));
@@ -182,10 +185,6 @@ export function LoginFlow() {
     setStage('login');
   };
 
-  // Registration journey: choose language (only if never chosen) → mobile → WhatsApp code → PIN → biodata.
-  const create = async () =>
-    (await hasChosenLanguage()) ? router.push({ pathname: '/login', params: { next: 'biodata' } }) : router.push({ pathname: '/language', params: { next: 'biodata' } });
-  const find = () => router.push({ pathname: '/login', params: { next: 'discover' } });
 
   const isRegistering = registering;
   const masked = digits.length > 4 ? `${cc} ${digits.slice(0, 2)}${'•'.repeat(Math.max(0, digits.length - 6))}${digits.slice(-4)}` : `${cc} ${digits}`;
@@ -226,34 +225,23 @@ export function LoginFlow() {
 
   if (stage === 'login') {
     return (
-      <Screen padded={false} edges={['bottom']}>
-        {/* Brand band: name, tagline, language — then the greeting. */}
-        <LinearGradient colors={[colors.forest, colors.emerald]} style={[styles.hero, { paddingTop: insets.top + space.sm }]}>
-          <View style={styles.inner}>
-            <Row style={styles.brand}>
-              <Row gap={space.sm} style={{ flexShrink: 1 }}>
-                <BrandMark size={32} />
-                <View style={{ flexShrink: 1 }}>
-                  <Text variant="h3" color={colors.ivory} numberOfLines={1}>
-                    {t('common.appName')}
-                  </Text>
-                  <Text variant="caption" color={colors.gold} numberOfLines={1}>
-                    {t('landing.tagline')}
-                  </Text>
-                </View>
-              </Row>
-              <LanguageSwitcher tone="dark" compact />
+      <Screen padded={false} edges={['top', 'bottom']}>
+        <View style={[styles.inner, styles.body]}>
+          <Row style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+            <BrandMark size={34} color={colors.goldMuted} />
+            <Row gap={space.sm}>
+              <LanguageSwitcher compact />
+              <Button label={t('common.close')} kind="ghost" size="sm" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} testID="login-close" />
             </Row>
-            <Text variant="h1" color={colors.ivory} center accessibilityRole="header" style={{ marginTop: space.lg, paddingHorizontal: space.xl }}>
-              {t('auth.loginTitle')}
+          </Row>
+          <View>
+            <Text variant="h1" accessibilityRole="header" style={{ fontSize: 28 }}>
+              {t('auth.welcomeBack')}
             </Text>
-            <Text variant="body" color={colors.sage} center style={{ marginTop: space.xs, paddingHorizontal: space.xl }}>
-              {t('auth.loginSub')}
+            <Text variant="body" color={colors.muted} style={{ marginTop: space.xs, fontSize: 16 }}>
+              {t('onb.login.sub')}
             </Text>
           </View>
-        </LinearGradient>
-
-        <View style={[styles.inner, styles.body]}>
           <PhoneField
             testID="login-phone"
             cc={cc}
@@ -271,33 +259,41 @@ export function LoginFlow() {
               ref={pinRef}
               value={pin}
               onChange={(v) => {
-                setPin(cleanPin(v));
+                const clean = cleanPin(v);
+                setPin(clean);
                 if (error) setError(null);
+                // Logs in by itself on the 4th digit (no extra tap), once the number is there.
+                if (clean.length === PIN_LENGTH && phoneSchema.safeParse(digits).success && !busy) void pinLogin(clean);
               }}
               length={PIN_LENGTH}
               secure
               error={!!error}
               label={t('auth.pinLabel')}
               testID="pin-input"
-              onSubmit={pinLogin}
+              onSubmit={() => pinLogin()}
             />
           </Field>
-          <Button label={busy ? t('auth.loggingIn') : t('auth.login')} onPress={pinLogin} loading={busy} disabled={pin.length !== PIN_LENGTH || !digits} full arrow testID="pin-login" />
+          <Button label={busy ? t('auth.loggingIn') : t('auth.login')} onPress={() => pinLogin()} loading={busy} disabled={pin.length !== PIN_LENGTH || !digits} full arrow testID="pin-login" />
           <Row style={{ justifyContent: 'space-between' }} wrap>
             <Button label={t('auth.forgotPin')} kind="ghost" size="sm" onPress={forgotPin} testID="forgot-pin" />
             <Button label={t('auth.whatsappLogin')} kind="ghost" size="sm" onPress={whatsappLogin} testID="whatsapp-login" />
           </Row>
-
-          {/* New people: create a biodata or find a match (both register with a WhatsApp code). */}
           <Row gap={space.sm} style={styles.divider}>
             <View style={styles.rule} />
             <Text variant="caption">{t('auth.newDivider')}</Text>
             <View style={styles.rule} />
           </Row>
-          <View style={styles.newActions} testID="new-member-actions">
-            <Button label={t('landing.createBiodata')} onPress={create} full arrow testID="cta-create" />
-            <Button label={t('landing.findMatch')} kind="secondary" onPress={find} full testID="cta-find" />
-          </View>
+          <Button
+            label={t('onb.welcome.find')}
+            kind="secondary"
+            onPress={() => {
+              if (!useOnboarding.getState().active) useOnboarding.getState().start();
+              router.replace('/start/who');
+            }}
+            full
+            arrow
+            testID="cta-create"
+          />
           {footerLinks}
           {extras}
         </View>
@@ -423,7 +419,7 @@ export function LoginFlow() {
 }
 
 /** Country code + mobile number (left-to-right even in Urdu). */
-function PhoneField(p: { testID: string; cc: string; onCc: (v: string) => void; phone: string; onPhone: (v: string) => void; onSubmit: () => void; error: string | null; editable?: boolean }) {
+export function PhoneField(p: { testID: string; cc: string; onCc: (v: string) => void; phone: string; onPhone: (v: string) => void; onSubmit: () => void; error: string | null; editable?: boolean }) {
   const { t } = useTranslation();
   return (
     <Field label={t('auth.phone')} error={p.error ?? undefined}>

@@ -51,13 +51,13 @@ const step = async (name, fn) => {
   await step('a bride sees the newly boosted groom in Featured; his reach updates', async () => {
     await page.goto(BASE + '/settings');
     await page.getByTestId('logout').click();
-    await page.getByTestId('cta-find').waitFor();
+    await page.getByTestId('welcome-member-login').waitFor();
     await login('9000000102');
     await page.goto(BASE + '/discover');
     await page.getByTestId('featured-strip').getByText('HR-10002').waitFor({ timeout: 10000 });
     await page.goto(BASE + '/settings');
     await page.getByTestId('logout').click();
-    await page.getByTestId('cta-find').waitFor();
+    await page.getByTestId('welcome-member-login').waitFor();
     await login('9000000001');
     await page.goto(BASE + '/boost');
     await page.getByTestId('boost-reach').getByText(/1 member has seen your profile in Featured/).waitFor({ timeout: 8000 });

@@ -1,6 +1,7 @@
 import type { DiscoverSections, FeedPage, FeedRequest } from '@/domain/feed';
 import type { SearchFilters } from '@/domain/search';
 import type { AnnouncementStats } from '@/domain/metrics';
+import type { MatchPreview, MatchPreviewInput } from '@/domain/onboarding';
 import type {
   AdminMember,
   Announcement,
@@ -257,6 +258,9 @@ export interface RecipientRow {
  */
 export interface Backend {
   readonly kind: 'demo' | 'supabase';
+
+  /** Before sign-up: how many live profiles match, plus 3 safe rows (initial, age, profession, city). No login needed. */
+  getMatchPreview(input: MatchPreviewInput): Promise<MatchPreview>;
 
   // auth
   requestOtp(countryCode: string, phone: string): Promise<OtpRequestResult>;

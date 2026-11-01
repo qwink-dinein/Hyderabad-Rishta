@@ -25,6 +25,8 @@ export const basicSchema = z
     heightCm: z.number({ message: 'v.required' }).min(120, 'v.height').max(230, 'v.height'),
     maritalStatus: req,
     children: z.number({ message: 'v.children' }).int('v.children').min(0, 'v.children').max(15, 'v.children').optional(),
+    childrenLiveWith: z.enum(['yes', 'no', 'sometimes']).optional(),
+    childrenNote: z.string().max(300, 'v.tooLong').refine((v) => !unsafeText(v), 'v.badChars').optional(),
     motherTongue: req,
     aboutMe: z.string().max(1000, 'v.tooLong').optional(),
   })
@@ -101,12 +103,17 @@ export const familySchema = z
     siblings: count,
     brothers: count,
     sisters: count,
+    marriedBrothers: count,
+    marriedSisters: count,
     residence: opt,
     description: z.string().max(1000, 'v.tooLong').optional(),
   })
   .superRefine((v, ctx) => {
     if (v.siblings != null && (v.brothers ?? 0) + (v.sisters ?? 0) > v.siblings)
       ctx.addIssue({ code: 'custom', path: ['siblings'], message: 'v.siblings' });
+    // Married brothers / sisters can't outnumber brothers / sisters.
+    if (v.marriedBrothers != null && v.marriedBrothers > (v.brothers ?? 0)) ctx.addIssue({ code: 'custom', path: ['marriedBrothers'], message: 'v.marriedSiblings' });
+    if (v.marriedSisters != null && v.marriedSisters > (v.sisters ?? 0)) ctx.addIssue({ code: 'custom', path: ['marriedSisters'], message: 'v.marriedSiblings' });
   });
 
 export const preferencesSchema = z

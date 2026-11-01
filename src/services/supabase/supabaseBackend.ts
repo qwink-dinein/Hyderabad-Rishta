@@ -1,3 +1,4 @@
+import type { MatchPreview, MatchPreviewInput } from '@/domain/onboarding';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { pokeEligibility } from '@/domain/connections';
 import { randomToken } from '@/domain/crypto';
@@ -390,6 +391,17 @@ export class SupabaseBackend implements Backend {
   }
 
   // ---------- discovery ----------
+  /** Pre-sign-up preview (callable without a session; see migration 20261126000000_onboarding). */
+  async getMatchPreview(input: MatchPreviewInput): Promise<MatchPreview> {
+    const r = await this.rpc<{ count?: number; items?: MatchPreview['items'] }>('match_preview', {
+      p_show: input.show,
+      p_age_min: input.ageMin ?? null,
+      p_age_max: input.ageMax ?? null,
+      p_region: input.region ?? null,
+    });
+    return { count: Number(r?.count ?? 0), items: Array.isArray(r?.items) ? r.items.slice(0, 3) : [] };
+  }
+
   async searchProfiles(filters: SearchFilters, page: number, pageSize = 10): Promise<Page<PublicProfile>> {
     pageSize = Math.max(1, Math.min(50, Math.floor(Number(pageSize) || 10)));
     page = Math.max(0, Math.floor(Number(page) || 0));

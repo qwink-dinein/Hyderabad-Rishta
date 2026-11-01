@@ -84,7 +84,7 @@ async function step(name, phone, fn) {
     await page.waitForTimeout(800);
     await page.goto(BASE + '/settings');
     await page.getByTestId('logout').click();
-    await page.getByTestId('cta-find').waitFor();
+    await page.getByTestId('welcome-member-login').waitFor();
     await loginWithOtp(page, BASE, '9000000100');
     await page.goto(BASE + '/notifications');
     await page.getByText(/accepted your interest\. They can now see the number you shared/).first().waitFor();

@@ -448,3 +448,32 @@ Design decision (not in the feature PRD, flagged for owner review): after a **de
   the first missing field and highlighted. In the form those fields say "Counts toward 100%" (not "Optional"),
   the "To reach 100%" list names each field and jumps to it, and the footer says "N more here for 100%".
   100 % is shown exactly when nothing is left. EN/UR/TE; unit + e2e.
+
+### 15.20 Onboarding redesign: see matches first (owner request, 2026-11-01)
+Research-backed (show value before sign-up; ask only what is needed; fast early progress; easy verification; catch
+people who leave). Mockups: docs/mockups/hq/onboarding-*.png. Palette: Lac, Pearl & Antique Gold (docs/design/palette.md).
+- **Opening screen** (`/`, logged out): "Assalamu alaikum.", one promise, three privacy promises, a Charminar line
+  drawing, one gold button "Find a rishta for my family" and "I'm already a member · Log in". Members log in on a
+  card that rises over it (`/login`, modal): number (always blank) + 4-digit PIN; it logs in by itself on the 4th
+  digit; Forgot PIN / WhatsApp code unchanged; "New here? Find a rishta for my family".
+- **Before sign-up** (`/start/who` → `wants` → `matches`): who it is for (one tap moves on; son/brother ⇒ bride,
+  daughter/sister ⇒ groom, only self/relative are asked), age band, where → a live count and 3 safe rows of real
+  profiles (first letter, age, profession, city — never names, photos, codes or contact; SQL `match_preview`,
+  callable without login). Answers stay on the phone until the number is verified.
+- **Sign-up** (`phone` → `code` → PIN): one field; the WhatsApp code fills itself from "Copy code" and is checked on
+  the 6th digit; then the existing PIN creation. Codes go only by WhatsApp (no SMS provider yet). An existing member
+  with a live biodata goes straight Home.
+- **Go live with 7 answers** (`about` → `more` → `work` → `live`): name, date of birth (scroll wheels), height (a full
+  scroll list 4′6″–7′0″ in inches with cm, or cm), marital status, mother tongue, where they live (pre-filled for a
+  Hyderabad search; tap to change), education, profession. Follow-ups only when they apply: previously married ⇒
+  number of children (required, 0 fine) ⇒ if children: do they live with him/her + a note (optional, new);
+  "Other" education/profession ⇒ write it. Saved on every Next. Privacy defaults are set, not asked.
+- **After live:** a win screen ("Imran's biodata is live", success tick + haptic) with one-tap suggestions (photo,
+  family details, about him/her). A photo now counts toward 100 % (owner decision) but never blocks publishing.
+  New optional family answers: married brothers / married sisters (≤ brothers / sisters).
+- **Left halfway:** every answer saves; reopening the app shows "Welcome back — continue where I left off".
+  (WhatsApp reminders after 1 hour and the next day are planned; they need an approved WhatsApp template.)
+- **Motion** (Emil Kowalski / animate-expo rules): every button dips to 97 % on touch-down (120 ms, strong ease-out)
+  with a light haptic on primary/gold buttons; labels cross-fade between states (Send → Sending… → Sent with an
+  emerald tick); the progress bar glides on from the previous screen; preview rows rise in 50 ms apart once; the
+  success tick pops in with a success haptic; native stack transitions for screens; Reduce Motion ⇒ fades only.

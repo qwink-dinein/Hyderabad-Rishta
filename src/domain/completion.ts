@@ -3,9 +3,10 @@ import { emptyBiodata, STEP_KEYS, STEP_SCHEMAS, stepErrors } from './validation'
 
 /**
  * Profile completion (owner PRD 2026-10-29), computed from the biodata the member actually filled in.
- * Photos and sensitive optional details (income, employer, contact) never count against them.
+ * Sensitive optional details (income, employer, contact) never count against them. A photo counts toward
+ * 100 % (owner decision 2026-11-01) but never blocks publishing; it stays hidden until the member allows it.
  */
-export type CompletionKey = 'basic' | 'about' | 'location' | 'career' | 'religion' | 'practice' | 'family' | 'preferences' | 'privacy';
+export type CompletionKey = 'photo' | 'basic' | 'about' | 'location' | 'career' | 'religion' | 'practice' | 'family' | 'preferences' | 'privacy';
 
 interface Item {
   key: CompletionKey;
@@ -40,6 +41,7 @@ export const fieldLabelKey = (step: number, field: string) =>
  * form, marked "counts toward 100 %" there, so the member can always see and reach exactly what is left.
  */
 export const RECOMMENDED: { step: number; field: string; label: string; done: (b: Biodata) => boolean }[] = [
+  { step: 0, field: 'photos', label: 'completion.field.photo', done: (b) => (b.photos?.length ?? 0) > 0 },
   { step: 0, field: 'aboutMe', label: 'completion.field.aboutMe', done: (b) => (b.basic.aboutMe ?? '').trim().length >= 20 },
   { step: 3, field: 'maslak', label: 'f.maslak', done: (b) => filled(b.religion.maslak) },
   { step: 3, field: 'namaz', label: 'f.namaz', done: (b) => filled(b.religion.namaz) },
@@ -82,6 +84,7 @@ export function missingFields(b: Biodata): MissingField[] {
 }
 
 const ITEMS: Item[] = [
+  { key: 'photo', step: 0, weight: 1, done: (b) => (b.photos?.length ?? 0) > 0 },
   { key: 'basic', step: 0, weight: 3, done: (b) => STEP_SCHEMAS[0].safeParse(b.basic).success },
   { key: 'about', step: 0, weight: 1, done: (b) => (b.basic.aboutMe ?? '').trim().length >= 20 },
   { key: 'location', step: 1, weight: 2, done: (b) => STEP_SCHEMAS[1].safeParse(b.location).success },
