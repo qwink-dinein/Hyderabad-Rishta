@@ -147,8 +147,9 @@ export function mapNotification(r: Row): NotificationView {
     readAt: s(r.read_at),
     createdAt: String(r.created_at),
   };
-  const a = r.announcement as Row | undefined;
-  return a ? { ...base, announcement: a as unknown as NotificationView['announcement'] } : base;
+  // The server sends an all-null announcement object on ordinary notifications: only a real one (with an id) counts.
+  const a = r.announcement as Row | null | undefined;
+  return a && a.id ? { ...base, announcement: a as unknown as NotificationView['announcement'] } : base;
 }
 
 export function mapReport(r: Row): Report {

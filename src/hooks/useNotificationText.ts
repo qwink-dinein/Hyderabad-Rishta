@@ -35,8 +35,10 @@ export const NOTIFICATION_ICONS: Record<string, IconName> = {
   team_created: 'sparkle',
 };
 
-function localized(v: Partial<Record<Lang, string>> & { en: string }, lang: Lang) {
-  return v[lang]?.trim() ? v[lang]! : v.en;
+/** Never throws on missing text (a notification must never take the whole screen down). */
+function localized(v: (Partial<Record<Lang, string>> & { en?: string }) | null | undefined, lang: Lang) {
+  if (!v) return '';
+  return v[lang]?.trim() ? v[lang]! : (v.en ?? '');
 }
 
 export function useNotificationText() {
@@ -44,7 +46,7 @@ export function useNotificationText() {
   const lang = useSession((s) => s.lang);
   return useCallback(
     (n: NotificationView) => {
-      if (n.announcement) return { title: localized(n.announcement.title, lang), body: localized(n.announcement.body, lang) };
+      if (n.announcement?.id) return { title: localized(n.announcement.title, lang), body: localized(n.announcement.body, lang) };
       const key =
         n.type === 'payment'
           ? `notifications.t.payment_${n.params.status}`
