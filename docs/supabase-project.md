@@ -36,7 +36,7 @@
 2. Authentication → Hooks → **Send SMS hook** → HTTPS →
    `https://hlthzrznuztapfsloxkm.supabase.co/functions/v1/send-whatsapp-otp` → generate secret.
 3. Edge Functions → Secrets: `SEND_SMS_HOOK_SECRET`, `WAPLIFY_API_KEY`, `WAPLIFY_TEMPLATE_NAME`
-   (`hr_login_otp`), `WAPLIFY_CODE_KEYS` (`1`). See `docs/whatsapp-otp-setup.md`.
+   (the exact Waplify template name, live: `otp_authentiction`), `WAPLIFY_CODE_KEYS` (`1`). See `docs/whatsapp-otp-setup.md`.
 4. Authentication → Phone → Test phone numbers, each with code `123456`: `919000000001` (store reviewers + live
    test bride), `919000000002` (live test groom), `919000000004` (live test admin).
 5. Before launch: upgrade the organization to **Pro** (daily backups, no pausing).

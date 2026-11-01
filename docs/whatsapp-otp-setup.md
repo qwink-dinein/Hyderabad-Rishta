@@ -20,7 +20,7 @@ The Waplify key lives only in Supabase secrets — never in the app. The code an
 ### A. Waplify / WhatsApp
 1. **WhatsApp number** — connected and active in Waplify, display name approved by Meta.
 2. **Template** — Waplify → Templates → New:
-   - Category **Authentication**, name **`hr_login_otp`**, language **English** (`en`)
+   - Category **Authentication**, any name (live project: **`otp_authentiction`**; the secret below must match it exactly), language **English** (`en`)
    - Button **Copy code**; tick *security recommendation*; tick *expiry* = **10 minutes**
    - Submit and wait for approval.
 3. **API key** — Developers → API → *Create API Key*. Copy it once; never paste it in chat or code.
@@ -41,7 +41,7 @@ The Waplify key lives only in Supabase secrets — never in the app. The code an
    |---|---|
    | `SEND_SMS_HOOK_SECRET` | the secret from B4 (`v1,whsec_…`) |
    | `WAPLIFY_API_KEY` | your `wapl_…` key |
-   | `WAPLIFY_TEMPLATE_NAME` | `hr_login_otp` |
+   | `WAPLIFY_TEMPLATE_NAME` | the template name exactly as in Waplify (live: `otp_authentiction`) |
    | `WAPLIFY_CODE_KEYS` | `1` (or e.g. `1,button_1` — see A4) |
 
 6. Authentication → Sign In / Providers → **Phone** → enable (no SMS provider needed — the hook replaces it).

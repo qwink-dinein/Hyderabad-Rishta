@@ -446,7 +446,7 @@ Normal returning login never sends one.
 - **SQL:** `20261112000000_hot_path_indexes.sql` indexes the foreign keys that member screens and RLS policies filter by (requests by sender/recipient, consents, blocks, shortlists, orders, offers, reports, views, impressions, deliveries).
 
 ## 23. WhatsApp login codes via Waplify (2026-10-29)
-- **Flow:** Supabase phone OTP → **Send SMS hook** → Edge Function `send-whatsapp-otp` → Waplify `POST /api/v1/messages/send` (Authentication template `hr_login_otp`, `body_data` keys from `WAPLIFY_CODE_KEYS`, default `1`). Supabase keeps generating, expiring (600 s), rate-limiting (60 s between sends) and verifying codes.
+- **Flow:** Supabase phone OTP → **Send SMS hook** → Edge Function `send-whatsapp-otp` → Waplify `POST /api/v1/messages/send` (Authentication template named by `WAPLIFY_TEMPLATE_NAME`, live: `otp_authentiction`, `body_data` keys from `WAPLIFY_CODE_KEYS`, default `1`). Supabase keeps generating, expiring (600 s), rate-limiting (60 s between sends) and verifying codes.
 - **Security:** Standard Webhooks HMAC-SHA256 check on `webhook-id.timestamp.body` with `SEND_SMS_HOOK_SECRET`, 5-minute replay window, constant-time compare; the Waplify key is a Supabase secret only; logs carry status, Waplify error code, request id and the last 4 digits — never the code.
 - **Errors to members:** 429 → "try again in N seconds" (Retry-After); 400 → "could not send to this number on WhatsApp"; key/template/5xx → generic retry (setup problems are not the member's).
 - **App:** login text says WhatsApp (EN/UR/TE); after the 60 s countdown `auth.whatsappHint` explains the number must use WhatsApp. Demo backend resend cooldown is 60 s to match.
