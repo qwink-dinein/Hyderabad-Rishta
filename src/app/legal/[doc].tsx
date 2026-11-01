@@ -16,7 +16,7 @@ const PRIVACY = [
   ['Who can see your data', 'Published biodata is visible to logged-in members according to your privacy settings. Photos, income and family details can be limited to people you explicitly consent to. Contact details are shared only after you accept a request AND separately consent.'],
   ['Your choices', 'You can edit or pause your profile, change visibility, block or report members, deactivate your account, or permanently delete it and its data from Settings.'],
   ['Retention', 'Deleted accounts are removed from the live database immediately; backups expire within 30 days. Consent and audit records may be kept as long as legally required.'],
-  ['Contact', 'privacy@example.com (placeholder — replace before launch).'],
+  ['Contact', 'For privacy questions or to request your data, email mukarramjahm@gmail.com.'],
 ];
 const TERMS = [
   ['Eligibility', 'You must be of legal marriageable age in your country (in India: 18 for women, 21 for men). Profiles created for relatives require their knowledge and consent.'],
