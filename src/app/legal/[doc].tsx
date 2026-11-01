@@ -32,7 +32,7 @@ const HELP = [
   ['How do I connect with someone?', 'Open their profile and tap Express Interest. Send an introduction, or offer your number — they decide whether to accept.'],
   ['Can I pause or delete my profile?', 'Yes. Pause it from My profile, or delete your account permanently from Settings.'],
   ['How do I report a problem?', 'Use Report on any profile. Our team reviews every report.'],
-  ['Support', 'support@example.com (placeholder — replace before launch).'],
+  ['Support', 'Email us at mukarramjahm@gmail.com — we reply as soon as we can.'],
 ];
 
 export default function Legal() {
@@ -48,7 +48,9 @@ export default function Legal() {
         {content.map(([h, b]) => (
           <View key={h} style={{ gap: space.xs }}>
             <Text variant="h3">{h}</Text>
-            <Text variant="body">{b}</Text>
+            <Text variant="body" selectable>
+              {b}
+            </Text>
           </View>
         ))}
       </View>
