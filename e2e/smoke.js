@@ -42,6 +42,7 @@ const step = async (name, fn) => {
     await page.getByTestId('bell').waitFor();
     await shot('04a-home');
     await page.getByRole('tab', { name: /Discover/ }).first().click();
+    await page.getByTestId('discover-tab-all').click(); // the count line belongs to the feed tabs
     await page.getByText(/\d+ profiles/).waitFor({ timeout: 10000 });
     await shot('04-discover');
   });
@@ -109,7 +110,10 @@ const step = async (name, fn) => {
     await login('9000000001');
     await page.waitForURL((u) => u.pathname === '/home');
     await page.goto(BASE + '/admin');
-    await page.getByText(/\d+ profiles/).waitFor();
+    // Sent back to the member app (Discover), never into the admin console.
+    await page.waitForURL((u) => !u.pathname.startsWith('/admin'), { timeout: 10000 });
+    await page.getByTestId('discover-search').waitFor();
+    if (await page.getByText('Admin console').count()) throw new Error('admin console visible to a member');
   });
   await step('desktop width layout', async () => {
     await page.setViewportSize({ width: 1280, height: 900 });

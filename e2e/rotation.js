@@ -43,6 +43,7 @@ const BASE = 'http://localhost:8081';
       if (!seenBefore.length) throw new Error('no card visible');
       await page.waitForTimeout(3500); // ≥ 1 s visible + the 2-second batch
       await page.reload(); // the app is closed and opened again
+      await page.getByTestId('discover-tab-all').click(); // a fresh start opens on Featured
       await page.locator('[data-testid^="discover-card-"]').first().waitFor({ timeout: 15000 });
       const top = (await cards()).slice(0, seenBefore.length).map((c) => c.id); // the list's first cards after reopening
       if (top.some((id) => seenBefore.includes(id))) throw new Error(`seen cards back on top: ${top} vs ${seenBefore}`);
