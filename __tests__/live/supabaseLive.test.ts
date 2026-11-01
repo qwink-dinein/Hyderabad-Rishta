@@ -110,6 +110,15 @@ run('live Supabase adapter', () => {
     const boost = await bride.startBoost();
     expect(['free', 'pending']).toContain(boost.order.status);
     if (boost.order.status === 'free') expect((await groom.getFeatured()).some((p) => p.id === ids[BRIDE])).toBe(true);
+    // A member only ever sees the opposite side, even when the filter asks for their own (owner report 2026-11-01).
+    for (const [who, own, other] of [[groom, 'groom', 'bride'], [bride, 'bride', 'groom']] as const) {
+      const f = { ...EMPTY_FILTERS, show: own };
+      const s = await who.getDiscoverSections(f);
+      const feed = await who.getDiscoverFeed(f, { refresh: true });
+      const all = [...(await who.searchProfiles(f, 0, 50)).items, ...feed.items, ...s.featured, ...s.recommended, ...s.recent, ...s.newSince];
+      expect(all.length).toBeGreaterThan(0);
+      expect(all.filter((p) => p.profileType !== other)).toEqual([]);
+    }
     expect(await groom.toggleShortlist(ids[BRIDE])).toBe(true);
     expect((await groom.getShortlist()).some((p) => p.id === ids[BRIDE])).toBe(true);
     await groom.blockProfile(ids[BRIDE]);
