@@ -1,5 +1,5 @@
 /**
- * @jest-environment node
+ * @jest-environment ./__tests__/live/nodeFetchEnv.js
  */
 import { createClient } from '@supabase/supabase-js';
 import { buildSeed } from '@/data/seed';
@@ -24,8 +24,10 @@ const BRIDE = '9000000001';
 const GROOM = '9000000002';
 const ADMIN = '9000000004';
 
+// Node's real fetch (see nodeFetchEnv.js); the preset's polyfill cannot reach the network in Node.
+const nodeFetch: typeof fetch = (...a) => ((globalThis as unknown as { __nodeFetch?: typeof fetch }).__nodeFetch ?? fetch)(...a);
 function phone() {
-  const client = createClient(URL, KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+  const client = createClient(URL, KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }, global: { fetch: nodeFetch } });
   return new SupabaseBackend(client, { secure: memoryKV(), platform: 'android' });
 }
 function biodata(lookingFor: 'bride' | 'groom', name: string): Biodata {
@@ -85,7 +87,7 @@ run('live Supabase adapter', () => {
     expect(her).toBeDefined();
     const prof = await groom.getProfile(ids[BRIDE]);
     expect(prof.photos[0]?.uri).toMatch(/^https:\/\//);
-    expect((await fetch(prof.photos[0].uri)).status).toBe(200);
+    expect((await nodeFetch(prof.photos[0].uri)).status).toBe(200);
     const req = await groom.sendRequest(ids[BRIDE], { message: 'Assalamu alaikum', offerPhone: false, consent: false, idempotencyKey: `live-${Date.now()}` });
     expect(req.status).toBe('pending');
     const status = await groom.getRequestStatusWith(ids[BRIDE]);

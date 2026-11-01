@@ -3,9 +3,12 @@
 // Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY.
 //
 // Issuing the session: Supabase Auth has no "create a session for user X" API, so after the
-// database approves the login we set a random single-use password on the user (admin API), sign in
-// with it (normal Auth session with refresh token), and immediately replace it with another random
-// value. The member never has or knows a password; phone + password sign-in must be enabled.
+// database approves the login we set a fresh random password on the user (admin API: 64 hex
+// characters, never stored, logged or returned) and sign in with it (normal Auth session with refresh
+// token). It is NOT changed again afterwards: Supabase ends every session of a user whose password
+// changes, which would kill the session just issued. The next PIN login replaces it (and so signs the
+// account out on other phones). The member never has or knows a password; phone + password sign-in
+// must be enabled.
 import { pinLogin, type LoginDeps, type Session } from './login.ts';
 
 declare const Deno: { env: { get(k: string): string | undefined }; serve(h: (r: Request) => Response | Promise<Response>): void };
@@ -15,8 +18,9 @@ const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 const admin = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'application/json' };
 
+// 32 random bytes = 64 hex characters: Supabase Auth refuses passwords longer than 72 characters.
 function randomSecret() {
-  const b = new Uint8Array(48);
+  const b = new Uint8Array(32);
   crypto.getRandomValues(b);
   return Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
 }
@@ -34,17 +38,13 @@ const deps: LoginDeps = {
   mintSession: async (userId, phoneE164) => {
     const once = randomSecret();
     await setPassword(userId, once);
-    try {
-      const res = await fetch(`${url}/auth/v1/token?grant_type=password`, {
-        method: 'POST',
-        headers: { apikey: anonKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phoneE164, password: once }),
-      });
-      if (!res.ok) throw new Error(`sign-in failed: ${res.status}`);
-      return (await res.json()) as Session;
-    } finally {
-      await setPassword(userId, randomSecret()); // the one-time password is dead immediately
-    }
+    const res = await fetch(`${url}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: { apikey: anonKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: phoneE164, password: once }),
+    });
+    if (!res.ok) throw new Error(`sign-in failed: ${res.status}`);
+    return (await res.json()) as Session;
   },
 };
 
