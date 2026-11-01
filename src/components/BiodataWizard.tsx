@@ -10,6 +10,7 @@ import { Text } from '@/components/ui/Text';
 import { ageFromDob, maskPhone } from '@/domain/format';
 import { citiesOf, COUNTRIES, districtsOf, statesOf } from '@/domain/options';
 import type { Biodata, Profile } from '@/domain/types';
+import { profileCompletion } from '@/domain/completion';
 import { emptyBiodata, STEP_KEYS, stepErrors } from '@/domain/validation';
 import { haptic, playSound } from '@/services/feedback';
 import { useOptions } from '@/hooks/useOptions';
@@ -18,6 +19,15 @@ import { useSession } from '@/state/session';
 import { colors, radius, space } from '@/theme/tokens';
 
 type Section = keyof Biodata;
+
+/** Field → label key for the "still needed" list (partner-preference fields have their own labels). */
+const PREF_LABELS: Record<string, string> = {
+  ageMin: 'f.prefAge', ageMax: 'f.prefAge', heightMin: 'f.prefHeight', heightMax: 'f.prefHeight', maritalStatus: 'f.prefMarital',
+  education: 'f.prefEducation', profession: 'f.prefProfession', countries: 'f.prefCountry', states: 'f.prefState', cities: 'f.prefCity',
+  motherTongues: 'f.prefTongue', relocation: 'f.prefRelocation',
+};
+const fieldLabelKey = (step: number, field: string) =>
+  step === 5 && PREF_LABELS[field] ? PREF_LABELS[field] : field === 'heightCm' ? 'f.height' : field === 'acceptContactRequests' ? 'f.acceptRequests' : `f.${field}`;
 
 /**
  * Unsaved edits are kept on this phone while the member types, so nothing is lost if the session ends
@@ -112,6 +122,18 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
   // (right where the mistake is), and all of them after "Save & continue".
   const [touched, setTouched] = useState<Set<string>>(() => new Set());
   const allErrors = useMemo(() => (bd ? stepErrors(step, bd[sectionFor(step)]) : {}), [bd, step]);
+  // Live progress from what is typed now (not only what was saved): % complete, and per step the required
+  // fields still empty — so the member always knows exactly what is left and where.
+  const completion = useMemo(() => profileCompletion(bd), [bd]);
+  const leftByStep = useMemo(
+    () =>
+      STEP_KEYS.map((k, i) => {
+        if (!bd) return [] as string[];
+        const fields = Object.keys(stepErrors(i, bd[k as Section])).map((f) => f.split('.')[0]);
+        return [...new Set(fields.map((f) => fieldLabelKey(i, f)))];
+      }),
+    [bd],
+  );
   const errors = useMemo(
     () => (showErrors ? allErrors : Object.fromEntries(Object.entries(allErrors).filter(([k]) => touched.has(k.split('.')[0])))),
     [allErrors, showErrors, touched],
@@ -509,6 +531,17 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
       }
       scrollProps={{ ref: scrollRef } as never}
       footer={
+        <View style={{ gap: space.sm }}>
+          {/* Always visible while scrolling: overall % and what is left on this step. */}
+          <View style={styles.footerProgress} testID="wizard-footer-progress">
+            <View style={[styles.pctTrack, { flex: 1, height: 6 }]}>
+              <View style={[styles.pctFill, { height: 6, width: `${completion.percent}%` }]} />
+            </View>
+            <Text variant="caption" style={{ color: colors.charcoal }}>
+              {completion.percent}% ·{' '}
+              {leftByStep[step].length ? t('wizard.leftHere', { count: leftByStep[step].length }) : t('wizard.stepDone')}
+            </Text>
+          </View>
         <Row gap={space.sm}>
           {step > 0 ? <Button label={t('common.back')} kind="secondary" onPress={() => go(step - 1, false)} style={{ flex: 1 }} disabled={saving} /> : null}
           <Button
@@ -520,6 +553,7 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
             testID="wizard-next"
           />
         </Row>
+        </View>
       }
     >
       <View style={{ paddingTop: space.lg, gap: space.sm }}>
@@ -551,6 +585,55 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
             </Row>
           </View>
         ) : null}
+        <View style={styles.progressCard} testID="wizard-progress">
+          <Row style={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <Text variant="h3" testID="wizard-percent">
+              {t('wizard.percent', { n: completion.percent })}
+            </Text>
+            <Text variant="caption">
+              {leftByStep.some((l) => l.length) ? t('wizard.sectionsLeft', { count: leftByStep.filter((l) => l.length).length }) : t('wizard.sectionsAllDone')}
+            </Text>
+          </Row>
+          <View style={styles.pctTrack} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: completion.percent }}>
+            <View style={[styles.pctFill, { width: `${completion.percent}%` }]} />
+          </View>
+          {leftByStep.some((l) => l.length) ? (
+            <View style={{ gap: 4 }} testID="wizard-left">
+              <Text variant="label">{t('wizard.toPublish')}</Text>
+              {leftByStep.map((fields, i) =>
+                fields.length ? (
+                  <Text key={i} variant="caption" style={{ color: colors.charcoal }}>
+                    <Text
+                      variant="caption"
+                      color={colors.emerald}
+                      style={{ fontWeight: '700', textDecorationLine: i === step ? 'none' : 'underline' }}
+                      onPress={i === step ? undefined : () => go(i, false)}
+                      accessibilityRole={i === step ? undefined : 'link'}
+                    >
+                      {t(`wizard.steps.${STEP_KEYS[i]}`)}
+                      {i === step ? ` (${t('wizard.thisStep')})` : ''}
+                    </Text>
+                    {': '}
+                    {fields.slice(0, 4).map((f) => t(f, { defaultValue: f.replace('f.', '') })).join(', ')}
+                    {fields.length > 4 ? ` ${t('wizard.andMore', { count: fields.length - 4 })}` : ''}
+                  </Text>
+                ) : null,
+              )}
+            </View>
+          ) : completion.missing.length ? (
+            <Text variant="caption" testID="wizard-left">
+              <Text variant="caption" color={colors.success} style={{ fontWeight: '700' }}>
+                {t('wizard.readyToPublish')}{' '}
+              </Text>
+              {t('wizard.toReach100')}{' '}
+              {completion.missing.map((k) => t(`completion.item.${k}`)).join(', ')}
+            </Text>
+          ) : (
+            <Text variant="caption" color={colors.success} style={{ fontWeight: '700' }} testID="wizard-left">
+              {t('wizard.allDone')}
+            </Text>
+          )}
+        </View>
         <Text variant="overline">{t('common.step', { n: step + 1, total: 7 })}</Text>
         <Text variant="h1" accessibilityRole="header">
           {t(`wizard.steps.${STEP_KEYS[step]}`)}
@@ -575,8 +658,16 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
                 style={[styles.stepPill, i === step && styles.stepPillOn, !reachable && { opacity: 0.45 }]}
               >
                 <Text variant="caption" color={i === step ? colors.white : colors.emerald}>
-                  {i + 1}. {t(`wizard.steps.${k}`)}
+                  {/* ✓ only for sections the member has reached and that need nothing more */}
+                  {!leftByStep[i].length && i <= maxReachable ? '✓' : `${i + 1}.`} {t(`wizard.steps.${k}`)}
                 </Text>
+                {leftByStep[i].length ? (
+                  <View style={[styles.leftBadge, i === step && { backgroundColor: colors.white }]} testID={`step-left-${i}`}>
+                    <Text variant="caption" color={colors.goldDeep} style={{ fontSize: 10.5, lineHeight: 13, fontWeight: '700' }}>
+                      {t('wizard.leftShort', { count: leftByStep[i].length })}
+                    </Text>
+                  </View>
+                ) : null}
               </Pressable>
             );
           })}
@@ -588,11 +679,16 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
 }
 
 const styles = StyleSheet.create({
+  footerProgress: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+  progressCard: { gap: space.sm, padding: space.md, borderRadius: radius.md, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
+  pctTrack: { height: 8, borderRadius: 4, backgroundColor: colors.sage, overflow: 'hidden' },
+  pctFill: { height: 8, borderRadius: 4, backgroundColor: colors.emerald },
+  leftBadge: { marginStart: 6, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 999, backgroundColor: colors.goldSoft },
   restore: { gap: space.xs, padding: space.md, borderRadius: radius.md, backgroundColor: colors.goldSoft, borderWidth: 1, borderColor: colors.gold },
   progressTrack: { flexDirection: 'row', gap: 4, marginTop: space.xs },
   segment: { flex: 1, height: 5, borderRadius: 3, backgroundColor: colors.border },
   segmentDone: { backgroundColor: colors.gold },
   segmentNow: { backgroundColor: colors.emerald },
-  stepPill: { paddingHorizontal: space.md, paddingVertical: 6, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.white },
+  stepPill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.md, paddingVertical: 6, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.white },
   stepPillOn: { backgroundColor: colors.emerald, borderColor: colors.emerald },
 });

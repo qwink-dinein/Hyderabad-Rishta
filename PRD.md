@@ -409,3 +409,15 @@ Design decision (not in the feature PRD, flagged for owner review): after a **de
 | Session expired | Unsaved biodata edits are kept on the phone as the member types; the message says so; after logging in the member returns to the same screen and can restore the draft (kept 14 days, removed after a successful save). |
 | Validation | Each field shows its own message as soon as it is edited (and all after Save & continue); the message clears when fixed. |
 | Success | Publishing, submitting for review, sending an interest and activating a boost show a confirmation sheet (animated check, haptic/sound) with the next step (e.g. Explore profiles, View my requests, Boost my profile). |
+
+### 15.16 Biodata progress while filling (owner request, 2026-11-01)
+- A progress card at the top of every biodata step shows the live **% complete** (from what is typed, not only what
+  was saved) and **exactly what is still needed to publish**, per section with field names ("Basic (this step):
+  Full name, Date of birth…; Location: City"); other sections are tappable links. When everything required is
+  filled it says "Ready to publish ✓" and lists the optional extras that reach 100 %.
+- Section tabs show "N left" or ✓ (✓ only for sections reached). A line above Save & continue stays visible while
+  scrolling: "64% · 2 required fields left on this step".
+- The percentage counts **field by field**: required information 85 % (each required field adds to it; fields that
+  become required, like number of children after "divorced", join the count), recommended extras 15 % (About me,
+  religious practice, family details, partner age range). It never shows 100 % while anything is missing. The Home
+  completion card uses the same calculation, so the numbers always match.

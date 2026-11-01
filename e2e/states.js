@@ -93,6 +93,30 @@ const BASE = 'http://localhost:8081';
     await page.getByTestId('success-sheet').waitFor({ state: 'detached', timeout: 5000 }).catch(() => undefined);
   });
 
+  await step('biodata progress: exact fields left per section, % rises as fields are filled', async () => {
+    const p2 = await (await browser.newContext({ viewport: { width: 400, height: 860 } })).newPage();
+    try {
+      await loginWithOtp(p2, BASE, '9811110000'); // brand-new member → biodata form
+      await p2.waitForURL((u) => u.pathname.startsWith('/biodata'), { timeout: 10000 });
+      await p2.getByTestId('wizard-progress').waitFor();
+      const pct = async () => Number((await p2.getByTestId('wizard-percent').innerText()).match(/\d+/)[0]);
+      const left = p2.getByTestId('wizard-left');
+      await left.getByText('Still needed to publish:').waitFor();
+      await left.getByText(/Basic \(this step\)/).waitFor();
+      await left.getByText(/Full name/).waitFor();
+      await left.getByText(/Location/).waitFor(); // later sections are named too
+      await p2.getByTestId('step-left-0').waitFor(); // "N left" on the section tab
+      const before = await pct();
+      await p2.getByLabel('Full name').fill('Arif Hussain');
+      await p2.waitForFunction((b) => Number(document.querySelector('[data-testid="wizard-percent"]').innerText.match(/\d+/)[0]) > b, before, { timeout: 3000 });
+      const text = await left.innerText();
+      if (/Full name/.test(text)) throw new Error('filled field still listed as needed');
+      await p2.screenshot({ path: `${SHOTS}/st-4-progress.png` });
+    } finally {
+      await p2.close();
+    }
+  });
+
   await browser.close();
   if (errors.length) {
     console.log('STATES E2E FAILED:\n  ' + errors.join('\n  '));

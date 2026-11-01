@@ -1,5 +1,5 @@
 import type { Biodata } from './types';
-import { STEP_SCHEMAS } from './validation';
+import { emptyBiodata, STEP_KEYS, STEP_SCHEMAS, stepErrors } from './validation';
 
 /**
  * Profile completion (owner PRD 2026-10-29), computed from the biodata the member actually filled in.
@@ -40,6 +40,36 @@ export interface Completion {
   missing: CompletionKey[];
 }
 
+/** Required fields per step, counted on an empty biodata (the fixed denominator). */
+let baseRequired: Set<string>[] | undefined;
+const requiredBase = () =>
+  (baseRequired ??= STEP_KEYS.map((k, i) => new Set(Object.keys(stepErrors(i, emptyBiodata()[k as keyof Biodata])).map((f) => f.split('.')[0]))));
+
+/**
+ * How much of the required information is filled, field by field (0–1). Conditional fields that become
+ * required (e.g. number of children once "divorced" is chosen) join the count while they apply.
+ */
+export function requiredProgress(b: Biodata): number {
+  const base = requiredBase();
+  let total = 0;
+  let left = 0;
+  STEP_KEYS.forEach((k, i) => {
+    let missing: Set<string>;
+    try {
+      missing = new Set(Object.keys(stepErrors(i, b[k as keyof Biodata])).map((f) => f.split('.')[0]));
+    } catch {
+      missing = new Set(base[i]);
+    }
+    const extra = [...missing].filter((f) => !base[i].has(f)).length;
+    total += base[i].size + extra;
+    left += missing.size;
+  });
+  return total ? Math.max(0, total - left) / total : 1;
+}
+
+/** Required information counts 85 % (field by field, so the number moves as you type); recommended extras 15 %. */
+const REQUIRED_SHARE = 0.85;
+
 export function profileCompletion(b: Biodata | undefined | null): Completion {
   if (!b) return { percent: 0, complete: false, next: { key: 'basic', step: 0 }, missing: ITEMS.map((i) => i.key) };
   let total = 0;
@@ -56,6 +86,8 @@ export function profileCompletion(b: Biodata | undefined | null): Completion {
     if (ok) got += it.weight;
     else missing.push(it);
   }
-  const percent = Math.round((got / total) * 100);
+  // Floor (not round): never show 100 % while something is still missing.
+  const raw = REQUIRED_SHARE * requiredProgress(b) + (1 - REQUIRED_SHARE) * (got / total);
+  const percent = missing.length ? Math.min(99, Math.floor(raw * 100)) : 100;
   return { percent, complete: percent >= PROFILE_COMPLETE_AT, next: missing[0] && { key: missing[0].key, step: missing[0].step }, missing: missing.map((m) => m.key) };
 }
