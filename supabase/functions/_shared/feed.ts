@@ -111,11 +111,18 @@ export function buildFeedOrder(candidates: PublicProfile[], filters: SearchFilte
   const rotation = rotationApplies(filters);
   const seenIds = new Set<string>();
   const pool: PublicProfile[] = [];
+  // People you are already in touch with (an interest either way) stay in the feed — after everyone new, with
+  // their "Interest sent / received" label — so nobody wonders where they went (owner request 2026-11-01).
+  const contacted: PublicProfile[] = [];
   for (const p of candidates) {
     if (seenIds.has(p.id)) continue;
     seenIds.add(p.id);
     if (rotation) {
-      if (ctx.shortlisted.has(p.id) || ctx.activeRequests.has(p.id)) continue;
+      if (ctx.activeRequests.has(p.id)) {
+        contacted.push(p);
+        continue;
+      }
+      if (ctx.shortlisted.has(p.id)) continue;
       if (inCooldown(ctx.seen.get(p.id), ctx.cfg, ctx.now)) continue;
     }
     pool.push(p);
@@ -126,8 +133,9 @@ export function buildFeedOrder(candidates: PublicProfile[], filters: SearchFilte
     .filter((p) => rotation && !unseen.includes(p))
     .sort((a, b) => lastSeen(ctx.seen.get(a.id)).localeCompare(lastSeen(ctx.seen.get(b.id))));
   const byRecent = (a: PublicProfile, b: PublicProfile) => (b.publishedAt ?? '').localeCompare(a.publishedAt ?? '') || a.id.localeCompare(b.id);
+  const tail = contacted.sort(byRecent).map((p) => p.id);
 
-  if (filters.sort === 'recent') return { ids: [...unseen.sort(byRecent), ...returning].map((p) => p.id), unseen: unseen.length };
+  if (filters.sort === 'recent') return { ids: [...unseen.sort(byRecent), ...returning].map((p) => p.id).concat(tail), unseen: unseen.length };
 
   const newSince = Math.min(ctx.now.getTime() - ctx.cfg.newDays * DAY, ctx.lastVisitAt ? new Date(ctx.lastVisitAt).getTime() : Infinity);
   const prefFilters = ctx.prefs ? filtersFromPreferences(ctx.prefs, filters.show) : null;
@@ -151,7 +159,7 @@ export function buildFeedOrder(candidates: PublicProfile[], filters: SearchFilte
     if (!from) break;
     out.push(buckets[from].shift()!.id);
   }
-  return { ids: [...out, ...returning.map((p) => p.id)], unseen: unseen.length };
+  return { ids: [...out, ...returning.map((p) => p.id), ...tail], unseen: unseen.length };
 }
 
 const lastSeen = (s?: SeenRecord) => [s?.impressedAt ?? '', s?.viewedAt ?? ''].sort().pop() ?? '';
@@ -244,9 +252,11 @@ export async function serveFeed(filters: SearchFilters, req: FeedRequest, deps: 
   const main = await deps.loadSnapshot(mainKey);
   const ctx: FeedContext = { ...base, now, lastVisitAt: main?.lastVisitAt };
   const rotation = rotationApplies(filters);
-  const inRotation = (id: string) => !rotation || (!ctx.shortlisted.has(id) && !ctx.activeRequests.has(id) && !inCooldown(ctx.seen.get(id), ctx.cfg, now));
+  // In touch already (an interest either way): always shown in the All feed, never cooled down or hidden.
+  const inRotation = (id: string) => !rotation || ctx.activeRequests.has(id) || (!ctx.shortlisted.has(id) && !inCooldown(ctx.seen.get(id), ctx.cfg, now));
   const eligible = new Map(candidates.map((p) => [p.id, p]));
-  const fresh = (ids: string[], from: number) => ids.slice(from).filter((id) => eligible.has(id) && inRotation(id) && !ctx.seen.get(id)?.impressedAt && !ctx.seen.get(id)?.viewedAt).length;
+  const fresh = (ids: string[], from: number) =>
+    ids.slice(from).filter((id) => eligible.has(id) && inRotation(id) && !ctx.activeRequests.has(id) && !ctx.seen.get(id)?.impressedAt && !ctx.seen.get(id)?.viewedAt).length;
 
   // Later pages: same snapshot, same order — cards already on screen never move.
   const cur = decodeCursor(req.cursor);
@@ -273,6 +283,12 @@ export async function serveFeed(filters: SearchFilters, req: FeedRequest, deps: 
   let snap: FeedSnapshot;
   if (snapshotUsable(existing, key, ctx.cfg, now, !!req.refresh)) {
     snap = { ...existing, openedAt: view === 'all' ? now.toISOString() : existing.openedAt, lastVisitAt: view === 'all' ? lastVisitAt : existing.lastVisitAt };
+    // People contacted since this list was made (or missing from it) join at the end, so they never vanish.
+    if (view === 'all' && rotation) {
+      const inList = new Set(snap.ids);
+      const extra = candidates.filter((p) => ctx.activeRequests.has(p.id) && !inList.has(p.id)).map((p) => p.id);
+      if (extra.length) snap = { ...snap, ids: [...snap.ids, ...extra] };
+    }
   } else {
     const ids =
       view === 'new'

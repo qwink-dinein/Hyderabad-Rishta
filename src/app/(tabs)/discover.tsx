@@ -98,7 +98,9 @@ export default function Discover() {
   }, [feed.data]);
   const items = tab === 'featured' ? featuredItems : feedItems;
   const firstPage = feed.data?.pages[0];
-  const toDiscover = (firstPage?.items.length ?? 0) + (firstPage?.remaining ?? 0);
+  // People already in touch stay listed (labelled) but are not "to discover".
+  const inTouch = (p: { relation?: { status?: string } }) => p.relation?.status === 'pending' || p.relation?.status === 'accepted';
+  const toDiscover = (firstPage?.items.filter((p) => !inTouch(p)).length ?? 0) + (firstPage?.remaining ?? 0);
   // "New (n)": the main feed knows how many arrived since the last visit; the New list knows its own size.
   const freshFirst = fresh.data?.pages[0];
   const newCount = freshFirst ? freshFirst.items.length + freshFirst.remaining : all.data?.pages[0]?.newSinceLastVisit ?? 0;

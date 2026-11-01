@@ -36,6 +36,15 @@ describe('feed engine (domain/feed.ts)', () => {
     expect(new Set(ids).size).toBe(list.length); // nothing twice
   });
 
+  it('people in touch (an interest either way) stay in the feed, after everyone else, even inside a cooldown', () => {
+    const list = [prof('a'), prof('b'), prof('c'), prof('d')];
+    const seen = new Map([['c', { profileId: 'c', viewedAt: at(1) }]]); // opened yesterday → normally hidden for 7 days
+    const { ids } = buildFeedOrder(list, EMPTY_FILTERS, ctx({ seen: seen as never, activeRequests: new Set(['c', 'a']), shortlisted: new Set(['b']) }));
+    expect(ids.slice(-2).sort()).toEqual(['a', 'c']); // in touch: last
+    expect(ids).not.toContain('b'); // shortlisted: in Shortlist, not Discover
+    expect(ids[0]).toBe('d');
+  });
+
   it('adjusts gracefully when a group runs out, and boost only gets its share', () => {
     const list = [prof('boost1', { boosted: true }), prof('boost2', { boosted: true }), prof('boost3', { boosted: true }), prof('o1'), prof('o2'), prof('o3')];
     const { ids } = buildFeedOrder(list, EMPTY_FILTERS, ctx());
@@ -83,6 +92,19 @@ describe('Discover rotation in the demo backend (acceptance criteria)', () => {
     }
     return out;
   };
+  const allItems = async (b: DemoBackend) => {
+    const out: PublicProfile[] = [];
+    let page = await b.getDiscoverFeed(EMPTY_FILTERS, { pageSize: 50 });
+    out.push(...page.items);
+    while (page.nextCursor) {
+      page = await b.getDiscoverFeed(EMPTY_FILTERS, { cursor: page.nextCursor, pageSize: 50 });
+      out.push(...page.items);
+    }
+    return out;
+  };
+  /** Profiles this member is in touch with (a pending or accepted interest either way). */
+  const contacted = async (b: DemoBackend) =>
+    new Set((await b.getRequests()).filter((v) => v.request.status === 'pending' || v.request.status === 'accepted').map((v) => v.other.id));
   beforeEach(() => {
     storage = memoryKV();
     clock = new Date('2026-10-01T09:00:00Z').getTime();
@@ -114,15 +136,24 @@ describe('Discover rotation in the demo backend (acceptance criteria)', () => {
     expect(await all(b)).toEqual(ids); // same snapshot → same order
   });
 
-  it('5: shortlisted and actively requested profiles leave Discover but stay in Shortlist / Requests', async () => {
+  it('5: shortlisted profiles leave Discover (they are in Shortlist); people you sent an interest to STAY, last, labelled', async () => {
     const b = await login(phone());
     const [a, c] = (await b.getDiscoverFeed(EMPTY_FILTERS, { pageSize: 5 })).items;
     await b.toggleShortlist(a.id);
+    await b.getProfile(c.id); // opened (would normally cool down for 7 days)…
     await b.sendRequest(c.id, { offerPhone: false, consent: false, idempotencyKey: 'k1' });
     const ids = await all(b, { refresh: true });
     expect(ids).not.toContain(a.id);
-    expect(ids).not.toContain(c.id);
     expect((await b.getShortlist()).map((p) => p.id)).toContain(a.id);
+    // …but an interest keeps them in the All feed (owner request 2026-11-01), after everyone not yet contacted.
+    expect(ids).toContain(c.id);
+    const inTouch = await contacted(b);
+    const firstContacted = ids.findIndex((id) => inTouch.has(id));
+    expect(ids.slice(firstContacted).every((id) => inTouch.has(id))).toBe(true);
+    const items = await allItems(b);
+    expect(items.find((p) => p.id === c.id)?.relation).toMatchObject({ status: 'pending', direction: 'sent' }); // → "Interest sent"
+    // Also when the saved list is reused (no refresh): still there.
+    expect(await all(b)).toContain(c.id);
   });
 
   it('6: seen profiles come back after the cooldown (3 days for a card, 7 for an opened profile), after unseen ones', async () => {
@@ -135,7 +166,9 @@ describe('Discover rotation in the demo backend (acceptance criteria)', () => {
     let ids = await all(b, { refresh: true });
     expect(ids).toContain(card.id);
     expect(ids).not.toContain(opened.id);
-    expect(ids[ids.length - 1]).toBe(card.id); // returns last, after everything unseen
+    const inTouch = await contacted(b);
+    const notContacted = ids.filter((id) => !inTouch.has(id));
+    expect(notContacted[notContacted.length - 1]).toBe(card.id); // returns last, after everything unseen (people in touch come after)
     clock += 4 * DAY;
     await login(b);
     ids = await all(b, { refresh: true });
@@ -161,8 +194,10 @@ describe('Discover rotation in the demo backend (acceptance criteria)', () => {
     const refreshed = (await b.getDiscoverFeed(EMPTY_FILTERS, { refresh: true, pageSize: 5 })).items.map((p) => p.id);
     expect(refreshed.some((id) => first.includes(id))).toBe(false);
     await b.recordImpressions(await all(b, { refresh: true }));
-    const done = await b.getDiscoverFeed(EMPTY_FILTERS, { refresh: true, pageSize: 5 });
-    expect(done.items).toHaveLength(0);
+    const done = await b.getDiscoverFeed(EMPTY_FILTERS, { refresh: true, pageSize: 50 });
+    const inTouch = await contacted(b);
+    expect(done.items.every((p) => inTouch.has(p.id))).toBe(true); // only people already in touch remain
+    expect(done.remaining).toBe(0);
     expect(done.caughtUp).toBe(true);
     // A keyword search still finds seen profiles (rotation is for normal browsing only).
     const seenOne = first[0];

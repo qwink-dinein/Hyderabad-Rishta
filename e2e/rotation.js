@@ -84,7 +84,10 @@ const BASE = 'http://localhost:8081';
       await page.getByTestId('discover-refresh').first().click();
       await page.getByText("You've caught up with all available profiles for now.").first().waitFor({ timeout: 10000 });
       await page.getByText('New profiles will appear here as they are published.').first().waitFor();
-      if ((await cards()).length) throw new Error('cards still listed after everything was seen');
+      // Only people already in touch stay (owner request 2026-11-01), each with its "Interest sent/received" label.
+      for (const { id } of await cards()) {
+        if (!(await page.getByTestId(`relation-${id}`).count())) throw new Error(`card ${id} listed after everything was seen, without an interest label`);
+      }
       await page.screenshot({ path: `${SHOTS}/rotation-2-caught-up.png` });
     });
   } catch (e) {
