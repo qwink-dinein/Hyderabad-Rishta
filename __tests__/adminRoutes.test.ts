@@ -1,4 +1,4 @@
-import { homeHrefFor, isMemberOnlyPath } from '@/hooks/useGoHome';
+import { homeHrefFor, isMemberOnlyPath } from '@/domain/routes';
 
 /** Owner report 2026-11-01: a master admin was moved to member screens and asked to create a biodata. */
 describe('an admin is never a member', () => {

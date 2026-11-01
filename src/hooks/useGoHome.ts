@@ -1,17 +1,9 @@
 import { useCallback } from 'react';
-import { router, type Href } from 'expo-router';
-import { isAdminRole } from '@/domain/types';
+import { router } from 'expo-router';
+import { homeHrefFor } from '@/domain/routes';
 import { useSession } from '@/state/session';
 
-/** Where "Home" means for whoever is using the app right now. */
-export function homeHrefFor(user: { role: Parameters<typeof isAdminRole>[0] } | null): Href {
-  if (!user) return '/';
-  return isAdminRole(user.role) ? '/admin' : '/home';
-}
-
-/** Screens that belong to members only (their own biodata, Discover, requests, boost…). Admins never see them. */
-const MEMBER_ONLY = ['/home', '/discover', '/shortlist', '/requests', '/dashboard', '/biodata', '/boost', '/activity', '/filters', '/request/'];
-export const isMemberOnlyPath = (path: string) => MEMBER_ONLY.some((p) => path === p || path.startsWith(p.endsWith('/') ? p : `${p}/`));
+export { homeHrefFor, isMemberOnlyPath } from '@/domain/routes';
 
 /**
  * Jump to the right home from anywhere: pops the screens stacked on top (so Back doesn't walk
