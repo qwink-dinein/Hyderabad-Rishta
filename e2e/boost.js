@@ -44,7 +44,7 @@ const setDb = (page, fn) => page.evaluate((src) => {
     await page.waitForURL((u) => u.pathname === '/shortlist', { waitUntil: 'commit' });
   });
 
-  await step('Home: real completion → opens the first incomplete section; updates after saving', '9000000001', async (page) => {
+  await step('Home: real completion names the exact fields → opens the first one; updates after saving', '9000000001', async (page) => {
     // Remove "about me" and family details from this member's saved biodata.
     await setDb(page, "const p = d.profiles.find((x) => x.id === 'p_1'); p.biodata.basic.aboutMe = ''; p.biodata.family.familyType = '';");
     await page.goto(BASE + '/home');
@@ -52,17 +52,17 @@ const setDb = (page, fn) => page.evaluate((src) => {
     await card.waitFor();
     const pct = await page.getByRole('progressbar').first().getAttribute('aria-valuenow');
     if (!(Number(pct) > 50 && Number(pct) < 100)) throw new Error(`unexpected completion ${pct}`);
-    await page.getByTestId('completion-next').getByText('Next: About me').waitFor();
+    await page.getByTestId('completion-next').getByText('Still missing: About me (at least 20 characters), Family type').waitFor(); // exact fields
     await page.screenshot({ path: `${SHOTS}/p1-home-completion.png` });
     await page.getByTestId('completion-cta').click();
-    await page.waitForURL((u) => u.pathname === '/biodata' && u.search.includes('step=0'), { waitUntil: 'commit' });
+    await page.waitForURL((u) => u.pathname === '/biodata' && u.search.includes('step=0') && u.search.includes('focus=aboutMe'), { waitUntil: 'commit' });
     // Fill About me through the real form and save; the card moves on to the next missing item.
     const about = page.getByLabel(/About/).first();
     await about.fill('We are a warm, practising family from Hyderabad looking for a kind partner.');
     await page.getByRole('button', { name: 'Save & continue' }).click();
     await page.waitForTimeout(800);
     await page.goto(BASE + '/home');
-    await page.getByTestId('completion-next').getByText('Next: Family details').waitFor();
+    await page.getByTestId('completion-next').getByText('Still missing: Family type').waitFor();
     const pct2 = await page.getByRole('progressbar').first().getAttribute('aria-valuenow');
     if (!(Number(pct2) > Number(pct))) throw new Error(`did not go up: ${pct} → ${pct2}`);
   });
