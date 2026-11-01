@@ -674,6 +674,7 @@ const ur: DeepPartial<Translation> = {
     free: 'مفت',
   },
   discover: {
+    sortBy: 'ترتیب',
     noResultsFor: "“{{q}}” کے لیے کوئی پروفائل نہیں ملی",
     noResultsKeyword: "مختلف ہجے، کوئی شہر یا پیشہ آزمائیں، یا تلاش ہٹا دیں۔",
     removeFilter: "{{name}} ہٹائیں",

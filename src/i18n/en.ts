@@ -701,6 +701,7 @@ const en = {
     free: 'Free',
   },
   discover: {
+    sortBy: 'Sort by',
     noResultsFor: "No profiles found for “{{q}}”",
     noResultsKeyword: "Try a different spelling, a city or a profession, or remove the search.",
     removeFilter: "Remove {{name}}",

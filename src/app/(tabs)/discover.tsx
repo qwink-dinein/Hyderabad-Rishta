@@ -7,7 +7,6 @@ import { ProfileCard, ProfileCardSkeleton } from '@/components/ProfileCard';
 import { ShortlistButton, TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
 import { Banner, EmptyState, ErrorView, Loading, SlowNotice } from '@/components/ui/feedback';
-import { ChipGroup } from '@/components/ui/forms';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { Row } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
@@ -156,25 +155,31 @@ export default function Discover() {
     [columns, shortSet, onToggle, onOpen],
   );
 
+  // Option C (owner choice 2026-11-01): Filters leads the row right above the cards, followed by the active
+  // filters as one-tap removable chips — reachable and visible, not a small icon in the top corner.
   const filterButton = (
     <Pressable
       onPress={() => router.push('/filters')}
       accessibilityRole="button"
       accessibilityLabel={filterCount ? `${t('discover.filters')} (${filterCount})` : t('discover.filters')}
-      hitSlop={6}
-      style={styles.iconBtn}
+      hitSlop={4}
+      style={({ pressed }) => [styles.filterChip, pressed && { opacity: 0.85 }]}
       testID="discover-filter-btn"
     >
-      <Icon name="sliders" />
+      <Icon name="sliders" size={18} color={colors.white} />
+      <Text variant="label" color={colors.white}>
+        {t('discover.filters')}
+      </Text>
       {filterCount ? (
-        <View style={styles.badge}>
-          <Text variant="caption" color={colors.emerald} style={styles.badgeText}>
+        <View style={styles.countPill}>
+          <Text variant="caption" color={colors.forest} style={styles.badgeText}>
             {filterCount}
           </Text>
         </View>
       ) : null}
     </Pressable>
   );
+  const sortLabel = filters.sort === 'recent' ? t('discover.sortRecent') : t('discover.sortRecommended');
 
   const header = (
     <View style={{ paddingHorizontal: space.sm, gap: space.md, paddingBottom: space.sm }}>
@@ -255,39 +260,50 @@ export default function Discover() {
           ) : null}
         </Banner>
       ) : null}
-      {tab === 'all' ? (
-        <ChipGroup
-          options={[
-            { value: 'recommended', label: t('discover.sortRecommended') },
-            { value: 'recent', label: t('discover.sortRecent') },
-          ]}
-          value={filters.sort}
-          onChange={(v) => v && patch({ sort: v })}
-        />
-      ) : null}
-      {tab !== 'recommended' && chips.length ? (
-        <View style={styles.chips}>
-          {chips.map((c) => (
-            <Pressable key={c.key} onPress={c.remove} accessibilityRole="button" accessibilityLabel={`${t('common.remove')} ${c.label}`} style={styles.chip}>
-              <Text variant="caption" color={colors.emerald}>
-                {c.label}
-              </Text>
-              <Icon name="close" size={12} />
-            </Pressable>
-          ))}
-          <Pressable onPress={() => setFilters({ ...EMPTY_FILTERS, sort: filters.sort })} accessibilityRole="button" style={[styles.chip, { borderColor: 'transparent' }]}>
-            <Text variant="caption" color={colors.danger}>
+      {/* Row 1: Filters + the active filters (tap ✕ to remove one). */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow} testID="discover-filter-row">
+        {filterButton}
+        {tab !== 'recommended'
+          ? chips.map((c) => (
+              <Pressable key={c.key} onPress={c.remove} accessibilityRole="button" accessibilityLabel={`${t('common.remove')} ${c.label}`} style={styles.chip}>
+                <Text variant="label" color={colors.emerald} numberOfLines={1}>
+                  {c.label}
+                </Text>
+                <Icon name="close" size={14} color={colors.emerald} />
+              </Pressable>
+            ))
+          : null}
+        {tab !== 'recommended' && chips.length ? (
+          <Pressable onPress={() => setFilters({ ...EMPTY_FILTERS, sort: filters.sort })} accessibilityRole="button" style={[styles.chip, styles.clearChip]} testID="discover-clear-filters">
+            <Text variant="label" color={colors.danger}>
               {t('common.clearAll')}
             </Text>
           </Pressable>
-        </View>
-      ) : null}
+        ) : null}
+      </ScrollView>
+      {/* Row 2: sort, count and refresh — right above the first card. */}
       {onFeedTab && feed.data ? (
-        <Row style={{ justifyContent: 'space-between' }} wrap>
-          <Text variant="label" color={colors.muted} accessibilityLiveRegion="polite" testID="discover-count">
+        <Row style={{ justifyContent: 'space-between', alignItems: 'center' }} gap={space.sm}>
+          {tab === 'all' ? (
+            <Pressable
+              onPress={() => patch({ sort: filters.sort === 'recent' ? 'recommended' : 'recent' })}
+              accessibilityRole="button"
+              accessibilityLabel={`${t('discover.sortBy')}: ${sortLabel}`}
+              style={styles.sortChip}
+              testID="discover-sort"
+            >
+              <Text variant="label" color={colors.emerald}>
+                {sortLabel}
+              </Text>
+              <Icon name="chevronDown" size={14} color={colors.emerald} />
+            </Pressable>
+          ) : null}
+          <Text variant="label" color={colors.muted} style={{ flex: 1, textAlign: tab === 'all' ? 'right' : 'left' }} accessibilityLiveRegion="polite" testID="discover-count" numberOfLines={1}>
             {t('discover.toDiscover', { count: toDiscover })}
           </Text>
-          <Button label={t('discover.refresh')} size="sm" kind="ghost" icon={<Icon name="refresh" size={16} color={colors.emerald} />} onPress={() => void feed.refresh()} testID="discover-refresh" />
+          <Pressable onPress={() => void feed.refresh()} accessibilityRole="button" accessibilityLabel={t('discover.refresh')} hitSlop={6} style={styles.refreshBtn} testID="discover-refresh">
+            <Icon name="refresh" size={18} color={colors.emerald} />
+          </Pressable>
         </Row>
       ) : null}
     </View>
@@ -353,7 +369,6 @@ export default function Discover() {
         right={
           <>
             <ShortlistButton />
-            {filterButton}
           </>
         }
       />
@@ -430,14 +445,20 @@ const styles = StyleSheet.create({
   tabOn: { backgroundColor: colors.emerald, borderColor: colors.emerald },
   tabDot: { position: 'absolute', top: 6, right: 8, width: 7, height: 7, borderRadius: 4, backgroundColor: colors.gold },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },
+  filterRow: { gap: space.sm, paddingVertical: 2, alignItems: 'center' },
+  filterChip: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: space.lg, borderRadius: radius.pill, backgroundColor: colors.emerald },
+  countPill: { minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center' },
+  clearChip: { backgroundColor: 'transparent', borderColor: 'transparent' },
+  sortChip: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40, paddingHorizontal: space.md, borderRadius: radius.pill, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
+  refreshBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: space.md,
-    paddingVertical: 6,
+    minHeight: 40,
     borderRadius: radius.pill,
-    backgroundColor: colors.sage,
+    backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: colors.border,
   },

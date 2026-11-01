@@ -674,6 +674,7 @@ const te: DeepPartial<Translation> = {
     free: 'ఉచితం',
   },
   discover: {
+    sortBy: 'క్రమం',
     noResultsFor: "“{{q}}” కోసం ప్రొఫైల్స్ లేవు",
     noResultsKeyword: "వేరే స్పెల్లింగ్, నగరం లేదా వృత్తిని ప్రయత్నించండి, లేదా శోధనను తీసివేయండి.",
     removeFilter: "{{name}} తీసివేయండి",
