@@ -99,6 +99,7 @@ const BASE = 'http://localhost:8081';
       const d = JSON.parse(localStorage.getItem('hr.demo.db'));
       const p = d.profiles.find((x) => x.userId === 'u_demo');
       p.biodata.religion.namaz = undefined;
+      if (!p.biodata.photos.length) p.biodata.photos = [{ id: 'e2ephoto1', uri: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==' }]; // a photo counts toward 100 % (2026-11-01)
       localStorage.setItem('hr.demo.db', JSON.stringify(d));
     });
     await page.goto(BASE + '/home');

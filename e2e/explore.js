@@ -49,6 +49,13 @@ const setDb = (page, src) => page.evaluate((s) => { const d = JSON.parse(localSt
       await shot(page, `f1-siblings-${lang}`);
     }
     await page.evaluate(() => localStorage.setItem('hr.lang', 'en'));
+    // A complete profile now includes a photo (a photo counts toward 100 %, owner decision 2026-11-01).
+    await page.evaluate(() => {
+      const d = JSON.parse(localStorage.getItem('hr.demo.db'));
+      const me = d.profiles.find((x) => x.userId === 'u_demo');
+      if (me && !me.biodata.photos.length) me.biodata.photos = [{ id: 'e2ephoto1', uri: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==' }];
+      localStorage.setItem('hr.demo.db', JSON.stringify(d));
+    });
     await page.goto(BASE + '/biodata/preview');
     await page.getByTestId('preview-edit').waitFor();
     await shot(page, 'f2-preview-footer');

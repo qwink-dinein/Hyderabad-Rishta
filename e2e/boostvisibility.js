@@ -46,7 +46,7 @@ const BASE = 'http://localhost:8081';
     if (fTop > sTop) throw new Error('Featured is below the activity cards');
     // Boosted cards carry the gold edge.
     const border = await page.locator('[data-testid^="home-featured-card-"]').first().evaluate((e) => getComputedStyle(e.firstElementChild).borderTopColor);
-    if (border !== 'rgb(198, 166, 107)') throw new Error(`no gold border: ${border}`); // colors.gold
+    if (border !== 'rgb(201, 160, 90)') throw new Error(`no gold border: ${border}`); // colors.gold (antique gold)
     await page.screenshot({ path: `${SHOTS}/bv-1-home-sections.png`, fullPage: true });
   });
 

@@ -46,7 +46,7 @@ const setDb = (page, fn) => page.evaluate((src) => {
 
   await step('Home: real completion names the exact fields → opens the first one; updates after saving', '9000000001', async (page) => {
     // Remove "about me" and family details from this member's saved biodata.
-    await setDb(page, "const p = d.profiles.find((x) => x.id === 'p_1'); p.biodata.basic.aboutMe = ''; p.biodata.family.familyType = '';");
+    await setDb(page, "const p = d.profiles.find((x) => x.id === 'p_1'); p.biodata.basic.aboutMe = ''; p.biodata.family.familyType = ''; if (!p.biodata.photos.length) p.biodata.photos = [{ id: 'e2ephoto1', uri: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==' }];");
     await page.goto(BASE + '/home');
     const card = page.getByTestId('completion-card');
     await card.waitFor();

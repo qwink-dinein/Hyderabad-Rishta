@@ -35,7 +35,7 @@ const BASE = 'http://localhost:8081';
     const first = page.locator('[data-testid^="list-card-"]').first();
     await first.locator('[data-testid^="boosted-"]').waitFor();
     const border = await first.evaluate((e) => getComputedStyle(e).borderTopColor);
-    if (border !== 'rgb(198, 166, 107)') throw new Error(`boosted card border ${border}`);
+    if (border !== 'rgb(201, 160, 90)') throw new Error(`boosted card border ${border}`);
     await page.screenshot({ path: `${SHOTS}/dc-1-featured.png` });
   });
 
@@ -54,7 +54,7 @@ const BASE = 'http://localhost:8081';
     for (let i = 0; i < n && !ordinary; i++) if (!(await cards.nth(i).locator('[data-testid^="boosted-"]').count())) ordinary = cards.nth(i);
     if (!ordinary) throw new Error('no ordinary card loaded');
     const border = await ordinary.evaluate((e) => getComputedStyle(e).borderTopColor);
-    if (border === 'rgb(198, 166, 107)') throw new Error('ordinary card has the gold border');
+    if (border === 'rgb(201, 160, 90)') throw new Error('ordinary card has the gold border');
     await ordinary.getByText('View profile').waitFor();
     await ordinary.getByText('Send Interest').waitFor();
     await page.screenshot({ path: `${SHOTS}/dc-2-all.png` });
