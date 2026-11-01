@@ -36,7 +36,7 @@ Built for one community, not a national catalogue: Hyderabadi Muslim families, w
 - Photos optional; the owner controls who sees photos, income and family details.
 - Paid boosts exist in pricing but **no payment gateway is connected yet** (open owner decision: in-app purchase vs Indian gateway vs free).
 - Admin approval of new biodatas can be switched on or off by the team; it is currently off.
-- **Open decision:** the app's colour direction (current Emerald & Gold; alternatives mocked in `docs/mockups/colour-directions.png`).
+- **Colour (decided 2026-11-01):** Lac, Pearl & Antique Gold: Laad Bazaar lac maroon, pearl white, antique gold for the main action, emerald only for "yes". Tokens and contrast in `docs/design/palette.md`. Screen layout for the redesign is still open.
 
 ## Brand Commitments
 - Name: **Hyderabad Rishta**; tagline "Faith · Family · Better futures".
