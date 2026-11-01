@@ -17,21 +17,23 @@ const step = async (name, fn) => {
   const shot = (n) => page.screenshot({ path: `${SHOTS}/${n}.png`, fullPage: false });
   const login = (phone) => loginWithOtp(page, BASE, phone);
 
-  await step('landing renders', async () => {
+  await step('app opens on login (blank number + PIN), new-member options below', async () => {
     await page.goto(BASE + '/');
-    await page.getByText('Find a rishta with dignity').waitFor({ timeout: 15000 });
+    await page.getByText('Assalamu alaikum, please log in').waitFor({ timeout: 15000 });
+    await page.getByTestId('login-phone').waitFor();
+    await page.getByTestId('cta-create').waitFor();
     await shot('01-landing');
   });
   await step('switch to Urdu (RTL) instantly', async () => {
     await page.getByRole('radio', { name: 'اردو' }).first().click();
-    await page.getByText('وقار، رازداری').waitFor();
+    await page.getByText('السلام علیکم، براہِ کرم لاگ اِن کریں').waitFor();
     const dir = await page.evaluate(() => document.documentElement.dir);
     if (dir !== 'rtl') throw new Error('dir=' + dir);
     await shot('02-landing-urdu');
   });
   await step('switch to Telugu', async () => {
     await page.getByRole('radio', { name: 'తెలుగు' }).first().click();
-    await page.getByText('గౌరవం').first().waitFor();
+    await page.getByText('అస్సలాము అలైకుమ్').first().waitFor();
     await shot('03-landing-telugu');
     await page.getByRole('radio', { name: 'English' }).first().click();
   });

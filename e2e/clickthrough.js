@@ -34,8 +34,8 @@ const db = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('hr.dem
 (async () => {
   browser = await chromium.launch();
 
-  await step('landing: carousel next/previous/dots/pause change the slide', null, async (page) => {
-    await page.goto(BASE + '/');
+  await step('How it works page: carousel next/previous/dots/pause change the slide', null, async (page) => {
+    await page.goto(BASE + '/welcome');
     const selected = () => page.locator('[aria-label^="Go to slide"][aria-selected="true"]').getAttribute('aria-label');
     const first = await selected();
     await btn(page, 'Pause slideshow').click();
@@ -52,7 +52,7 @@ const db = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('hr.dem
     if ((await selected()) !== 'Go to slide 3') throw new Error('dot did not jump');
   });
 
-  await step('landing: language buttons switch to Urdu (RTL) and back; CTAs go to the right place', null, async (page) => {
+  await step('opening screen: language buttons switch to Urdu (RTL) and back; CTAs go to the right place', null, async (page) => {
     await page.goto(BASE + '/');
     await page.getByRole('radio', { name: 'اردو' }).first().click();
     await page.waitForFunction(() => document.documentElement.dir === 'rtl');
@@ -62,8 +62,11 @@ const db = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('hr.dem
     // First visit asks for the language, then the number (by design).
     await page.waitForURL((u) => (u.pathname === '/login' || u.pathname === '/language') && u.search.includes('biodata'), { waitUntil: 'commit' });
     await page.goto(BASE + '/');
-    await page.getByTestId('cta-login').click();
-    await page.waitForURL((u) => u.pathname === '/login', { waitUntil: 'commit' });
+    await page.getByTestId('how-it-works').click(); // the old landing page lives behind "How it works"
+    await page.waitForURL((u) => u.pathname === '/welcome', { waitUntil: 'commit' });
+    await page.getByTestId('welcome-login').click(); // and leads back to login
+    await page.waitForURL((u) => u.pathname === '/', { waitUntil: 'commit' });
+    await page.getByTestId('pin-input').waitFor();
   });
 
   await step('home: keyword search opens Discover filtered; filter button opens Filters; View all; new interests', MEMBER, async (page) => {
@@ -193,9 +196,10 @@ const db = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('hr.dem
     await page.getByTestId('cta-find').waitFor();
     if ((await db(page)).profiles.find((p) => p.id === 'p_1').status !== 'paused') throw new Error('profile not hidden');
     await page.goto(BASE + '/login');
+    await page.getByTestId('login-phone').fill(MEMBER); // the number box is always blank
     await page.getByTestId('pin-input').fill('4827');
     await page.getByTestId('pin-login').click();
-    await page.waitForURL((u) => !u.pathname.startsWith('/login'), { waitUntil: 'commit' });
+    await page.waitForURL((u) => !u.pathname.startsWith('/login') && u.pathname !== '/', { waitUntil: 'commit' });
     const u = (await db(page)).users.find((x) => x.id === 'u_demo');
     if (u.deactivatedAt) throw new Error('still deactivated');
   });

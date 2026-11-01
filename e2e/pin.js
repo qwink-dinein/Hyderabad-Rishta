@@ -5,17 +5,20 @@ require('fs').mkdirSync(SHOTS, { recursive: true });
 const BASE = 'http://localhost:8081';
 const NUM = '9777700001';
 const errors = [];
+let pageRef;
 const step = async (name, fn) => {
   try { await fn(); console.log('✓', name); }
-  catch (e) { console.log('✗', name, '-', e.message.split('\n')[0]); errors.push(name); }
+  catch (e) { console.log('✗', name, '-', e.message.split('\n')[0]); errors.push(name); await pageRef?.screenshot({ path: `${SHOTS}/fail-pin-${name.replace(/\W+/g, '_').slice(0, 30)}.png` }).catch(() => {}); }
 };
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 400, height: 860 } });
+  pageRef = page;
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 300)); });
   const otpCount = () => page.evaluate(() => JSON.parse(localStorage.getItem('hr.demo.db')).audit.length >= 0 && JSON.parse(localStorage.getItem('hr.demo.db')).otps.length);
   const logout = async () => { await page.goto(BASE + '/settings'); await page.getByTestId('logout').click(); await page.getByTestId('cta-find').waitFor(); };
+  const typeNumber = async (n = NUM) => { await page.getByTestId('login-phone').fill(n); };
   const pinEntry = async (pin) => {
     await page.getByTestId('pin-setup-input').fill(pin);
     await page.getByTestId('pin-continue').click();
@@ -54,16 +57,26 @@ const step = async (name, fn) => {
     await page.goto(BASE + '/settings');
     await page.getByText('PIN login is on', { exact: false }).waitFor();
   });
-  await step('after logout, login shows the number prefilled + PIN cells + Forgot PIN', async () => {
-    await logout();
-    await page.goto(BASE + '/login');
+  await step('after logout, the app opens on login: BLANK number, PIN cells, Forgot PIN, new-member options', async () => {
+    await logout(); // lands on the opening screen
     await page.getByTestId('pin-input').waitFor();
-    const shown = await page.getByTestId('pin-number').innerText();
-    if (!shown.includes('97777 00001')) throw new Error(`number shown: ${shown}`);
+    const shown = await page.getByTestId('login-phone').inputValue();
+    if (shown !== '') throw new Error(`number box not blank: "${shown}"`);
     await page.getByTestId('forgot-pin').waitFor();
+    await page.getByTestId('new-member-card').getByText('Create an account').waitFor();
+    await page.getByTestId('new-member-card').getByText('Find matches').waitFor();
     await page.screenshot({ path: `${SHOTS}/a4-pin-login.png` });
+    await page.reload(); // still blank after the app restarts
+    if ((await page.getByTestId('login-phone').inputValue()) !== '') throw new Error('number prefilled after restart');
+  });
+  await step('PIN without a number: asks for the number', async () => {
+    await page.getByTestId('pin-input').fill('4827');
+    await page.getByTestId('pin-login').click({ force: true });
+    await page.waitForTimeout(300);
+    if (!new URL(page.url()).pathname.match(/^\/(login)?$/)) throw new Error('logged in without a number');
   });
   await step('wrong PIN: clear error with attempts left', async () => {
+    await typeNumber();
     await page.getByTestId('pin-input').fill('0000');
     await page.getByTestId('pin-login').click();
     await page.getByText('Incorrect PIN. 4 attempts left.').waitFor();
@@ -73,14 +86,15 @@ const step = async (name, fn) => {
     const before = await otpCount();
     await page.getByTestId('pin-input').fill('48 27');
     await page.getByTestId('pin-login').click();
-    await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 10000 });
+    await page.waitForURL((u) => !u.pathname.startsWith('/login') && u.pathname !== '/', { timeout: 10000 });
     if ((await otpCount()) !== before) throw new Error('an OTP was sent during PIN login');
   });
   await step('Forgot PIN: OTP to the registered number, new PIN, logged in', async () => {
     await logout();
-    await page.goto(BASE + '/login');
+    await typeNumber(); // the number typed above carries into the reset
     await page.getByTestId('forgot-pin').click();
     await page.getByText('Reset your PIN').waitFor();
+    if ((await page.getByTestId('phone-input').inputValue()) !== NUM) throw new Error('number not carried into Forgot PIN');
     await page.getByTestId('send-otp').click();
     await page.getByTestId('otp-input').fill('123456');
     await page.getByTestId('verify-otp').click();
@@ -93,13 +107,13 @@ const step = async (name, fn) => {
   });
   await step('old PIN no longer works, new PIN does', async () => {
     await logout();
-    await page.goto(BASE + '/login');
+    await typeNumber();
     await page.getByTestId('pin-input').fill('4827');
     await page.getByTestId('pin-login').click();
     await page.getByText('Incorrect PIN', { exact: false }).waitFor();
     await page.getByTestId('pin-input').fill('5931');
     await page.getByTestId('pin-login').click();
-    await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 10000 });
+    await page.waitForURL((u) => !u.pathname.startsWith('/login') && u.pathname !== '/', { timeout: 10000 });
   });
   await step('change PIN from Settings with the current PIN', async () => {
     await page.goto(BASE + '/settings');
@@ -112,7 +126,7 @@ const step = async (name, fn) => {
   });
   await step('5 wrong PINs lock the account temporarily (server-side)', async () => {
     await logout();
-    await page.goto(BASE + '/login');
+    await typeNumber();
     for (let i = 0; i < 5; i++) {
       await page.getByTestId('pin-input').fill('0000');
       await page.getByTestId('pin-login').click();
@@ -121,12 +135,13 @@ const step = async (name, fn) => {
     await page.getByText('Too many wrong PINs', { exact: false }).waitFor();
     await page.screenshot({ path: `${SHOTS}/a7-pin-locked.png` });
     await page.reload(); // a restart does not reset the counter
+    await typeNumber();
     await page.getByTestId('pin-input').fill('7140');
     await page.getByTestId('pin-login').click();
     await page.getByText('Too many wrong PINs', { exact: false }).waitFor();
   });
   await step('existing account from before PINs: OTP, then asked to set a PIN, data intact', async () => {
-    await page.getByTestId('other-number').click();
+    await page.getByTestId('whatsapp-login').click();
     await page.getByTestId('phone-input').fill('9000000001');
     await page.getByTestId('send-otp').click();
     await page.getByTestId('otp-input').fill('123456');
@@ -135,6 +150,34 @@ const step = async (name, fn) => {
     await pinEntry('3816');
     await pinEntry('3816');
     await page.waitForURL((u) => u.pathname.startsWith('/home'), { timeout: 10000 }); // not forced into biodata again
+  });
+
+  await step('a phone never used before: number + PIN → one-time WhatsApp code, then PIN alone works there', async () => {
+    // A second browser = another phone. The demo data lives per browser, so register there first.
+    const other = await browser.newContext({ viewport: { width: 400, height: 860 } });
+    const p2 = await other.newPage();
+    await p2.goto(BASE + '/login?next=biodata');
+    await p2.getByTestId('phone-input').fill('9777700009');
+    await p2.getByTestId('send-otp').click();
+    await p2.getByTestId('otp-input').fill('123456');
+    await p2.getByTestId('verify-otp').click();
+    await p2.waitForURL((u) => u.pathname.startsWith('/pin'));
+    for (let i = 0; i < 2; i++) { await p2.getByTestId('pin-setup-input').fill('6295'); await p2.getByTestId('pin-continue').click(); }
+    await p2.waitForURL((u) => u.pathname.startsWith('/biodata'), { timeout: 10000 });
+    // Forget this phone: as if the member picked up a new phone.
+    await p2.evaluate(() => { for (const k of Object.keys(localStorage)) if (!k.startsWith('hr.demo.db')) localStorage.removeItem(k); });
+    const db = JSON.parse(await p2.evaluate(() => localStorage.getItem('hr.demo.db')));
+    await p2.evaluate((d) => { d.devices = []; d.sessions = []; localStorage.setItem('hr.demo.db', JSON.stringify(d)); }, db);
+    await p2.goto(BASE + '/');
+    await p2.getByTestId('login-phone').fill('9777700009');
+    await p2.getByTestId('pin-input').fill('6295');
+    await p2.getByTestId('pin-login').click();
+    await p2.getByTestId('otp-sent').waitFor({ timeout: 10000 }); // the code went out automatically
+    await p2.getByTestId('login-notice').waitFor();
+    await p2.getByTestId('otp-input').fill('123456');
+    await p2.getByTestId('verify-otp').click();
+    await p2.waitForURL((u) => !u.pathname.startsWith('/login') && u.pathname !== '/' && u.pathname !== '/', { timeout: 10000 });
+    await other.close();
   });
 
   await browser.close();

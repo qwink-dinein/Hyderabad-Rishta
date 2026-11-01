@@ -428,3 +428,15 @@ Design decision (not in the feature PRD, flagged for owner review): after a **de
   Bride/Groom filter cannot override it; for members the filters screen shows "Showing grooms/brides — based on your
   biodata" instead of the choice. Accounts without a biodata (e.g. the team) can still choose a side.
 - Enforced on the server: demo backend, the discover-feed function and the database's `search_profiles`.
+
+### 15.18 Login-first opening (owner request, 2026-11-01)
+- The app opens on Log in: mobile number + 4-digit PIN → Log in. The number box is ALWAYS blank (never prefilled,
+  not even on the same phone or after a restart), so any registered member can log in from any phone by typing it.
+- A phone that never verified that number gets a one-time WhatsApp code first (sent automatically, with a short
+  explanation); after that, number + PIN works on that phone. Owner choice: keep this check rather than PIN-only on
+  any phone. Lockout after 5 wrong PINs is unchanged.
+- Under Log in: "Forgot PIN?" (WhatsApp code → new PIN; the typed number carries over) and "Log in with WhatsApp code"
+  (accounts without a PIN). Below: "New to Hyderabad Rishta?" card with "Create an account" and "Find matches"
+  (both register with a WhatsApp code → PIN → biodata, since a member must say who they are looking for first;
+  existing members using Find matches go to Discover). Footer: How it works (the former landing page, now /welcome),
+  Privacy, Help; master-admin recovery and terms unchanged. EN/UR/TE. Mockup: docs/mockups/login-first.png.

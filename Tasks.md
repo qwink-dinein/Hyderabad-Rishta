@@ -80,6 +80,7 @@
 | T-073 | QA round 2: click-through of every remaining button/flow; fixes (aria state app-wide, Filters→Discover, block list names, revoked-session handling, crash screen) | ✅ |
 | T-075 | No photo → owner-supplied Hyderabadi bride/groom portrait (cropped to `assets/personas/*.webp`) instead of the initial letter, everywhere `ProfilePhoto` is used (Discover, Home featured, Shortlist, Requests, connection screen, profile page, preview); photo wins; removal restores; load-failure fallbacks; `e2e/personas.js` | ✅ |
 | T-076 | Discover: filter button beside the search box (same as Home) with an active-filter count badge | ✅ |
+| T-098 | Login-first opening: number (always blank) + PIN + Log in, Forgot PIN, Log in with WhatsApp code, new phone → automatic one-time WhatsApp code; Create an account / Find matches below; old landing moved to /welcome (How it works); EN/UR/TE; e2e updated | ✅ |
 | T-097 | Fix: Bride/Groom filter could override the member's own side (feed, Recently published). Own side always wins — demo, adapter, discover-feed, SQL search_profiles; filters screen explains; unit + SQL tests | ✅ |
 | T-096 | Biodata progress: live field-by-field %, exact fields left per section (tappable), N-left/✓ tabs, sticky footer progress; Home uses the same %; EN/UR/TE; unit + e2e | ✅ |
 | T-095 | Screen states checklist: offline banner + auto-refresh, slow-network progress, actionable errors, no-results suggestions, permission explanations, session-expiry draft keep/restore + return to screen, live field validation, success sheets; EN/UR/TE; tests | ✅ |
