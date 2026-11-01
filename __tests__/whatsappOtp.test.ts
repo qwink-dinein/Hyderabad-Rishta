@@ -59,7 +59,7 @@ describe('sending through Waplify', () => {
     expect(r).toEqual({ status: 200, body: {} });
     expect(f.calls[0].url).toBe('https://server.waplify.io/api/v1/messages/send');
     expect(f.calls[0].init.headers.Authorization).toBe('Bearer wapl_test');
-    expect(JSON.parse(f.calls[0].init.body)).toEqual({ template_name: 'hr_login_otp', contact_phone: '919876543210', contact_name: 'Hyderabad Rishta member', body_data: { '1': '482913' } });
+    expect(JSON.parse(f.calls[0].init.body)).toEqual({ template_name: 'hr_login_otp', contact_phone: '919876543210', contact_name: 'Hyderabad Rishta member', body_data: { '1': '482913' }, url_button_data: '482913' });
   });
 
   it('fills every configured body_data key with the code (e.g. body + copy-code button)', async () => {

@@ -33,7 +33,7 @@ it('send: stores only a keyed hash and delivers the code on WhatsApp to the norm
   expect(r).toEqual({ status: 200, body: { sent: true } });
   expect(h.rpcs[0]).toEqual({ fn: 'backup_code_issue', args: { p_master: 'master-1', p_cc: '+91', p_phone: '9876543210', p_hash: hash('482913') } });
   expect(JSON.stringify(h.rpcs)).not.toContain('482913'); // the code itself never reaches the database
-  expect(h.sends[0].body).toMatchObject({ template_name: 'hr_login_otp', contact_phone: '919876543210', body_data: { '1': '482913' } });
+  expect(h.sends[0].body).toMatchObject({ template_name: 'hr_login_otp', contact_phone: '919876543210', body_data: { '1': '482913' }, url_button_data: '482913' });
   expect(JSON.stringify(r)).not.toContain('482913'); // nor the app
 });
 

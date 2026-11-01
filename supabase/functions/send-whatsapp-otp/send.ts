@@ -7,7 +7,9 @@
 //   { "user": { "id": "...", "phone": "919876543210", ... }, "sms": { "otp": "123456" } }
 // Hook reply: 200 {} on success, or { "error": { "http_code": <n>, "message": "..." } }.
 // Waplify: POST https://server.waplify.io/api/v1/messages/send, Authorization: Bearer wapl_...,
-//   { template_name, contact_phone: "91XXXXXXXXXX" (no +), contact_name, body_data }.
+//   { template_name, contact_phone: "91XXXXXXXXXX" (no +), contact_name, body_data, url_button_data }.
+// Authentication templates with a "Copy code" button need the code again in url_button_data, or Meta
+// rejects the message; sending it is harmless for templates without a button.
 
 export interface WaplifyConfig {
   apiKey: string;
@@ -98,7 +100,7 @@ export async function sendOtp(cfg: WaplifyConfig, deps: SendDeps, payload: unkno
     res = await deps.fetch(`${cfg.baseUrl ?? 'https://server.waplify.io'}/api/v1/messages/send`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${cfg.apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ template_name: cfg.templateName, contact_phone: phone, contact_name: cfg.contactName ?? 'Hyderabad Rishta member', body_data }),
+      body: JSON.stringify({ template_name: cfg.templateName, contact_phone: phone, contact_name: cfg.contactName ?? 'Hyderabad Rishta member', body_data, url_button_data: otp }),
     });
   } catch {
     deps.log?.('waplify unreachable');
