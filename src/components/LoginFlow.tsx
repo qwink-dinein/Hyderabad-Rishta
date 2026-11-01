@@ -286,19 +286,15 @@ export function LoginFlow() {
             <Button label={t('auth.whatsappLogin')} kind="ghost" size="sm" onPress={whatsappLogin} testID="whatsapp-login" />
           </Row>
 
-          {/* New people: create an account or start finding matches (both register with a WhatsApp code). */}
+          {/* New people: create a biodata or find a match (both register with a WhatsApp code). */}
           <Row gap={space.sm} style={styles.divider}>
             <View style={styles.rule} />
             <Text variant="caption">{t('auth.newDivider')}</Text>
             <View style={styles.rule} />
           </Row>
-          <View style={styles.newCard} testID="new-member-card">
-            <Text variant="h3" color={colors.emerald}>
-              {t('auth.newTitle')}
-            </Text>
-            <Text variant="caption">{t('auth.newSub')}</Text>
-            <Button label={t('auth.createAccount')} kind="gold" onPress={create} full arrow testID="cta-create" style={{ marginTop: space.xs }} />
-            <Button label={t('auth.findMatches')} kind="secondary" onPress={find} full testID="cta-find" />
+          <View style={styles.newActions} testID="new-member-actions">
+            <Button label={t('landing.createBiodata')} onPress={create} full arrow testID="cta-create" />
+            <Button label={t('landing.findMatch')} kind="secondary" onPress={find} full testID="cta-find" />
           </View>
           {footerLinks}
           {extras}
@@ -472,7 +468,7 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: space.xl, paddingTop: space.xl, gap: space.md },
   divider: { alignItems: 'center', marginTop: space.sm },
   rule: { flex: 1, height: 1, backgroundColor: colors.border },
-  newCard: { gap: space.sm, padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.goldSoft, borderWidth: 1, borderColor: colors.border },
+  newActions: { gap: space.md },
   links: { justifyContent: 'center', paddingVertical: space.sm },
   underline: { textDecorationLine: 'underline' },
   numberRow: { padding: space.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.white, alignItems: 'center' },

@@ -436,7 +436,7 @@ Design decision (not in the feature PRD, flagged for owner review): after a **de
   explanation); after that, number + PIN works on that phone. Owner choice: keep this check rather than PIN-only on
   any phone. Lockout after 5 wrong PINs is unchanged.
 - Under Log in: "Forgot PIN?" (WhatsApp code → new PIN; the typed number carries over) and "Log in with WhatsApp code"
-  (accounts without a PIN). Below: "New to Hyderabad Rishta?" card with "Create an account" and "Find matches"
-  (both register with a WhatsApp code → PIN → biodata, since a member must say who they are looking for first;
+  (accounts without a PIN). Below: a "New to Hyderabad Rishta?" divider, then "Create your biodata →" and "Find your match"
+  buttons, stacked (owner chose option C, docs/mockups/login-below.png; no card) (both register with a WhatsApp code → PIN → biodata, since a member must say who they are looking for first;
   existing members using Find matches go to Discover). Footer: How it works (the former landing page, now /welcome),
   Privacy, Help; master-admin recovery and terms unchanged. EN/UR/TE. Mockup: docs/mockups/login-first.png.

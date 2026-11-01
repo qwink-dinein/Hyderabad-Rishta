@@ -87,7 +87,7 @@ export default function Welcome() {
           <Button label={t('landing.findMatch')} kind="secondary" onPress={find} full testID="welcome-find" />
           {/* Tertiary action: clearly tappable (tinted pill, icon, arrow) but lighter than the two buttons above. */}
           <Pressable
-            onPress={() => router.replace('/')}
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
             accessibilityRole="button"
             accessibilityLabel={`${t('landing.registered')} ${t('landing.logIn')}`}
             style={({ pressed }) => [styles.login, pressed && styles.loginPressed]}

@@ -63,8 +63,9 @@ const step = async (name, fn) => {
     const shown = await page.getByTestId('login-phone').inputValue();
     if (shown !== '') throw new Error(`number box not blank: "${shown}"`);
     await page.getByTestId('forgot-pin').waitFor();
-    await page.getByTestId('new-member-card').getByText('Create an account').waitFor();
-    await page.getByTestId('new-member-card').getByText('Find matches').waitFor();
+    await page.getByTestId('new-member-actions').getByText('Create your biodata').waitFor();
+    await page.getByTestId('new-member-actions').getByText('Find your match').waitFor();
+    if (await page.getByText('Start your rishta journey').count()) throw new Error('old card still shown');
     await page.screenshot({ path: `${SHOTS}/a4-pin-login.png` });
     await page.reload(); // still blank after the app restarts
     if ((await page.getByTestId('login-phone').inputValue()) !== '') throw new Error('number prefilled after restart');
