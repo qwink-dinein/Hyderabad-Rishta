@@ -1154,8 +1154,9 @@ export class DemoBackend implements Backend {
         if (!owner || owner.deactivatedAt || owner.deletedAt) return false;
         return !ctx.blocked(p);
       });
-      // Default to the opposite type of the viewer's own profile.
-      const f = { ...filters, show: filters.show ?? mine?.biodata.basic.lookingFor };
+      // Matrimony rule: a member only ever sees the side their own biodata is looking for — no filter can
+      // change it. The Bride/Groom filter applies only to accounts without a biodata (e.g. the team).
+      const f = { ...filters, show: mine?.biodata.basic.lookingFor ?? filters.show };
       const projected = candidates
         // Discovery NEVER carries contact details, even when consented (PRD §9.3) — only the profile view does.
         .map((p) => ({ ...ctx.project(p), contact: undefined, relation: ctx.relation(p) }))
@@ -1181,7 +1182,7 @@ export class DemoBackend implements Backend {
   private discoverCandidates(db: DemoDb, u: User, filters: SearchFilters) {
     const ctx = this.viewerContext(db, u);
     const shortlisted = new Set(db.shortlists.filter((s) => s.userId === u.id).map((s) => s.profileId));
-    const f = { ...filters, show: filters.show ?? ctx.mine?.biodata.basic.lookingFor };
+    const f = { ...filters, show: ctx.mine?.biodata.basic.lookingFor ?? filters.show }; // own side always wins
     return db.profiles
       .filter((p) => {
         if (p.userId === u.id || p.status !== 'published' || p.deletedAt) return false;
@@ -1195,7 +1196,7 @@ export class DemoBackend implements Backend {
   getDiscoverFeed(filters: SearchFilters, req: FeedRequest): Promise<FeedPage> {
     return this.run((db) => {
       const u = this.me(db);
-      const f = { ...filters, show: filters.show ?? this.myProfile(db, u.id)?.biodata.basic.lookingFor };
+      const f = { ...filters, show: this.myProfile(db, u.id)?.biodata.basic.lookingFor ?? filters.show }; // own side always wins
       return serveFeed(f, req, {
         candidates: async () => this.discoverCandidates(db, u, f),
         context: async () => this.feedContext(db, u),
@@ -1261,7 +1262,7 @@ export class DemoBackend implements Backend {
   getDiscoverSections(filters: SearchFilters): Promise<DiscoverSections> {
     return this.run((db) => {
       const u = this.me(db);
-      const f = { ...filters, show: filters.show ?? this.myProfile(db, u.id)?.biodata.basic.lookingFor };
+      const f = { ...filters, show: this.myProfile(db, u.id)?.biodata.basic.lookingFor ?? filters.show }; // own side always wins
       const candidates = this.discoverCandidates(db, u, f);
       // An explicit search (keyword / shortlist only) shows plain results: no sections.
       if (!rotationApplies(f)) return { featured: [], recommended: [], recent: [], newSince: [] };

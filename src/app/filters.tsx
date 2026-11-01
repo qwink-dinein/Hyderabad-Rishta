@@ -8,6 +8,8 @@ import { Header, Row, Screen, Section } from '@/components/ui/layout';
 import { citiesOf, COUNTRIES, districtsOf, statesOf } from '@/domain/options';
 import { EMPTY_FILTERS, type SearchFilters } from '@/domain/search';
 import { useOptions } from '@/hooks/useOptions';
+import { useMyProfile } from '@/hooks/queries';
+import { Text } from '@/components/ui/Text';
 import { backend } from '@/services';
 import { useFilters } from '@/state/filters';
 import { space } from '@/theme/tokens';
@@ -22,6 +24,9 @@ export default function Filters() {
   const [f, setF] = useState<SearchFilters>(filters);
   const [count, setCount] = useState<number | null>(null);
   const { opts, heights, ages, plain, subMaslakOpts } = useOptions();
+  // Members always see the opposite side from their own biodata; only accounts without a biodata choose.
+  const { data: me } = useMyProfile();
+  const ownSide = me?.biodata.basic.lookingFor;
   const patch = (p: Partial<SearchFilters>) => setF((prev) => ({ ...prev, ...p }));
 
   useEffect(() => {
@@ -61,9 +66,15 @@ export default function Filters() {
       }
     >
       <Section title={t('filters.basic')}>
-        <Field label={t('filters.show')} optional>
-          <ChipGroup options={opts('lookingFor')} value={f.show} onChange={(v) => patch({ show: v })} />
-        </Field>
+        {ownSide ? (
+          <Text variant="caption" testID="filters-own-side">
+            {t(ownSide === 'groom' ? 'filters.showingGrooms' : 'filters.showingBrides')}
+          </Text>
+        ) : (
+          <Field label={t('filters.show')} optional>
+            <ChipGroup options={opts('lookingFor')} value={f.show} onChange={(v) => patch({ show: v })} />
+          </Field>
+        )}
         <RangeSelect label={t('filters.ageRange')} options={ages} min={f.ageMin} max={f.ageMax} onChange={(a, b) => patch({ ageMin: a, ageMax: b })} />
         <RangeSelect label={t('filters.heightRange')} options={heights} min={f.heightMin} max={f.heightMax} onChange={(a, b) => patch({ heightMin: a, heightMax: b })} />
         <Field label={t('f.maritalStatus')} optional>

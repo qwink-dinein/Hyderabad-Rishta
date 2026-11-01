@@ -738,6 +738,8 @@ const en = {
     caughtUpBody: 'New profiles will appear here as they are published.',
   },
   filters: {
+    showingGrooms: "Showing grooms — based on your biodata (you are looking for a groom).",
+    showingBrides: "Showing brides — based on your biodata (you are looking for a bride).",
     title: 'Filters',
     basic: 'Basic',
     location: 'Location',

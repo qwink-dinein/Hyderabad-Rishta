@@ -36,7 +36,9 @@ do $$ declare j jsonb; begin
   assert (j ->> 'acceptsRequests')::boolean, 'acceptsRequests exposed';
   assert j -> 'children' is null, 'children omitted for never married';
   assert (select count(*) from search_profiles(p_keyword => 'hafiz')) = 1, 'custom value searchable';
-  assert (select count(*) from search_profiles(p_show => 'groom')) = 0, 'type filter';
+  -- A (a groom) asking for grooms still gets brides only: own side always wins (member_side migration).
+  assert (select count(*) from search_profiles(p_show => 'groom') x where x ->> 'profileType' = 'groom') = 0, 'own side always wins';
+  assert (select count(*) from search_profiles(p_show => 'groom') x where x ->> 'profileType' = 'bride') = 1, 'still sees brides';
 end $$;
 -- A cannot escalate own role or publish directly
 do $$ begin

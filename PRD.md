@@ -421,3 +421,10 @@ Design decision (not in the feature PRD, flagged for owner review): after a **de
   become required, like number of children after "divorced", join the count), recommended extras 15 % (About me,
   religious practice, family details, partner age range). It never shows 100 % while anything is missing. The Home
   completion card uses the same calculation, so the numbers always match.
+
+### 15.17 Opposite side only (owner report, 2026-11-01)
+- A member only ever sees the side their own biodata is looking for — a bride sees grooms, a groom sees brides —
+  everywhere (Featured, New, Recommended, All Profiles, Home sections, search, shortlist suggestions). The
+  Bride/Groom filter cannot override it; for members the filters screen shows "Showing grooms/brides — based on your
+  biodata" instead of the choice. Accounts without a biodata (e.g. the team) can still choose a side.
+- Enforced on the server: demo backend, the discover-feed function and the database's `search_profiles`.

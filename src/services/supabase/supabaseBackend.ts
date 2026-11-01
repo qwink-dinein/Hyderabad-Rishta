@@ -394,7 +394,8 @@ export class SupabaseBackend implements Backend {
     pageSize = Math.max(1, Math.min(50, Math.floor(Number(pageSize) || 10)));
     page = Math.max(0, Math.floor(Number(page) || 0));
     const mine = page === 0 || !this.searchCache ? await this.getMyProfile().catch(() => null) : null;
-    const show = filters.show ?? mine?.biodata.basic.lookingFor ?? undefined;
+    // Own side always wins (the database enforces it too); the filter only applies without a biodata.
+    const show = mine?.biodata.basic.lookingFor ?? filters.show ?? undefined;
     const key = JSON.stringify({ show });
     const nowMs = this.now().getTime();
     let list = this.searchCache && this.searchCache.key === key && page > 0 && nowMs - this.searchCache.at < 60_000 ? this.searchCache.list : null;

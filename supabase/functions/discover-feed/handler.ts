@@ -62,9 +62,9 @@ export async function discoverFeed(deps: FeedEdgeDeps, input: unknown): Promise<
   const sections = b.mode === 'sections';
   const view = b.view === 'new' ? 'new' : 'all';
   const base = cleanFilters(b.filters);
-  // The member's own looking-for decides the side, exactly like Discover (keys must match the demo's).
+  // The member's own looking-for decides the side and no filter can override it (keys must match the demo's).
   const first = (await deps.rpc('get_feed_context', { p_keys: [] })) as Ctx;
-  const f: SearchFilters = { ...base, show: base.show ?? first.lookingFor };
+  const f: SearchFilters = { ...base, show: first.lookingFor ?? base.show };
   const keys = [...new Set([filtersKey(f, 'all'), filtersKey(f, view)])];
   const ctx = (await deps.rpc('get_feed_context', { p_keys: keys })) as Ctx;
   const shortlisted = new Set((ctx.shortlisted ?? []).map(String));
