@@ -18,6 +18,12 @@ pointing at this version. (`final_v1` is kept the same way; see `docs/RELEASE_fi
   toward 100%". 100 % appears exactly when nothing is left.
 - **Earlier today, also in v2:** Discover redesign (tabs + premium cards), screen states (offline, slow network,
   errors, no results, permissions, session expiry, success), live biodata progress per section.
+- **My Boost / Home numbers:** proven to move with real activity (other members' views, shortlists, interests;
+  own views, team views and refreshes within 30 minutes never count) and now refresh every 30 s on screen and
+  when the app is reopened.
+- **App icon:** the brand's gold emblem on the dark green (replaces Expo's placeholder), Android adaptive +
+  themed (monochrome) icons, the emblem on the ivory opening screen, matching web favicon. Name under the icon:
+  "Hyderabad Rishta" (iPhone shortens it on the home screen). Preview: `docs/mockups/app-icon.png`.
 - **Support / privacy contact:** mukarramjahm@gmail.com on Help & support, the privacy policy, and the
   "contact support" messages (account removed / suspended, biodata removed, safety review). EN/UR/TE.
 - **Not in final_v2 (planned next):** paid checkout (payment provider), phone push sending (FCM/APNs keys),
@@ -27,10 +33,10 @@ pointing at this version. (`final_v1` is kept the same way; see `docs/RELEASE_fi
 | Check | Result |
 |---|---|
 | Typecheck (app + functions), lint | clean (0 errors, 2 known warnings) |
-| Unit tests (Jest) | 323 passed (5 live tests skipped offline) |
+| Unit tests (Jest) | 324 passed (5 live tests skipped offline) |
 | Database suites (`scripts/test-db.sh`) | 22 / 22 passed |
-| Web end-to-end suites | full run in progress at drafting time — result recorded before the `final_v2` branch is created |
-| Live end-to-end test against the real project | 5 / 5 passed (after the opposite-side fix, incl. a new side check) |
+| Web end-to-end suites | 24 / 24 passed (full run; boost re-run after updating its wording check; smoke, home, boost, states, pin re-run on the final build) |
+| Live end-to-end test against the real project | 5 / 5 passed — incl. the opposite-side check and the My Boost / Home numbers (another member's view, shortlist and interest show up; own views don't) |
 | Real WhatsApp code to the owner's phone | delivered; code verified by the live server (session then signed out) |
 | Live database vs this commit | 31 migrations applied (latest `20261125000000_member_side`); all 160 public functions byte-identical (md5 of each definition) to the tested database |
 
