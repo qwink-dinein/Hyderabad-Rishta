@@ -66,7 +66,10 @@
     "scheme": "hyderabadrishta",
     "backgroundColor": "#F8F4EB",
     "extra": {
-      "supportsRTL": true
+      "supportsRTL": true,
+      "eas": {
+        "projectId": "4521260e-821b-4eea-95ab-049c2588f224"
+      }
     }
   }
 }
