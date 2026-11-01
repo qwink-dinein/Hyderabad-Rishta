@@ -13,7 +13,7 @@ import { useSession } from '@/state/session';
 /** The member's own biodata (PRD §6), using the shared wizard. */
 export default function BiodataScreen() {
   const { t } = useTranslation();
-  const params = useLocalSearchParams<{ step?: string }>();
+  const params = useLocalSearchParams<{ step?: string; focus?: string }>();
   const user = useSession((s) => s.user);
   const { data: profile, isLoading } = useMyProfile();
   const save = useSaveDraft();
@@ -47,6 +47,7 @@ export default function BiodataScreen() {
       title={profile ? t('wizard.editTitle') : t('wizard.title')}
       finishLabel={profile && profile.status !== 'draft' && profile.status !== 'rejected' ? t('wizard.saveReview') : t('wizard.reviewPreview')}
       initialStep={params.step != null ? Number(params.step) : undefined}
+      initialFocus={params.focus || undefined}
     />
   );
 }

@@ -45,3 +45,48 @@ describe('profile completion', () => {
     expect(requiredProgress(b)).toBeLessThanOrEqual(before);
   });
 });
+
+describe('exactly what is missing (owner report 2026-11-01: "99 % even when I filled everything")', () => {
+  const seed = buildSeed();
+  const bio = (id: string) => JSON.parse(JSON.stringify(seed.profiles.find((p) => p.id === id)!.biodata)) as Biodata;
+
+  it('every profile below 100 % names at least one exact field, and 100 % means nothing is left', () => {
+    for (const p of seed.profiles) {
+      const c = profileCompletion(p.biodata);
+      if (c.percent === 100) expect(c.fields).toEqual([]);
+      else {
+        expect(c.fields.length).toBeGreaterThan(0);
+        expect(c.next?.field).toBe(c.fields[0].field); // the card opens this field
+        expect(c.next?.step).toBe(c.fields[0].step);
+      }
+    }
+  });
+
+  it('a stuck-at-99 % profile points at the one recommended field, and filling it reaches 100 %', () => {
+    const b = bio('p_9'); // seed: everything but namaz
+    const c = profileCompletion(b);
+    expect(c.percent).toBe(99);
+    expect(c.fields).toEqual([{ step: 3, field: 'namaz', label: 'f.namaz', required: false }]);
+    b.religion.namaz = 'regularly';
+    expect(profileCompletion(b)).toMatchObject({ percent: 100, complete: true, fields: [] });
+  });
+
+  it('family: family type and a parent occupation are listed separately, in form order', () => {
+    const b = bio('p_1');
+    b.family.familyType = undefined as never;
+    b.family.fatherOccupation = '';
+    b.family.motherOccupation = '';
+    expect(profileCompletion(b).fields.map((f) => f.field)).toEqual(['familyType', 'fatherOccupation']);
+    b.family.motherOccupation = 'Teacher'; // either parent is enough
+    expect(profileCompletion(b).fields.map((f) => f.field)).toEqual(['familyType']);
+  });
+
+  it('a short "About me" is named with the 20-character rule; required fields come first', () => {
+    const b = bio('p_1');
+    b.basic.aboutMe = 'Hi';
+    b.basic.fullName = '';
+    const f = profileCompletion(b).fields;
+    expect(f[0]).toMatchObject({ step: 0, field: 'fullName', required: true });
+    expect(f[1]).toMatchObject({ step: 0, field: 'aboutMe', label: 'completion.field.aboutMe', required: false });
+  });
+});

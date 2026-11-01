@@ -93,6 +93,30 @@ const BASE = 'http://localhost:8081';
     await page.getByTestId('success-sheet').waitFor({ state: 'detached', timeout: 5000 }).catch(() => undefined);
   });
 
+  await step('99 % explained: the card names the exact field and opens the form right at it', async () => {
+    // Clear one recommended field on the demo member (everything else filled) → stuck at 99 %.
+    await page.evaluate(() => {
+      const d = JSON.parse(localStorage.getItem('hr.demo.db'));
+      const p = d.profiles.find((x) => x.userId === 'u_demo');
+      p.biodata.religion.namaz = undefined;
+      localStorage.setItem('hr.demo.db', JSON.stringify(d));
+    });
+    await page.goto(BASE + '/home');
+    await page.getByTestId('completion-card').waitFor({ timeout: 10000 });
+    await page.getByTestId('completion-next').getByText('Still missing: Namaz').waitFor();
+    await page.getByTestId('completion-cta').click();
+    await page.waitForURL((u) => u.pathname === '/biodata' && u.searchParams.get('step') === '3' && u.searchParams.get('focus') === 'namaz');
+    const target = page.getByTestId('field-focus-target');
+    await target.getByText('Namaz').waitFor({ timeout: 10000 });
+    await target.getByText('Counts toward 100%').waitFor(); // not "optional"
+    await page.waitForTimeout(900); // scrolled into view
+    const box = await target.boundingBox();
+    if (!box || box.y < 0 || box.y > 860) throw new Error(`field not on screen (y=${box && box.y})`);
+    await page.screenshot({ path: `${SHOTS}/st-5-jump-to-field.png` });
+    await target.getByText('Regularly').click();
+    await page.getByTestId('wizard-percent').getByText('100%').waitFor({ timeout: 5000 });
+  });
+
   await step('biodata progress: exact fields left per section, % rises as fields are filled', async () => {
     const p2 = await (await browser.newContext({ viewport: { width: 400, height: 860 } })).newPage();
     try {

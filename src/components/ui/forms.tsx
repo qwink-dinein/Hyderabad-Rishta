@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, memo, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, Easing, FlatList, Modal, Pressable, StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -16,17 +16,40 @@ export interface Option {
   label: string;
 }
 
+/**
+ * Lets a form point at one field by its label: that field is highlighted and reports where it is on screen
+ * (so the form can scroll to it), and recommended fields say "counts toward 100 %" instead of "optional".
+ */
+export const FieldFocusContext = createContext<{ target?: string; onFound?: (windowY: number) => void; recommended?: Set<string> }>({});
+
 /** Wraps a control with its label, optional marker, hint and inline error (announced to screen readers). */
 export function Field({ label, error, hint, optional, children, required }: { label: string; error?: string; hint?: string; optional?: boolean; required?: boolean; children: ReactNode }) {
   const t = useUiT();
+  const focus = useContext(FieldFocusContext);
+  const targeted = !!focus.target && focus.target === label;
+  const recommended = optional && !!focus.recommended?.has(label);
+  const ref = useRef<React.ComponentRef<typeof View>>(null);
+  const onFound = focus.onFound;
+  useEffect(() => {
+    if (!targeted || !onFound) return;
+    // After the step has laid out: tell the form where this field is so it can scroll to it.
+    const id = setTimeout(() => ref.current?.measureInWindow((_x: number, y: number) => onFound(y)), 250);
+    return () => clearTimeout(id);
+  }, [targeted, onFound]);
   return (
-    <View style={{ gap: space.xs + 2, marginBottom: space.lg }}>
-      <View style={{ flexDirection: 'row', gap: space.xs, alignItems: 'baseline' }}>
+    <View ref={ref} style={[{ gap: space.xs + 2, marginBottom: space.lg }, targeted && styles.targeted]} testID={targeted ? 'field-focus-target' : undefined}>
+      <View style={{ flexDirection: 'row', gap: space.xs, alignItems: 'baseline', flexWrap: 'wrap' }}>
         <Text variant="label">
           {label}
           {required ? <Text variant="label" color={colors.danger}> *</Text> : null}
         </Text>
-        {optional ? <Text variant="caption">· {t('common.optional')}</Text> : null}
+        {recommended ? (
+          <Text variant="caption" color={colors.goldDeep}>
+            · {t('common.countsToward100')}
+          </Text>
+        ) : optional ? (
+          <Text variant="caption">· {t('common.optional')}</Text>
+        ) : null}
       </View>
       {children}
       {error ? (
@@ -384,6 +407,7 @@ export function RangeSelect({ label, options, min, max, onChange, error }: {
 }
 
 const styles = StyleSheet.create({
+  targeted: { backgroundColor: colors.goldSoft, borderWidth: 1.5, borderColor: colors.gold, borderRadius: radius.md, padding: space.md, marginHorizontal: -space.md },
   input: {
     minHeight: 52,
     borderWidth: 1.2,

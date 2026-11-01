@@ -440,3 +440,11 @@ Design decision (not in the feature PRD, flagged for owner review): after a **de
   buttons, stacked (owner chose option C, docs/mockups/login-below.png; no card) (both register with a WhatsApp code → PIN → biodata, since a member must say who they are looking for first;
   existing members using Find matches go to Discover). Footer: How it works (the former landing page, now /welcome),
   Privacy, Help; master-admin recovery and terms unchanged. EN/UR/TE. Mockup: docs/mockups/login-first.png.
+
+### 15.19 Completion names the exact field (owner report, 2026-11-01)
+- Why a "full" biodata showed 99 %: six recommended fields count toward 100 % beyond what publishing needs —
+  About me (20+ characters), Maslak, Namaz, Family type, Father's or mother's occupation, Partner age range.
+- Now: the Home card says "Still missing: <exact fields>"; tapping it opens the form on that step, scrolled to
+  the first missing field and highlighted. In the form those fields say "Counts toward 100%" (not "Optional"),
+  the "To reach 100%" list names each field and jumps to it, and the footer says "N more here for 100%".
+  100 % is shown exactly when nothing is left. EN/UR/TE; unit + e2e.

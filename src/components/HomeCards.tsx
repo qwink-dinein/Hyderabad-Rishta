@@ -39,7 +39,9 @@ export function CompletionCard() {
   const { data: me } = useMyProfile();
   if (!me) return null;
   const c = profileCompletion(me.biodata);
-  const open = () => router.push({ pathname: '/biodata', params: { step: String(c.next?.step ?? 0) } });
+  // Straight to the first field still missing (scrolled to and highlighted), not just the section.
+  const open = () => router.push({ pathname: '/biodata', params: { step: String(c.next?.step ?? 0), ...(c.next?.field ? { focus: c.next.field } : {}) } });
+  const names = c.fields.map((f) => t(f.label));
   // Shown only while something is missing: a complete profile needs no card (owner request 2026-10-29).
   if (c.complete) return null;
   return (
@@ -50,9 +52,9 @@ export function CompletionCard() {
         <View style={{ flex: 1, gap: 2 }}>
           <Text variant="bodyStrong">{t('completion.title')}</Text>
           <Text variant="caption">{t('completion.body')}</Text>
-          {c.next ? (
+          {names.length ? (
             <Text variant="label" color={colors.goldDeep} testID="completion-next">
-              {t('completion.next', { item: t(`completion.item.${c.next.key}`) })}
+              {names.length > 3 ? t('completion.missingMore', { items: names.slice(0, 3).join(', '), count: names.length - 3 }) : t('completion.missing', { items: names.join(', ') })}
             </Text>
           ) : null}
         </View>

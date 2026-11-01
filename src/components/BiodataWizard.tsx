@@ -4,13 +4,13 @@ import { useUiT } from '@/i18n/uiLang';
 import { PhotoPicker } from '@/components/PhotoPicker';
 import { Button } from '@/components/ui/Button';
 import { Banner, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
-import { ChipGroup, Field, OptionList, RangeSelect, Reveal, Select, TextField, ToggleRow } from '@/components/ui/forms';
+import { ChipGroup, Field, FieldFocusContext, OptionList, RangeSelect, Reveal, Select, TextField, ToggleRow } from '@/components/ui/forms';
 import { Header, Row, Screen } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { ageFromDob, maskPhone } from '@/domain/format';
 import { citiesOf, COUNTRIES, districtsOf, statesOf } from '@/domain/options';
 import type { Biodata, Profile } from '@/domain/types';
-import { profileCompletion } from '@/domain/completion';
+import { fieldLabelKey, profileCompletion, RECOMMENDED_FIELDS } from '@/domain/completion';
 import { emptyBiodata, STEP_KEYS, stepErrors } from '@/domain/validation';
 import { haptic, playSound } from '@/services/feedback';
 import { useOptions } from '@/hooks/useOptions';
@@ -19,15 +19,6 @@ import { useSession } from '@/state/session';
 import { colors, radius, space } from '@/theme/tokens';
 
 type Section = keyof Biodata;
-
-/** Field → label key for the "still needed" list (partner-preference fields have their own labels). */
-const PREF_LABELS: Record<string, string> = {
-  ageMin: 'f.prefAge', ageMax: 'f.prefAge', heightMin: 'f.prefHeight', heightMax: 'f.prefHeight', maritalStatus: 'f.prefMarital',
-  education: 'f.prefEducation', profession: 'f.prefProfession', countries: 'f.prefCountry', states: 'f.prefState', cities: 'f.prefCity',
-  motherTongues: 'f.prefTongue', relocation: 'f.prefRelocation',
-};
-const fieldLabelKey = (step: number, field: string) =>
-  step === 5 && PREF_LABELS[field] ? PREF_LABELS[field] : field === 'heightCm' ? 'f.height' : field === 'acceptContactRequests' ? 'f.acceptRequests' : `f.${field}`;
 
 /**
  * Unsaved edits are kept on this phone while the member types, so nothing is lost if the session ends
@@ -58,6 +49,8 @@ export interface BiodataWizardProps {
   /** Label of the last step's button. */
   finishLabel: string;
   initialStep?: number;
+  /** Field to scroll to and highlight on open (e.g. from "Complete your profile"). */
+  initialFocus?: string;
   /** Shown above the steps (e.g. "Adding a member for +91 •••"). */
   banner?: ReactNode;
 }
@@ -66,7 +59,7 @@ export interface BiodataWizardProps {
  * Multi-step biodata wizard (PRD §6): progress, save-and-continue, validation. Shared by members
  * (their own biodata) and the admin "add a member" flow, so both always ask exactly the same things.
  */
-export function BiodataWizard({ profile, loading: isLoading, phone, save, saving, onFinish, onExit, onHome, title, finishLabel, initialStep, banner }: BiodataWizardProps) {
+export function BiodataWizard({ profile, loading: isLoading, phone, save, saving, onFinish, onExit, onHome, title, finishLabel, initialStep, initialFocus, banner }: BiodataWizardProps) {
   const t = useUiT();
   const toast = useToast((s) => s.show);
   const errMsg = useErrorMessage();
@@ -75,6 +68,20 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
   const [step, setStep] = useState(0);
   const [showErrors, setShowErrors] = useState(false);
   const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  // Jump to one exact field (from Home's "Complete your profile" or the "still missing" list): scroll to it
+  // and highlight it for a few seconds.
+  const [focusField, setFocusField] = useState<string | undefined>(initialFocus);
+  const scrollY = useRef(0);
+  useEffect(() => {
+    if (!focusField) return;
+    const id = setTimeout(() => setFocusField(undefined), 5000);
+    return () => clearTimeout(id);
+  }, [focusField]);
+  const onFound = useCallback((fieldY: number) => {
+    const sv = scrollRef.current as unknown as { measureInWindow?: (cb: (x: number, y: number) => void) => void } | null;
+    if (!sv?.measureInWindow) return;
+    sv.measureInWindow((_x, top) => scrollRef.current?.scrollTo({ y: Math.max(0, scrollY.current + fieldY - top - 24), animated: true }));
+  }, []);
   const userId = useSession((st) => st.user?.id);
   const key = userId ? draftKey(userId, profile?.id) : null;
   const savedJson = useMemo(() => JSON.stringify(profile?.biodata ?? emptyBiodata()), [profile]);
@@ -516,7 +523,14 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
   ];
 
   const maxReachable = Math.max(profile?.lastStep ?? 0, step);
+  const focusLabel = focusField ? t(fieldLabelKey(step, focusField)) : undefined;
+  const recommended = new Set([...RECOMMENDED_FIELDS].map((f) => t(fieldLabelKey(f === 'ageMin' || f === 'ageMax' ? 5 : 0, f))));
+  const jumpTo = async (target: number, field: string) => {
+    if (target !== step) await go(target, false);
+    setFocusField(field);
+  };
   return (
+    <FieldFocusContext.Provider value={{ target: focusLabel, onFound, recommended }}>
     <Screen
       header={
         <Header
@@ -529,7 +543,7 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
           }}
         />
       }
-      scrollProps={{ ref: scrollRef } as never}
+      scrollProps={{ ref: scrollRef, scrollEventThrottle: 32, onScroll: (e: { nativeEvent: { contentOffset: { y: number } } }) => (scrollY.current = e.nativeEvent.contentOffset.y) } as never}
       footer={
         <View style={{ gap: space.sm }}>
           {/* Always visible while scrolling: overall % and what is left on this step. */}
@@ -539,7 +553,11 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
             </View>
             <Text variant="caption" style={{ color: colors.charcoal }}>
               {completion.percent}% ·{' '}
-              {leftByStep[step].length ? t('wizard.leftHere', { count: leftByStep[step].length }) : t('wizard.stepDone')}
+              {leftByStep[step].length
+                ? t('wizard.leftHere', { count: leftByStep[step].length })
+                : completion.fields.some((f) => f.step === step)
+                  ? t('wizard.recommendedHere', { count: completion.fields.filter((f) => f.step === step).length })
+                  : t('wizard.stepDone')}
             </Text>
           </View>
         <Row gap={space.sm}>
@@ -626,7 +644,21 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
                 {t('wizard.readyToPublish')}{' '}
               </Text>
               {t('wizard.toReach100')}{' '}
-              {completion.missing.map((k) => t(`completion.item.${k}`)).join(', ')}
+              {completion.fields.map((f, i) => (
+                <Text key={f.field}>
+                  {i ? ', ' : ''}
+                  <Text
+                    variant="caption"
+                    color={colors.emerald}
+                    style={{ fontWeight: '700', textDecorationLine: 'underline' }}
+                    onPress={() => void jumpTo(f.step, f.field)}
+                    accessibilityRole="link"
+                    testID={`wizard-missing-${f.field}`}
+                  >
+                    {t(f.label)}
+                  </Text>
+                </Text>
+              ))}
             </Text>
           ) : (
             <Text variant="caption" color={colors.success} style={{ fontWeight: '700' }} testID="wizard-left">
@@ -675,6 +707,7 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
       </View>
       <View style={{ marginTop: space.md }}>{steps[step]}</View>
     </Screen>
+    </FieldFocusContext.Provider>
   );
 }
 

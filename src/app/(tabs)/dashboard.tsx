@@ -119,7 +119,7 @@ export default function Dashboard() {
             <Badge label={t(`opt.status.${st}`)} tone={st === 'published' ? 'success' : st === 'rejected' ? 'danger' : 'gold'} />
           </View>
         </Row>
-        <Pressable onPress={step(completion.next?.step ?? 0)} accessibilityRole="button" accessibilityLabel={t('completion.a11y', { percent: completion.percent })} style={{ gap: 6 }} testID="profile-completion">
+        <Pressable onPress={() => router.push({ pathname: '/biodata', params: { step: String(completion.next?.step ?? 0), ...(completion.next?.field ? { focus: completion.next.field } : {}) } })} accessibilityRole="button" accessibilityLabel={t('completion.a11y', { percent: completion.percent })} style={{ gap: 6 }} testID="profile-completion">
           <Row style={{ justifyContent: 'space-between' }}>
             <Text variant="label">{t('completion.label')}</Text>
             <Text variant="label" color={colors.emerald}>{`${completion.percent}%`}</Text>
