@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { formatMoney } from '@/domain/format';
 import { pricingCopy } from '@/domain/pricing';
 import type { Order, PricingConfig, ProfileType } from '@/domain/types';
-import { backend } from '@/services';
+import { backend, backendInfo } from '@/services';
 import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
 import { Button } from './ui/Button';
 import { Banner, useErrorMessage, useToast } from './ui/feedback';
@@ -30,16 +30,21 @@ export function CheckoutSheet({ order, onClose, onDone }: { order: Order | null;
   const toast = useToast((s) => s.show);
   const errMsg = useErrorMessage();
   const [busy, setBusy] = useState<'success' | 'failure' | null>(null);
+  const [error, setError] = useState<string | null>(null);
   if (!order) return null;
+  // Simulated payments exist only in the demo. The live app has no payment gateway yet (owner decision pending):
+  // say so plainly instead of showing buttons the server must refuse.
+  const canSimulate = backendInfo.kind === 'demo';
 
   const pay = async (outcome: 'success' | 'failure') => {
     setBusy(outcome);
+    setError(null);
     try {
       await backend.completePayment(order.id, outcome);
       toast(outcome === 'success' ? t('pricing.paymentSuccess') : t('pricing.paymentFailed'), outcome === 'success' ? 'success' : 'danger');
       onDone(outcome === 'success');
     } catch (e) {
-      toast(errMsg(e), 'danger');
+      setError(errMsg(e)); // shown inside the sheet (a toast would sit behind it)
     } finally {
       setBusy(null);
     }
@@ -65,10 +70,31 @@ export function CheckoutSheet({ order, onClose, onDone }: { order: Order | null;
             <Text variant="h2">{formatMoney(order.amount, order.currency)}</Text>
           </Row>
           <Text variant="caption">{t('pricing.noAutoRenew')}</Text>
-          {order.simulated ? <Banner tone="warning" icon="shield">{t('pricing.simulatedNote')}</Banner> : null}
-          <Button label={t('pricing.simulateSuccess')} onPress={() => pay('success')} loading={busy === 'success'} disabled={!!busy} full />
-          <Button label={t('pricing.simulateFailure')} kind="secondary" onPress={() => pay('failure')} loading={busy === 'failure'} disabled={!!busy} full />
-          <Button label={t('common.cancel')} kind="ghost" onPress={onClose} disabled={!!busy} />
+          {canSimulate ? (
+            <>
+              {order.simulated ? <Banner tone="warning" icon="shield">{t('pricing.simulatedNote')}</Banner> : null}
+              {error ? (
+                <Text variant="caption" color={colors.danger} accessibilityRole="alert" testID="checkout-error">
+                  {error}
+                </Text>
+              ) : null}
+              <Button label={t('pricing.simulateSuccess')} onPress={() => pay('success')} loading={busy === 'success'} disabled={!!busy} full testID="checkout-pay" />
+              <Button label={t('pricing.simulateFailure')} kind="secondary" onPress={() => pay('failure')} loading={busy === 'failure'} disabled={!!busy} full />
+              <Button label={t('common.cancel')} kind="ghost" onPress={onClose} disabled={!!busy} />
+            </>
+          ) : (
+            <>
+              <Banner tone="warning" icon="clock">
+                <Text variant="bodyStrong" color={colors.goldDeep}>
+                  {t('pricing.paymentsSoonTitle')}
+                </Text>
+                <Text variant="caption" color={colors.goldDeep} testID="checkout-soon">
+                  {t('pricing.paymentsSoonBody')}
+                </Text>
+              </Banner>
+              <Button label={t('common.close')} onPress={onClose} full testID="checkout-ok" />
+            </>
+          )}
         </View>
       </View>
     </Modal>

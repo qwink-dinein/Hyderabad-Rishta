@@ -648,6 +648,8 @@ const te: DeepPartial<Translation> = {
     },
   },
   pricing: {
+    paymentsSoonTitle: "ఆన్‌లైన్ చెల్లింపు ఇంకా ప్రారంభం కాలేదు",
+    paymentsSoonBody: "ఎలాంటి డబ్బు తీసుకోలేదు. చెల్లింపు బూస్ట్‌లు త్వరలో అందుబాటులోకి వస్తాయి — అప్పుడు మీరు ఇక్కడే చెల్లించవచ్చు.",
     orderStatus: { pending: "చెల్లింపు పెండింగ్", paid: "చెల్లించబడింది", failed: "విఫలమైంది", free: "ఉచితం", cancelled: "రద్దు చేయబడింది" },
     simulated: "అనుకరణ",
     forBrides: "వధువులకు",

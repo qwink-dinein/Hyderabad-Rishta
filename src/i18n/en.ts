@@ -675,6 +675,8 @@ const en = {
     },
   },
   pricing: {
+    paymentsSoonTitle: "Online payment isn't open yet",
+    paymentsSoonBody: "No money has been taken. Paid boosts will be available soon — you'll be able to pay here once they are.",
     orderStatus: { pending: "Awaiting payment", paid: "Paid", failed: "Failed", free: "Free", cancelled: "Cancelled" },
     simulated: "simulated",
     forBrides: "For brides",

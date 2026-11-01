@@ -648,6 +648,8 @@ const ur: DeepPartial<Translation> = {
     },
   },
   pricing: {
+    paymentsSoonTitle: "آن لائن ادائیگی ابھی شروع نہیں ہوئی",
+    paymentsSoonBody: "کوئی رقم نہیں لی گئی۔ ادائیگی والے بوسٹ جلد دستیاب ہوں گے — تب آپ یہیں ادائیگی کر سکیں گے۔",
     orderStatus: { pending: "ادائیگی باقی", paid: "ادا شدہ", failed: "ناکام", free: "مفت", cancelled: "منسوخ" },
     simulated: "نمونہ",
     forBrides: "دلہن کے لیے",
