@@ -121,6 +121,18 @@ run('live Supabase adapter', () => {
     }
     expect(await groom.toggleShortlist(ids[BRIDE])).toBe(true);
     expect((await groom.getShortlist()).some((p) => p.id === ids[BRIDE])).toBe(true);
+    // What the bride sees on My Boost / Home comes from the live records (owner concern 2026-11-01).
+    const before = await bride.getDashboard();
+    expect(before.views).toBeGreaterThanOrEqual(1); // the groom's earlier view
+    expect(before.shortlistedBy).toBeGreaterThanOrEqual(1); // his shortlist just now
+    expect(before.requestsReceived).toBeGreaterThanOrEqual(1); // his interest
+    expect(before.requestsAccepted).toBeGreaterThanOrEqual(1);
+    if (boost.order.status === 'free') {
+      expect(before.boostState).toBe('active');
+      expect(typeof before.boostViews).toBe('number');
+    }
+    await bride.getProfile(ids[BRIDE]); // she opens her own profile
+    expect((await bride.getDashboard()).views).toBe(before.views); // never counted
     await groom.blockProfile(ids[BRIDE]);
     expect((await groom.getBlockedIds())).toContain(ids[BRIDE]);
     await groom.unblockProfile(ids[BRIDE]);

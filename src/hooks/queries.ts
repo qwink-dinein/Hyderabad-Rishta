@@ -30,7 +30,8 @@ export function useMyProfile() {
   return useQuery({ queryKey: qk.myProfile, queryFn: () => backend.getMyProfile(), enabled: useAuthed() });
 }
 export function useDashboard() {
-  return useQuery({ queryKey: qk.dashboard, queryFn: () => backend.getDashboard(), enabled: useAuthed() });
+  // My Boost / Home numbers keep themselves current while on screen (and on return to the app, see _layout).
+  return useQuery({ queryKey: qk.dashboard, queryFn: () => backend.getDashboard(), enabled: useAuthed(), refetchInterval: 30_000 });
 }
 export function usePricing() {
   return useQuery({ queryKey: qk.pricing, queryFn: () => backend.getPricing(), staleTime: 60_000 });

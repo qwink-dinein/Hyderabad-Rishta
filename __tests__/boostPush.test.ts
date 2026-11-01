@@ -323,3 +323,42 @@ describe('dispatcher (edge function core)', () => {
     for (const [src, dest, mode] of FILES) expect(fs.readFileSync(path.join(__dirname, '..', dest), 'utf8')).toBe(build(src, mode));
   });
 });
+
+describe('My Boost numbers move with real activity (owner concern 2026-11-01: "this is what a customer sees")', () => {
+  it('views, shortlists and interests from other members count; own views and refreshes do not', async () => {
+    const b = make();
+    await freeBoost(b, BRIDE2); // p_4 boosted now
+    const start = await b.getDashboard();
+    expect(start.boostState).toBe('active');
+    const base = { views: start.views, during: start.boostViews ?? 0, short: start.shortlistedBy, ints: start.requestsReceived };
+
+    await b.getProfile('p_4'); // the bride opens her own profile: never counted
+    expect((await b.getDashboard()).views).toBe(base.views);
+
+    advance(60_000);
+    await as(b, GROOM);
+    await b.getProfile('p_4');
+    await b.getProfile('p_4'); // refresh within 30 minutes: counted once
+    await b.toggleShortlist('p_4');
+
+    advance(60_000);
+    await as(b, '9000000103'); // a second groom views her and sends an interest
+    await b.getProfile('p_4');
+    await b.sendRequest('p_4', { message: 'Assalamu alaikum', offerPhone: false, consent: false, idempotencyKey: 'mb-1' });
+
+    await as(b, BRIDE2);
+    const after = await b.getDashboard();
+    expect(after.views).toBe(base.views + 2);
+    expect(after.boostViews).toBe(base.during + 2); // "N views since your boost started"
+    expect(after.uniqueViewers).toBeGreaterThanOrEqual(2);
+    expect(after.shortlistedBy).toBe(base.short + 1);
+    expect(after.requestsReceived).toBe(base.ints + 1);
+
+    // The same viewer coming back after 30 minutes is a new view.
+    advance(31 * 60_000);
+    await as(b, GROOM);
+    await b.getProfile('p_4');
+    await as(b, BRIDE2);
+    expect((await b.getDashboard()).boostViews).toBe(base.during + 3);
+  });
+});

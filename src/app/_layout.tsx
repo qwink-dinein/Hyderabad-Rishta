@@ -10,6 +10,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import i18n, { isRTL, restoreLanguage } from '@/i18n';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { PushBridge } from '@/components/PushBridge';
+import { qk } from '@/hooks/queries';
 import { wireOnlineManager } from '@/hooks/useOnline';
 import { modalTransition, useStackTransitions, webScreenLayout } from '@/navigation/transitions';
 import { Button } from '@/components/ui/Button';
@@ -83,6 +84,7 @@ export default function RootLayout() {
   useEffect(() => {
     const sub = AppState.addEventListener('change', (s) => {
       if (s !== 'active' || !useSession.getState().user) return;
+      void queryClient.invalidateQueries({ queryKey: qk.dashboard }); // fresh views / shortlists / interests
       backend
         .getSession()
         .then((u) => (u ? setUser(u) : sessionLost()))
