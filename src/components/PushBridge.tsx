@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
-import { router, type Href } from 'expo-router';
+import { router, usePathname, type Href } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { qk, useNotifications } from '@/hooks/queries';
@@ -56,6 +56,11 @@ function ArrivalBanner() {
   const seen = useRef<Set<string> | null>(null);
   // Several can arrive at once (payment confirmed + boost active): show each in turn, oldest first.
   const [queue, setQueue] = useState<NotificationView[]>([]);
+  const path = usePathname();
+  const onboarding = useRef(false);
+  useEffect(() => {
+    onboarding.current = path.startsWith('/start');
+  }, [path]);
   const current = queue[0] ?? null;
   const next = () => setQueue((q) => q.slice(1));
   const [y] = useState(() => new Animated.Value(0));
@@ -73,7 +78,8 @@ function ArrivalBanner() {
     }
     const fresh = data.filter((n) => !n.readAt && !seen.current!.has(n.id)).reverse();
     for (const n of data) seen.current.add(n.id);
-    if (!fresh.length) return;
+    // The onboarding's own win screen already says it ("biodata is live"): no duplicate pop-up there.
+    if (!fresh.length || onboarding.current) return;
     setQueue((q) => [...q, ...fresh].slice(0, 5)); // a burst never turns into a long parade
   }, [data]);
 
@@ -92,7 +98,7 @@ function ArrivalBanner() {
     return () => clearTimeout(id);
   }, [current]);
 
-  if (!current) return null;
+  if (!current || path.startsWith('/start')) return null;
   const { title } = text(current);
   return (
     <View pointerEvents="box-none" style={[styles.wrap, { top: insets.top + space.sm }]}>
