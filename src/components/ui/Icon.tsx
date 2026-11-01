@@ -11,7 +11,7 @@ export type IconName =
   | 'chevronDown' | 'close' | 'check' | 'camera' | 'lock' | 'shield' | 'globe' | 'settings' | 'star' | 'eye' | 'phone'
   | 'flag' | 'ban' | 'plus' | 'pause' | 'play' | 'sparkle' | 'home' | 'chart'
   | 'arrowRight' | 'arrowLeft' | 'message' | 'mapPin' | 'briefcase' | 'cap' | 'ruler' | 'volume' | 'vibrate' | 'help' | 'info' | 'compass' | 'clock'
-  | 'crown' | 'edit' | 'sliders' | 'image' | 'refresh';
+  | 'crown' | 'edit' | 'sliders' | 'image' | 'refresh' | 'dots' | 'send';
 
 const PATHS: Record<IconName, string> = {
   heart: 'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z',
@@ -61,6 +61,8 @@ const PATHS: Record<IconName, string> = {
   edit: 'M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4',
   sliders: 'M4 7h9m4 0h3M4 17h3m4 0h9M15 5v4M9 15v4',
   image: 'M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4M15 9.5h.01',
+  dots: 'M5.5 12h.01M12 12h.01M18.5 12h.01',
+  send: 'M21 3 10 14M21 3l-7 18-4-7-7-4 18-7z',
 };
 
 export interface IconProps {
@@ -72,6 +74,8 @@ export interface IconProps {
 
 export const Icon = memo(function Icon({ name, size = 22, color = colors.emerald, strokeWidth = 1.8 }: IconProps) {
   const filled = name === 'heartFilled';
+  // Dots are drawn as round caps of near-zero-length strokes: thicker so they read as dots.
+  if (name === 'dots') strokeWidth = Math.max(strokeWidth, 3.2);
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       <Path d={PATHS[name]} stroke={color} strokeWidth={strokeWidth} fill={filled ? color : 'none'} strokeLinecap="round" strokeLinejoin="round" />

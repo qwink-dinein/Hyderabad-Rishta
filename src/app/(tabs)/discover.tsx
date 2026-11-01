@@ -1,72 +1,83 @@
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfileCard, ProfileCardSkeleton } from '@/components/ProfileCard';
-import { ProfileRail } from '@/components/ProfileRail';
 import { ShortlistButton, TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
 import { Banner, EmptyState, ErrorView, Loading } from '@/components/ui/feedback';
 import { ChipGroup } from '@/components/ui/forms';
-import { Icon } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { Row } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
+import { rotationApplies } from '@/domain/feed';
 import { formatHeight } from '@/domain/format';
 import { activeFilterCount, EMPTY_FILTERS, filtersFromPreferences, type SearchFilters } from '@/domain/search';
-import { rotationApplies, type FeedView } from '@/domain/feed';
 import type { PublicProfile } from '@/domain/types';
 import { useDiscoverSections, useMyProfile, useShortlistIds, useToggleShortlist } from '@/hooks/queries';
 import { useDiscoverFeed, useImpressions } from '@/hooks/useDiscoverFeed';
 import { useOptions } from '@/hooks/useOptions';
-import { backendInfo } from '@/services';
-import { useFilters } from '@/state/filters';
-import { useSession } from '@/state/session';
 import { isRTL } from '@/i18n';
+import { backendInfo } from '@/services';
+import { useFilters, type DiscoverTab } from '@/state/filters';
+import { useSession } from '@/state/session';
 import { fontFamily } from '@/theme/fonts';
 import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Chip = { key: string; label: string; remove: () => void };
+const TABS: { key: DiscoverTab; icon: IconName }[] = [
+  { key: 'featured', icon: 'sparkle' },
+  { key: 'new', icon: 'star' },
+  { key: 'recommended', icon: 'heart' },
+  { key: 'all', icon: 'users' },
+];
 
 /**
- * Discovery list with removable filter chips and incremental loading (PRD §9), on the persistent rotation
- * feed (owner Mini PRD 2026-10-31): continues past what was really seen, never moves loaded cards, offers the
- * profiles new since the last visit, and says so when everything has been seen.
- * Above the list (owner Mini PRD "Boost Visibility", 2026-10-31): A · Featured (boosted profiles matching the
- * filters), B · Recommended for you, C · Recently published, then D · Discover all. A–C are hidden during an
- * explicit search (keyword / shortlisted only) and in the "new since your last visit" list.
+ * Discover (Design PRD "Discover Screen & Premium Matrimonial Profile Cards", 2026-11-01).
+ * Header (shortlist, filters, bell) → search → category tabs:
+ *  - Featured: active boosts that match the filters (fair rotation + per-viewer cap, from getDiscoverSections);
+ *  - New: published since the last visit and not seen yet (the persistent feed's "new" list);
+ *  - Recommended: the persistent feed run on the member's partner preferences (its own browsing position);
+ *  - All Profiles: the persistent rotation feed with the member's filters and sort.
+ * The selected tab survives opening a profile (it lives in the filters store). Cards on screen for ≥ 1 s
+ * count as seen (impressions), so the rotation keeps moving past them.
  */
 export default function Discover() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { filters, setFilters, patch } = useFilters();
+  const { filters, setFilters, patch, tab: storedTab, setTab } = useFilters();
   const { data: me } = useMyProfile();
+  const lang = useSession((s) => s.lang);
+  const { label } = useOptions();
   const params = useLocalSearchParams<{ view?: string; at?: string }>();
-  const [view, setView] = useState<FeedView>(params.view === 'new' ? 'new' : 'all');
-  const search = useDiscoverFeed(filters, view);
-  const impressions = useImpressions();
-  // Changing filters starts that filter set's own feed (and leaves the "new" list).
-  const filtersSig = JSON.stringify(filters);
-  const [viewSig, setViewSig] = useState(filtersSig);
-  if (viewSig !== filtersSig) {
-    setViewSig(filtersSig);
-    setView('all');
-  }
+
+  // Featured (sections) and the main feed always load: opening Discover is a "visit" for new-since tracking.
+  const sections = useDiscoverSections(filters, rotationApplies(filters));
+  const featuredItems = useMemo(() => sections.data?.featured ?? [], [sections.data]);
+  // First visit: start on Featured when there is something to feature, otherwise on All Profiles.
+  const tab: DiscoverTab | null = storedTab ?? (sections.isLoading ? null : featuredItems.length ? 'featured' : 'all');
   // Opened from Home's "New since your last visit → View all" (the tab may already be mounted).
   const [openedAt, setOpenedAt] = useState(params.at);
   if (openedAt !== params.at) {
     setOpenedAt(params.at);
-    if (params.view === 'new') setView('new');
+    if (params.view === 'new') setTab('new');
   }
-  const showSections = view === 'all' && rotationApplies(filters);
-  const sections = useDiscoverSections(filters, showSections);
-  const sec = showSections ? sections.data : undefined;
+
+  const prefs = me?.biodata.preferences;
+  const recFilters = useMemo<SearchFilters>(() => (prefs ? { ...filtersFromPreferences(prefs, filters.show), sort: 'recommended' } : filters), [prefs, filters]);
+  const hasPrefs = !!prefs && activeFilterCount(filtersFromPreferences(prefs)) > 0;
+  const all = useDiscoverFeed(filters, 'all');
+  const fresh = useDiscoverFeed(filters, 'new', tab === 'new');
+  const rec = useDiscoverFeed(recFilters, 'all', tab === 'recommended');
+  const feed = tab === 'new' ? fresh : tab === 'recommended' ? rec : all;
+  const onFeedTab = tab !== 'featured' && tab !== null;
+  const impressions = useImpressions();
+
   const { data: shortIds } = useShortlistIds();
   const toggle = useToggleShortlist();
-  const { label } = useOptions();
   const shortSet = useMemo(() => new Set(shortIds ?? []), [shortIds]);
-  const lang = useSession((s) => s.lang);
   const [q, setQ] = useState(filters.keyword ?? '');
   const [syncedKw, setSyncedKw] = useState(filters.keyword);
   if (syncedKw !== filters.keyword) {
@@ -74,17 +85,26 @@ export default function Discover() {
     setSyncedKw(filters.keyword);
     setQ(filters.keyword ?? '');
   }
+  const submitSearch = () => {
+    const keyword = q.trim() || undefined;
+    patch({ keyword });
+    if (keyword) setTab('all'); // an explicit search shows plain results in All Profiles
+  };
 
-  const items = useMemo(() => {
+  const feedItems = useMemo(() => {
     // Pages never repeat a profile; this guards against a retried request appending a page twice.
     const seen = new Set<string>();
-    return (search.data?.pages.flatMap((p) => p.items) ?? []).filter((p) => !seen.has(p.id) && !!seen.add(p.id));
-  }, [search.data]);
-  const firstPage = search.data?.pages[0];
+    return (feed.data?.pages.flatMap((p) => p.items) ?? []).filter((p) => !seen.has(p.id) && !!seen.add(p.id));
+  }, [feed.data]);
+  const items = tab === 'featured' ? featuredItems : feedItems;
+  const firstPage = feed.data?.pages[0];
   const toDiscover = (firstPage?.items.length ?? 0) + (firstPage?.remaining ?? 0);
-  const newCount = view === 'all' ? firstPage?.newSinceLastVisit ?? 0 : 0;
+  // "New (n)": the main feed knows how many arrived since the last visit; the New list knows its own size.
+  const freshFirst = fresh.data?.pages[0];
+  const newCount = freshFirst ? freshFirst.items.length + freshFirst.remaining : all.data?.pages[0]?.newSinceLastVisit ?? 0;
   const noMatches = firstPage?.total === 0;
   const columns = width >= 900 ? 2 : 1;
+  const filterCount = activeFilterCount(filters);
 
   const chips = useMemo<Chip[]>(() => {
     const out: Chip[] = [];
@@ -125,7 +145,6 @@ export default function Discover() {
 
   const onOpen = useCallback((id: string) => router.push(`/profile/${id}`), []);
   const onToggle = useCallback((id: string) => toggle.mutate(id), [toggle]);
-  const rail = { shortlisted: shortSet, onToggleShortlist: onToggle, onOpen } as const;
   const renderItem = useCallback(
     ({ item }: { item: PublicProfile }) => (
       <View style={{ flex: 1 / columns, padding: space.sm }} testID={`discover-card-${item.id}`}>
@@ -135,54 +154,80 @@ export default function Discover() {
     [columns, shortSet, onToggle, onOpen],
   );
 
+  const filterButton = (
+    <Pressable
+      onPress={() => router.push('/filters')}
+      accessibilityRole="button"
+      accessibilityLabel={filterCount ? `${t('discover.filters')} (${filterCount})` : t('discover.filters')}
+      hitSlop={6}
+      style={styles.iconBtn}
+      testID="discover-filter-btn"
+    >
+      <Icon name="sliders" />
+      {filterCount ? (
+        <View style={styles.badge}>
+          <Text variant="caption" color={colors.emerald} style={styles.badgeText}>
+            {filterCount}
+          </Text>
+        </View>
+      ) : null}
+    </Pressable>
+  );
+
   const header = (
     <View style={{ paddingHorizontal: space.sm, gap: space.md, paddingBottom: space.sm }}>
-      <Row gap={space.sm}>
-        <View style={styles.search}>
-          <Icon name="search" size={18} color={colors.muted} />
-          <TextInput
-            value={q}
-            onChangeText={setQ}
-            onSubmitEditing={() => patch({ keyword: q.trim() || undefined })}
-            returnKeyType="search"
-            placeholder={t('home.searchPlaceholder')}
-            placeholderTextColor={colors.muted}
-            accessibilityLabel={t('common.search')}
-            style={[styles.searchInput, { fontFamily: fontFamily(lang, 'body'), textAlign: isRTL(lang) ? 'right' : 'left' }]}
-            testID="discover-search"
-          />
-          {q ? (
+      <View style={styles.search}>
+        <Icon name="search" size={18} color={colors.muted} />
+        <TextInput
+          value={q}
+          onChangeText={setQ}
+          onSubmitEditing={submitSearch}
+          returnKeyType="search"
+          placeholder={t('home.searchPlaceholder')}
+          placeholderTextColor={colors.muted}
+          accessibilityLabel={t('common.search')}
+          style={[styles.searchInput, { fontFamily: fontFamily(lang, 'body'), textAlign: isRTL(lang) ? 'right' : 'left' }]}
+          testID="discover-search"
+        />
+        {q ? (
+          <Pressable
+            onPress={() => {
+              setQ('');
+              patch({ keyword: undefined });
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.clearAll')}
+            hitSlop={8}
+          >
+            <Icon name="close" size={16} color={colors.muted} />
+          </Pressable>
+        ) : null}
+      </View>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs} accessibilityRole="tablist" accessibilityLabel={t('discover.tabsA11y')}>
+        {TABS.map(({ key, icon }) => {
+          const on = tab === key;
+          const text = key === 'new' && newCount ? `${t('discover.tabNew')} (${newCount})` : t(`discover.tab${key === 'all' ? 'All' : key[0].toUpperCase() + key.slice(1)}`);
+          return (
             <Pressable
-              onPress={() => {
-                setQ('');
-                patch({ keyword: undefined });
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={t('common.clearAll')}
-              hitSlop={8}
+              key={key}
+              onPress={() => setTab(key)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: on }}
+              aria-selected={on}
+              style={[styles.tab, on && styles.tabOn]}
+              testID={`discover-tab-${key}`}
             >
-              <Icon name="close" size={16} color={colors.muted} />
-            </Pressable>
-          ) : null}
-        </View>
-        {/* Same filter button as Home, right next to the search box. */}
-        <Pressable
-          onPress={() => router.push('/filters')}
-          accessibilityRole="button"
-          accessibilityLabel={activeFilterCount(filters) ? `${t('discover.filters')} (${activeFilterCount(filters)})` : t('discover.filters')}
-          style={styles.filterBtn}
-          testID="discover-filter-btn"
-        >
-          <Icon name="filter" size={20} color={colors.white} />
-          {activeFilterCount(filters) ? (
-            <View style={styles.filterCount}>
-              <Text variant="caption" color={colors.emerald} style={{ fontSize: 11, lineHeight: 14 }}>
-                {activeFilterCount(filters)}
+              <Icon name={icon} size={16} color={on ? colors.white : colors.emerald} />
+              <Text variant="label" color={on ? colors.white : colors.emerald}>
+                {text}
               </Text>
-            </View>
-          ) : null}
-        </Pressable>
-      </Row>
+              {key === 'new' && newCount && !on ? <View style={styles.tabDot} /> : null}
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
       {backendInfo.kind === 'demo' ? <Banner tone="warning" icon="sparkle">{t('discover.demoData')}</Banner> : null}
       {me?.status !== 'published' ? (
         <Banner icon="user">
@@ -192,58 +237,33 @@ export default function Discover() {
           <Button label={t('discover.completeBiodata')} size="sm" kind="secondary" onPress={() => router.push(me ? '/dashboard' : '/biodata')} style={{ alignSelf: 'flex-start', marginTop: space.sm }} />
         </Banner>
       ) : null}
-      {showSections ? (
-        <View style={{ gap: space.xl, marginHorizontal: -space.sm, paddingTop: space.sm }}>
-          <ProfileRail
-            title={`★ ${t('discover.featuredTitle')}`}
-            note={t('discover.featuredHint')}
-            items={sec?.featured ?? []}
-            loading={sections.isLoading}
-            inset={space.sm * 2}
-            testID="featured-strip"
-            {...rail}
-          />
-          <ProfileRail title={t('home.recommended')} note={t('home.recommendedNote')} items={sec?.recommended ?? []} inset={space.sm * 2} testID="discover-recommended" {...rail} />
-          <ProfileRail
-            title={t('home.recent')}
-            action={filters.sort === 'recent' ? undefined : t('home.viewAll')}
-            onAction={() => patch({ sort: 'recent' })}
-            items={sec?.recent ?? []}
-            inset={space.sm * 2}
-            testID="discover-recent"
-            {...rail}
-          />
-          <Text variant="h2" accessibilityRole="header" style={{ paddingHorizontal: space.sm * 2 }} testID="discover-all-title">
-            {t('discover.allTitle')}
-          </Text>
-        </View>
+
+      {tab === 'featured' ? (
+        <Text variant="caption" testID="featured-strip-note">
+          {t('discover.featuredHint')} {t('discover.boostedNote')}
+        </Text>
       ) : null}
-      <Row gap={space.sm} wrap>
-        <Button
-          label={`${t('discover.filters')}${activeFilterCount(filters) ? ` (${activeFilterCount(filters)})` : ''}`}
-          size="sm"
-          icon={<Icon name="filter" size={16} color={colors.white} />}
-          onPress={() => router.push('/filters')}
-          testID="open-filters"
+      {tab === 'recommended' ? (
+        <Banner icon="heart">
+          <Text variant="caption" color={colors.emerald}>
+            {hasPrefs ? t('discover.recHint') : t('discover.recHintEmpty')}
+          </Text>
+          {!hasPrefs && me ? (
+            <Button label={t('discover.recSetPrefs')} size="sm" kind="secondary" onPress={() => router.push({ pathname: '/biodata', params: { step: '5' } })} style={{ alignSelf: 'flex-start', marginTop: space.sm }} />
+          ) : null}
+        </Banner>
+      ) : null}
+      {tab === 'all' ? (
+        <ChipGroup
+          options={[
+            { value: 'recommended', label: t('discover.sortRecommended') },
+            { value: 'recent', label: t('discover.sortRecent') },
+          ]}
+          value={filters.sort}
+          onChange={(v) => v && patch({ sort: v })}
         />
-        {me ? (
-          <Button
-            label={t('discover.usePrefs')}
-            size="sm"
-            kind="secondary"
-            onPress={() => setFilters({ ...filtersFromPreferences(me.biodata.preferences), sort: filters.sort })}
-          />
-        ) : null}
-      </Row>
-      <ChipGroup
-        options={[
-          { value: 'recommended', label: t('discover.sortRecommended') },
-          { value: 'recent', label: t('discover.sortRecent') },
-        ]}
-        value={filters.sort}
-        onChange={(v) => v && patch({ sort: v })}
-      />
-      {chips.length ? (
+      ) : null}
+      {tab !== 'recommended' && chips.length ? (
         <View style={styles.chips}>
           {chips.map((c) => (
             <Pressable key={c.key} onPress={c.remove} accessibilityRole="button" accessibilityLabel={`${t('common.remove')} ${c.label}`} style={styles.chip}>
@@ -260,28 +280,12 @@ export default function Discover() {
           </Pressable>
         </View>
       ) : null}
-      {view === 'new' ? (
-        <Banner icon="sparkle">
-          <Text variant="caption" color={colors.emerald}>
-            {t('discover.viewingNew')}
-          </Text>
-          <Button label={t('discover.backToAll')} size="sm" kind="secondary" onPress={() => setView('all')} style={{ alignSelf: 'flex-start', marginTop: space.sm }} testID="discover-back-all" />
-        </Banner>
-      ) : newCount ? (
-        <Pressable onPress={() => setView('new')} accessibilityRole="button" style={styles.newChip} testID="discover-new-chip">
-          <Icon name="sparkle" size={16} color={colors.emerald} />
-          <Text variant="label" color={colors.emerald}>
-            {t('discover.newSince', { count: newCount })}
-          </Text>
-          <Icon name={isRTL(lang) ? 'chevronLeft' : 'chevronRight'} size={16} color={colors.emerald} />
-        </Pressable>
-      ) : null}
-      {search.data ? (
+      {onFeedTab && feed.data ? (
         <Row style={{ justifyContent: 'space-between' }} wrap>
           <Text variant="label" color={colors.muted} accessibilityLiveRegion="polite" testID="discover-count">
             {t('discover.toDiscover', { count: toDiscover })}
           </Text>
-          <Button label={t('discover.refresh')} size="sm" kind="ghost" icon={<Icon name="refresh" size={16} color={colors.emerald} />} onPress={() => void search.refresh()} testID="discover-refresh" />
+          <Button label={t('discover.refresh')} size="sm" kind="ghost" icon={<Icon name="refresh" size={16} color={colors.emerald} />} onPress={() => void feed.refresh()} testID="discover-refresh" />
         </Row>
       ) : null}
     </View>
@@ -296,36 +300,63 @@ export default function Discover() {
       <Text variant="caption" center>
         {t('discover.caughtUpBody')}
       </Text>
-      <Button label={t('discover.refresh')} size="sm" kind="secondary" icon={<Icon name="refresh" size={16} color={colors.emerald} />} onPress={() => void search.refresh()} />
+      <Button label={t('discover.refresh')} size="sm" kind="secondary" icon={<Icon name="refresh" size={16} color={colors.emerald} />} onPress={() => void feed.refresh()} />
     </View>
   );
+  const toAll = <Button label={t('discover.seeAll')} kind="secondary" size="sm" onPress={() => setTab('all')} />;
+  const empty =
+    tab === 'featured' ? (
+      <EmptyState icon="sparkle" title={t('discover.featuredEmptyTitle')} body={t('discover.featuredEmptyBody')} action={toAll} />
+    ) : tab === 'new' ? (
+      <EmptyState icon="star" title={t('discover.newEmptyTitle')} body={t('discover.newEmptyBody')} action={toAll} />
+    ) : noMatches ? (
+      <EmptyState
+        icon="search"
+        title={t('discover.empty')}
+        body={t('discover.emptyHint')}
+        action={chips.length && tab === 'all' ? <Button label={t('discover.clearFilters')} kind="secondary" size="sm" onPress={() => setFilters({ ...EMPTY_FILTERS, sort: filters.sort })} /> : undefined}
+      />
+    ) : (
+      caughtUp
+    );
+
+  const loading = tab === null || (tab === 'featured' ? sections.isLoading : feed.isLoading);
+  const error = tab === 'featured' ? sections.error : feed.error;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <TabHeader title={t('discover.title')} settings right={<ShortlistButton />} />
-      {search.isLoading ? (
+      <TabHeader
+        title={t('discover.title')}
+        right={
+          <>
+            <ShortlistButton />
+            {filterButton}
+          </>
+        }
+      />
+      {loading ? (
         <View style={styles.column}>
           {header}
           <View style={{ padding: space.sm, gap: space.lg }}>
-            <ProfileCardSkeleton />
-            <ProfileCardSkeleton />
+            <ProfileCardSkeleton layout="list" />
+            <ProfileCardSkeleton layout="list" />
           </View>
         </View>
-      ) : search.isError ? (
+      ) : error ? (
         <View style={styles.column}>
           {header}
-          <ErrorView error={search.error} onRetry={() => search.refetch()} />
+          <ErrorView error={error} onRetry={() => (tab === 'featured' ? sections.refetch() : feed.refetch())} />
         </View>
       ) : (
         <FlatList
-          key={columns}
+          key={`${columns}-${tab}`}
           data={items}
           numColumns={columns}
           keyExtractor={(p) => p.id}
           renderItem={renderItem}
           ListHeaderComponent={header}
           contentContainerStyle={[styles.column, { padding: space.sm, paddingBottom: space.xxxl }]}
-          onEndReached={() => search.hasNextPage && !search.isFetchingNextPage && search.fetchNextPage()}
+          onEndReached={() => onFeedTab && feed.hasNextPage && !feed.isFetchingNextPage && feed.fetchNextPage()}
           onEndReachedThreshold={0.6}
           initialNumToRender={4}
           maxToRenderPerBatch={6}
@@ -333,24 +364,20 @@ export default function Discover() {
           removeClippedSubviews
           onViewableItemsChanged={impressions.onViewableItemsChanged}
           viewabilityConfig={impressions.viewabilityConfig}
-          refreshControl={<RefreshControl refreshing={search.isRefetching && !search.isFetchingNextPage} onRefresh={() => void search.refresh()} tintColor={colors.emerald} />}
-          ListEmptyComponent={
-            noMatches ? (
-              <EmptyState
-                icon="search"
-                title={t('discover.empty')}
-                body={t('discover.emptyHint')}
-                action={chips.length ? <Button label={t('discover.clearFilters')} kind="secondary" size="sm" onPress={() => setFilters({ ...EMPTY_FILTERS, sort: filters.sort })} /> : undefined}
-              />
-            ) : (
-              caughtUp
-            )
+          refreshControl={
+            <RefreshControl
+              refreshing={tab === 'featured' ? sections.isRefetching : feed.isRefetching && !feed.isFetchingNextPage}
+              onRefresh={() => void (tab === 'featured' ? sections.refetch() : feed.refresh())}
+              tintColor={colors.emerald}
+            />
           }
+          testID={tab === 'featured' ? 'featured-strip' : `discover-list-${tab}`}
+          ListEmptyComponent={empty}
           ListFooterComponent={
-            items.length ? (
-              search.isFetchingNextPage ? (
+            items.length && onFeedTab ? (
+              feed.isFetchingNextPage ? (
                 <Loading />
-              ) : !search.hasNextPage ? (
+              ) : !feed.hasNextPage ? (
                 <View>
                   {caughtUp}
                   <Text variant="caption" center>
@@ -369,23 +396,16 @@ export default function Discover() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.ivory },
   column: { width: '100%', maxWidth: maxContentWidth + 280, alignSelf: 'center' },
-  filterBtn: { width: 48, height: 48, borderRadius: radius.md, backgroundColor: colors.emerald, alignItems: 'center', justifyContent: 'center' },
-  filterCount: { position: 'absolute', top: -5, right: -5, minWidth: 20, height: 20, paddingHorizontal: 4, borderRadius: 10, backgroundColor: colors.gold, borderWidth: 2, borderColor: colors.ivory, alignItems: 'center', justifyContent: 'center' },
-  search: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 48, paddingHorizontal: space.md, borderRadius: radius.md, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
+  iconBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  badge: { position: 'absolute', top: 4, right: 3, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: colors.ivory },
+  badgeText: { fontSize: 10.5, lineHeight: 13, fontWeight: '700' },
+  search: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 48, paddingHorizontal: space.md, borderRadius: radius.md, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
   searchInput: { flex: 1, fontSize: 16, color: colors.charcoal, paddingVertical: space.sm },
+  tabs: { gap: space.sm, paddingVertical: 2 },
+  tab: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40, paddingHorizontal: space.md, borderRadius: radius.pill, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
+  tabOn: { backgroundColor: colors.emerald, borderColor: colors.emerald },
+  tabDot: { position: 'absolute', top: 6, right: 8, width: 7, height: 7, borderRadius: 4, backgroundColor: colors.gold },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },
-  newChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.sm,
-    alignSelf: 'flex-start',
-    paddingHorizontal: space.md,
-    paddingVertical: space.sm,
-    borderRadius: radius.pill,
-    backgroundColor: colors.sage,
-    borderWidth: 1,
-    borderColor: colors.emerald,
-  },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',

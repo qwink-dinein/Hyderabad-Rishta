@@ -84,6 +84,7 @@ const step = async (name, fn) => {
   });
   await step('express interest (introduction only)', async () => {
     await page.goto(BASE + '/discover');
+    await page.getByTestId('discover-tab-all').click(); // the main feed lives under All Profiles
     await page.getByRole('button', { name: /^View profile/ }).first().click();
     await page.getByTestId('express-interest').click();
     await page.getByText('How would you like to connect?').waitFor();
@@ -97,8 +98,9 @@ const step = async (name, fn) => {
     await logout();
     await login('9000000100'); // seed bride p_0 → lands on Home
     await page.goto(BASE + '/discover');
+    await page.getByTestId('discover-tab-all').click(); // the main feed lives under All Profiles
     await page.getByText(/\d+ profiles/).waitFor();
-    await page.getByTestId('open-filters').click();
+    await page.getByTestId('discover-filter-btn').click();
     await page.getByLabel('Keyword').fill('Hafiz');
     await page.getByRole('button', { name: /Show 1 profiles/ }).waitFor({ timeout: 5000 });
     await page.getByTestId('apply-filters').click();

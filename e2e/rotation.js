@@ -25,6 +25,7 @@ const BASE = 'http://localhost:8081';
   try {
     await loginWithOtp(page, BASE, '9000000001');
     await page.goto(BASE + '/discover');
+    await page.getByTestId('discover-tab-all').click(); // the main feed lives under All Profiles
     await page.locator('[data-testid^="discover-card-"]').first().waitFor({ timeout: 15000 });
     let seenBefore = [];
 

@@ -97,11 +97,12 @@ const db = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('hr.dem
 
   await step('discover: sort, preferences, heart on a card updates the saved count', MEMBER, async (page) => {
     await page.goto(BASE + '/discover');
+    await page.getByTestId('discover-tab-all').click(); // the main feed lives under All Profiles
     await page.getByRole('button', { name: 'Open your shortlist (0 saved)' }).waitFor();
     await page.getByRole('radio', { name: 'Newest' }).click();
     await page.getByRole('radio', { name: 'Newest', checked: true }).waitFor();
-    await page.getByText('Use my preferences').first().click();
-    await page.waitForTimeout(400);
+    await page.getByTestId('discover-tab-recommended').click(); // partner preferences now have their own tab
+    await page.locator('[data-testid^="discover-card-"]').first().waitFor({ timeout: 8000 });
     await page.getByRole('button', { name: 'Shortlist', exact: true }).first().click();
     await page.getByRole('button', { name: 'Open your shortlist (1 saved)' }).waitFor({ timeout: 8000 });
     await page.getByRole('button', { name: 'Shortlisted', exact: true }).first().click();

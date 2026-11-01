@@ -50,10 +50,13 @@ const BASE = 'http://localhost:8081';
     await page.screenshot({ path: `${SHOTS}/bv-1-home-sections.png`, fullPage: true });
   });
 
-  await step('Discover: A Featured · B Recommended · C Recently published · D Discover all; search hides A–C', async () => {
+  await step('Discover: Featured · New · Recommended · All Profiles tabs; boosted cards gold; search shows plain results', async () => {
     await page.goto(BASE + '/discover');
-    await page.getByTestId('featured-strip').waitFor({ timeout: 10000 });
-    await page.getByTestId('discover-all-title').waitFor();
+    await page.getByTestId('featured-strip').waitFor({ timeout: 10000 }); // opens on Featured when there are boosts
+    await page.locator('[data-testid^="boosted-"]').first().waitFor();
+    for (const tab of ['new', 'recommended', 'all']) await page.getByTestId(`discover-tab-${tab}`).waitFor();
+    await page.getByTestId('discover-tab-all').click();
+    await page.locator('[data-testid^="discover-card-"]').first().waitFor();
     await page.screenshot({ path: `${SHOTS}/bv-2-discover-sections.png`, fullPage: true });
     await page.getByTestId('discover-search').fill('Hyderabad');
     await page.getByTestId('discover-search').press('Enter');
@@ -79,7 +82,7 @@ const BASE = 'http://localhost:8081';
     await page.locator('[data-testid^="home-recent-card-"]').first().waitFor({ timeout: 10000 });
     if (await page.getByTestId('home-featured').count()) throw new Error('Featured still on Home');
     await page.goto(BASE + '/discover');
-    await page.locator('[data-testid^="discover-recent-card-"]').first().waitFor({ timeout: 10000 });
+    await page.locator('[data-testid^="discover-card-"]').first().waitFor({ timeout: 10000 }); // nothing featured → opens on All Profiles
     if (await page.getByTestId('featured-strip').count()) throw new Error('Featured still on Discover');
   });
 

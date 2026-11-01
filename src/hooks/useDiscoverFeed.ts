@@ -14,7 +14,7 @@ export const feedKey = (f: SearchFilters, view: FeedView) => ['discoverFeed', vi
  * Loaded cards never move; reopening continues past what was really seen. `refresh()` asks the server for
  * a rebuilt feed (new eligible profiles in, seen ones out) instead of reshuffling the same cards.
  */
-export function useDiscoverFeed(filters: SearchFilters, view: FeedView) {
+export function useDiscoverFeed(filters: SearchFilters, view: FeedView, enabled = true) {
   const qc = useQueryClient();
   const authed = !!useSession((s) => s.user);
   const refreshNext = useRef(false);
@@ -28,7 +28,7 @@ export function useDiscoverFeed(filters: SearchFilters, view: FeedView) {
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.nextCursor,
-    enabled: authed,
+    enabled: authed && enabled,
     // The order is stored server-side; refetching on focus would only re-serve it. Keep cards stable.
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,

@@ -1,19 +1,21 @@
 import { memo, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import { declinedRecently, relationBadge } from '@/domain/connections';
 import { formatHeight } from '@/domain/format';
 import type { PublicProfile } from '@/domain/types';
 import { useOptions } from '@/hooks/useOptions';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { haptic } from '@/services/feedback';
+import { backend } from '@/services';
 import { colors, motion, radius, shadow, space } from '@/theme/tokens';
 import { BrandMark } from './art/Illustrations';
 import { Button } from './ui/Button';
-import { Badge } from './ui/feedback';
+import { Badge, confirm, useToast } from './ui/feedback';
 import { Icon, StarMotif, type IconName } from './ui/Icon';
 import { Text } from './ui/Text';
 
@@ -28,9 +30,10 @@ const PERSONA = {
  * initials. A broken photo falls back to the portrait; a broken portrait to a neutral branded medallion.
  * Restricted photos never reach the client, so the portrait can't reveal anything.
  */
-export const ProfilePhoto = memo(function ProfilePhoto({ profile, height = 200, rounded = true }: { profile: PublicProfile; height?: number | '100%'; rounded?: boolean }) {
+export const ProfilePhoto = memo(function ProfilePhoto({ profile, height = 200, rounded = true, index = 0 }: { profile: PublicProfile; height?: number | '100%'; rounded?: boolean; index?: number }) {
   const { t } = useTranslation();
-  const uri = profile.photos[0]?.uri;
+  // Only photos the server sent (the owner's visibility rule applied) can ever be shown.
+  const uri = profile.photos[Math.min(index, Math.max(0, profile.photos.length - 1))]?.uri;
   const [photoFailed, setPhotoFailed] = useState<string | null>(null);
   const [artFailed, setArtFailed] = useState(false);
   const [box, setBox] = useState(0);
@@ -170,8 +173,22 @@ export const ProfileCard = memo(function ProfileCard({ profile, shortlisted, onT
           ? { label: t('card.respond'), kind: 'primary', go: () => router.push('/requests') }
           : declined || !profile.acceptsRequests || status === 'blocked'
             ? null
-            : { label: t('profile.expressInterest'), kind: 'primary', go: () => router.push({ pathname: '/profile/[id]', params: { id: profile.id, express: '1' } }) };
+            : { label: t('card.sendInterest'), kind: 'primary', icon: 'send', go: () => router.push({ pathname: '/profile/[id]', params: { id: profile.id, express: '1' } }) };
 
+  if (variant === 'standard') {
+    return (
+      <ListCard
+        profile={profile}
+        shortlisted={shortlisted}
+        onToggleShortlist={onToggleShortlist}
+        onOpen={onOpen}
+        primary={primary}
+        facts={{ edu, prof, place, tongue, maslak, marital: label('marital', profile.maritalStatus) ?? '' }}
+        rel={rel && relLabel ? { label: relLabel, tone: rel.tone, connected: rel.key === 'connected' } : null}
+        summary={summary}
+      />
+    );
+  }
   const featured = variant === 'featured';
   return (
     <Animated.View style={[styles.card, featured && styles.cardFeatured, profile.boosted && styles.cardBoosted, { transform: [{ scale: press }] }]}>
@@ -244,7 +261,181 @@ export const ProfileCard = memo(function ProfileCard({ profile, shortlisted, onT
 });
 
 /** Loading placeholder with a soft pulse (static when Reduce Motion is on). */
-export function ProfileCardSkeleton() {
+type Primary = { label: string; kind: 'primary' | 'secondary'; icon?: IconName; go: () => void } | null;
+const NEW_DAYS = 14;
+
+/**
+ * Discover / Shortlist card (Design PRD "Discover Screen & Premium Matrimonial Profile Cards", 2026-11-01):
+ * photo on the start side (~45 % boosted, ~38 % ordinary), biodata on the other, actions below. Boosted
+ * profiles get the champagne-gold edge, gold photo frame and ★ Boosted badge; ordinary cards are more compact.
+ * No public engagement numbers and no verification tick (neither exists as a real, private-safe signal).
+ */
+const ListCard = memo(function ListCard({ profile, shortlisted, onToggleShortlist, onOpen, primary, facts, rel, summary }: {
+  profile: PublicProfile;
+  shortlisted: boolean;
+  onToggleShortlist: (id: string) => void;
+  onOpen: (id: string) => void;
+  primary: Primary;
+  facts: { edu?: string; prof?: string; place: string; tongue?: string; maslak?: string; marital: string };
+  rel: { label: string; tone: 'gold' | 'emerald' | 'muted' | 'danger' | 'success'; connected: boolean } | null;
+  summary: string;
+}) {
+  const { t } = useTranslation();
+  const qc = useQueryClient();
+  const reduced = useReducedMotion();
+  // Small phones: keep both button labels on one line by dropping their icons (text never shrinks).
+  const narrow = useWindowDimensions().width < 360;
+  const boosted = !!profile.boosted;
+  const photos = profile.photos.length;
+  const [idx, setIdx] = useState(0);
+  const [menu, setMenu] = useState(false);
+  const [enter] = useState(() => new Animated.Value(reduced ? 1 : 0));
+  useEffect(() => {
+    if (reduced) return;
+    Animated.timing(enter, { toValue: 1, duration: motion.fade, easing: Easing.out(Easing.quad), useNativeDriver: true }).start();
+  }, [enter, reduced]);
+  const [mountedAt] = useState(() => Date.now());
+  const isNew = !boosted && !!profile.publishedAt && mountedAt - new Date(profile.publishedAt).getTime() < NEW_DAYS * 86400000;
+  const step = (d: number) => setIdx((i) => (i + d + photos) % photos);
+
+  const block = async () => {
+    setMenu(false);
+    const ok = await confirm({ title: t('card.blockTitle', { name: profile.displayName }), body: t('card.blockBody'), confirmLabel: t('card.block'), danger: true });
+    if (!ok) return;
+    try {
+      await backend.blockProfile(profile.id);
+      useToast.getState().show(t('card.blocked'));
+      qc.invalidateQueries();
+    } catch {
+      useToast.getState().show(t('common.somethingWrong'), 'danger');
+    }
+  };
+
+  return (
+    <Animated.View
+      style={[
+        styles.lcard,
+        boosted && styles.lcardBoosted,
+        { opacity: enter, transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] },
+      ]}
+      testID={`list-card-${profile.id}`}
+    >
+      <View style={styles.lrow}>
+        <View style={[styles.lphoto, boosted ? styles.lphotoBoosted : styles.lphotoCompact]}>
+          <Pressable onPress={() => onOpen(profile.id)} accessibilityRole="button" accessibilityLabel={`${t('card.view')}: ${summary}`} style={StyleSheet.absoluteFill}>
+            <ProfilePhoto profile={profile} height="100%" rounded={false} index={idx} />
+          </Pressable>
+          {photos > 1 ? (
+            <>
+              <View style={styles.lcount} pointerEvents="none">
+                <Text variant="caption" color={colors.ivory} style={{ fontSize: 12 }}>
+                  {idx + 1}/{photos}
+                </Text>
+              </View>
+              <Pressable onPress={() => step(-1)} accessibilityRole="button" accessibilityLabel={t('card.prevPhoto')} hitSlop={6} style={[styles.larrow, { left: 6 }]}>
+                <Icon name="chevronLeft" size={16} color={colors.emerald} />
+              </Pressable>
+              <Pressable onPress={() => step(1)} accessibilityRole="button" accessibilityLabel={t('card.nextPhoto')} hitSlop={6} style={[styles.larrow, { right: 6 }]}>
+                <Icon name="chevronRight" size={16} color={colors.emerald} />
+              </Pressable>
+              <View style={styles.ldots} pointerEvents="none">
+                {Array.from({ length: Math.min(photos, 5) }, (_, i) => (
+                  <View key={i} style={[styles.ldot, i === Math.min(idx, 4) && styles.ldotOn]} />
+                ))}
+              </View>
+            </>
+          ) : null}
+        </View>
+
+        <View style={styles.linfo}>
+          <View style={styles.ltop}>
+            {boosted ? (
+              <View style={styles.lboost} testID={`boosted-${profile.id}`}>
+                <Icon name="star" size={13} color={colors.goldDeep} />
+                <Text variant="caption" color={colors.goldDeep} style={styles.lbadgeText}>
+                  {t('discover.boosted')}
+                </Text>
+              </View>
+            ) : isNew ? (
+              <View style={styles.lnew}>
+                <Text variant="caption" color={colors.emerald} style={styles.lbadgeText}>
+                  {t('card.new')}
+                </Text>
+              </View>
+            ) : null}
+            <View style={{ flex: 1 }} />
+            <HeartButton on={shortlisted} onToggle={() => onToggleShortlist(profile.id)} tone="plain" style={styles.lheart} />
+            <Pressable onPress={() => setMenu((m) => !m)} accessibilityRole="button" accessibilityLabel={t('card.more')} accessibilityState={{ expanded: menu }} hitSlop={6} style={styles.lmore} testID={`card-menu-${profile.id}`}>
+              <Icon name="dots" size={20} color={colors.charcoal} />
+            </Pressable>
+          </View>
+
+          <Pressable onPress={() => onOpen(profile.id)} accessible={false} style={{ gap: 2 }}>
+            <Text variant="h2" numberOfLines={1} style={{ fontSize: boosted ? 22 : 20 }}>
+              {profile.displayName}, {profile.age}
+            </Text>
+            <Text variant="caption">{profile.code}</Text>
+          </Pressable>
+          {rel ? (
+            <View style={styles.relation} testID={`relation-${profile.id}`}>
+              <Badge label={`${rel.connected ? '✓ ' : ''}${rel.label}`} tone={rel.tone} />
+            </View>
+          ) : null}
+          <View style={{ gap: 3, marginTop: 2 }}>
+            <Meta icon="ruler" text={formatHeight(profile.heightCm, false)} />
+            <Meta icon="mapPin" text={facts.place} />
+            <Meta icon="cap" text={facts.edu} />
+            <Meta icon="briefcase" text={facts.prof} />
+          </View>
+          <View style={styles.tags}>
+            {facts.marital ? <Badge label={facts.marital} tone="muted" /> : null}
+            {facts.tongue ? <Badge label={facts.tongue} tone="emerald" /> : null}
+            {facts.maslak ? <Badge label={facts.maslak} tone="muted" /> : null}
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.lactions}>
+        <Button label={t('card.viewShort')} kind="secondary" size="sm" icon={narrow ? undefined : <Icon name="eye" size={16} color={colors.emerald} />} onPress={() => onOpen(profile.id)} style={{ flex: 1 }} />
+        {primary ? (
+          <Button
+            label={primary.label}
+            kind={primary.kind}
+            size="sm"
+            icon={primary.icon && !narrow ? <Icon name={primary.icon} size={15} color={primary.kind === 'primary' ? colors.white : colors.emerald} /> : undefined}
+            onPress={primary.go}
+            style={{ flex: 1.2 }}
+            testID={`card-express-${profile.id}`}
+          />
+        ) : null}
+      </View>
+
+      {menu ? (
+        <View style={styles.lmenu} testID={`card-menu-list-${profile.id}`}>
+          <Pressable
+            onPress={() => {
+              setMenu(false);
+              router.push({ pathname: '/profile/[id]', params: { id: profile.id, report: '1' } });
+            }}
+            accessibilityRole="menuitem"
+            style={styles.lmenuItem}
+          >
+            <Icon name="flag" size={16} color={colors.charcoal} />
+            <Text variant="label">{t('card.report')}</Text>
+          </Pressable>
+          <Pressable onPress={block} accessibilityRole="menuitem" style={styles.lmenuItem} testID={`card-block-${profile.id}`}>
+            <Icon name="ban" size={16} color={colors.danger} />
+            <Text variant="label" color={colors.danger}>
+              {t('card.block')}
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+    </Animated.View>
+  );
+});
+
+export function ProfileCardSkeleton({ layout = 'card' }: { layout?: 'card' | 'list' } = {}) {
   const reduced = useReducedMotion();
   const [o] = useState(() => new Animated.Value(0.6));
   useEffect(() => {
@@ -258,6 +449,25 @@ export function ProfileCardSkeleton() {
     loop.start();
     return () => loop.stop();
   }, [o, reduced]);
+  if (layout === 'list') {
+    return (
+      <Animated.View style={[styles.lcard, { opacity: o }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <View style={styles.lrow}>
+          <View style={[styles.lphoto, styles.lphotoCompact, { backgroundColor: colors.skeleton }]} />
+          <View style={[styles.linfo, { gap: space.sm, paddingTop: space.sm }]}>
+            <View style={[styles.bar, { width: '70%', height: 18 }]} />
+            <View style={[styles.bar, { width: '40%' }]} />
+            <View style={[styles.bar, { width: '80%' }]} />
+            <View style={[styles.bar, { width: '65%' }]} />
+          </View>
+        </View>
+        <View style={styles.lactions}>
+          <View style={[styles.bar, { flex: 1, height: 36, borderRadius: radius.pill }]} />
+          <View style={[styles.bar, { flex: 1.2, height: 36, borderRadius: radius.pill }]} />
+        </View>
+      </Animated.View>
+    );
+  }
   return (
     <Animated.View style={[styles.card, { opacity: o }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       <View style={[styles.photo, { backgroundColor: colors.skeleton }]} />
@@ -312,4 +522,26 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   bar: { height: 12, borderRadius: 6, backgroundColor: colors.skeleton },
+  // List card (Discover / Shortlist)
+  lcard: { backgroundColor: colors.white, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.md, gap: space.md, ...shadow.card },
+  lcardBoosted: { borderColor: colors.gold, borderWidth: 1.5, backgroundColor: '#FFFDF8', shadowColor: colors.goldMuted, shadowOpacity: 0.16, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
+  lrow: { flexDirection: 'row', gap: space.md },
+  lphoto: { borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.sage },
+  lphotoBoosted: { width: '45%', aspectRatio: 0.74, borderWidth: 1.5, borderColor: colors.gold },
+  lphotoCompact: { width: '38%', aspectRatio: 0.8 },
+  lcount: { position: 'absolute', top: 6, left: 6, paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.pill, backgroundColor: 'rgba(11,48,40,0.6)' },
+  larrow: { position: 'absolute', top: '50%', marginTop: -14, width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center' },
+  ldots: { position: 'absolute', bottom: 8, alignSelf: 'center', flexDirection: 'row', gap: 4 },
+  ldot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)' },
+  ldotOn: { backgroundColor: colors.white },
+  linfo: { flex: 1, minWidth: 0, gap: 4 },
+  ltop: { flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 36 },
+  lboost: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, backgroundColor: colors.goldSoft, borderWidth: 1, borderColor: colors.gold },
+  lnew: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, backgroundColor: colors.sage },
+  lbadgeText: { fontSize: 12, fontWeight: '600' },
+  lheart: { width: 36, height: 36 },
+  lmore: { width: 32, height: 36, alignItems: 'center', justifyContent: 'center' },
+  lactions: { flexDirection: 'row', gap: space.sm },
+  lmenu: { position: 'absolute', top: 48, right: space.md, backgroundColor: colors.white, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingVertical: 4, minWidth: 170, ...shadow.card, elevation: 8, zIndex: 10 },
+  lmenuItem: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.md, paddingVertical: space.sm + 2 },
 });

@@ -501,3 +501,16 @@ Normal returning login never sends one.
 - A Supabase Auth OTP would sign the backup number in, so the Edge Function `master-backup-phone` (master's JWT) issues its own code: `send` → 6 random digits, only `HMAC-SHA256(BACKUP_CODE_SECRET or the service key, master:number:code)` stored via `backup_code_issue`, code delivered on WhatsApp with the login template (`send-whatsapp-otp/send.ts#sendOtp`); `verify` → `backup_code_verify` (right: `set_master_backup_phone`, code forgotten; wrong: attempt counted and kept).
 - Rules (database): caller must be the master; not their own login number or another admin's; 10-minute expiry, 5 attempts, ≥ 60 s between codes, ≤ 5 codes per hour; table `backup_phone_codes` and both functions are service-role only.
 - App: `masterSendBackupPhoneCode` + `masterSetBackupPhone` (demo keeps its fixed demo code). Tests: `__tests__/masterBackupPhone.test.ts`, `supabase/tests/99_backup_phone_codes.test.sql`.
+
+## 28. Discover tabs and list cards (2026-11-01)
+- **Discover** (`src/app/(tabs)/discover.tsx`): tabs from `useFilters().tab` (store, survives navigation). Featured
+  = `useDiscoverSections(filters).featured`; New = `useDiscoverFeed(filters, 'new')`; Recommended =
+  `useDiscoverFeed(filtersFromPreferences(prefs), 'all')` (own snapshot key); All = `useDiscoverFeed(filters, 'all')`.
+  The All feed always loads (opening Discover is a visit for new-since tracking); New/Recommended load only when
+  open (`useDiscoverFeed(…, enabled)`). One FlatList renders the active tab with the same impressions tracking.
+- **Cards** (`ProfileCard` `variant="standard"` → `ListCard`): horizontal layout; boosted styling from
+  `profile.boosted`; photo pager over `profile.photos` (already privacy-filtered by the backend); menu → report route
+  or `backend.blockProfile` (confirm, then all queries refresh). Home rails keep the narrow `variant="featured"` card.
+  `ProfileCardSkeleton({ layout: 'list' })` matches the new card.
+- **Tests:** `e2e/discovercards.js` (tabs and persistence, gold vs ordinary, no private stats, menu, shortlist,
+  Send Interest, photo pager and "Photo on request", 320 px); other suites open All Profiles where they need the feed.

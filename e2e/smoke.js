@@ -46,7 +46,7 @@ const step = async (name, fn) => {
     await shot('04-discover');
   });
   await step('open filters, apply age filter', async () => {
-    await page.getByTestId('open-filters').click();
+    await page.getByTestId('discover-filter-btn').click();
     await page.getByTestId('apply-filters').waitFor();
     await shot('05-filters');
     await page.getByRole('switch', { name: /Published in the last 30 days/ }).click();
@@ -114,6 +114,7 @@ const step = async (name, fn) => {
   await step('desktop width layout', async () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(BASE + '/discover');
+    await page.getByTestId('discover-tab-all').click(); // the main feed lives under All Profiles
     await page.getByText(/\d+ profiles/).waitFor();
     await shot('13-discover-desktop');
   });

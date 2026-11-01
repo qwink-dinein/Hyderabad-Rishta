@@ -370,3 +370,28 @@ Design decision (not in the feature PRD, flagged for owner review): after a **de
   - Featured section on/off, number of cards (1–30), frequency cap (1–7 days in any 7).
   - Per option: availability, duration, bride/groom price or free, Popular, promotional label (≤ 24 characters, no markup).
   - Orders already placed keep their price and length.
+
+### 15.14 Discover screen & premium profile cards (Design PRD, 2026-11-01)
+- **Header:** Discover title; shortlist heart (with count), filters (with active-filter count) and the bell. Search
+  ("Search by city, education, profession…") stays visible below it.
+- **Category tabs** (horizontally scrollable): **Featured** (active boosts matching the filters — fair rotation and
+  per-viewer cap, 15.13), **New (n)** (published since the last visit and not seen — the persistent feed's new list),
+  **Recommended** (the persistent feed run on the member's partner preferences, with its own browsing position;
+  a prompt to set preferences when none are set), **All Profiles** (the persistent rotation feed with the member's
+  filters and sort). Discover opens on Featured when something is featured, otherwise All Profiles; the chosen tab
+  is kept when a profile is opened and closed. A keyword search switches to All Profiles (plain results).
+- **Profile card** (Discover and Shortlist): photo on one side (≈45 % boosted, ≈38 % ordinary), biodata on the
+  other in this order — badge, name and age, profile ID, height, city and state, education, profession, then chips
+  for marital status, mother tongue and maslak (where disclosed). Actions: heart (shortlist), ⋯ menu (Report
+  profile; Block and hide, with confirmation), View profile, **Send Interest** (primary, deep emerald; it reflects
+  history — Respond, Interest sent, Connected, or hidden when not allowed).
+- **Boosted cards:** champagne-gold border, gold photo frame, small gold "★ Boosted" badge, refined warm shadow; the
+  Featured tab says Boosted is a promotional label, not compatibility. **Ordinary cards:** neutral border, smaller
+  photo, "New" badge when published within 14 days.
+- **Photos:** only photos the owner's visibility allows reach the app; several → "1/n" counter, arrows and dots;
+  none or restricted → the default Hyderabadi bride/groom portrait, with "Photo on request" when restricted.
+- **Removed:** public engagement numbers on cards (views, shortlists, interests stay in the owner's dashboard) and
+  any verification tick (no verification system exists).
+- **Motion:** gentle card entrance, heart animation, skeletons matching the card; all respect Reduce Motion. No
+  scrolling sounds. **Small phones (< 360 px):** button icons are dropped so labels stay on one line; text never
+  shrinks; no horizontal overflow (checked at 320 px).
