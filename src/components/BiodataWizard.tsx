@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useUiT } from '@/i18n/uiLang';
 import { PhotoPicker } from '@/components/PhotoPicker';
@@ -13,9 +13,23 @@ import type { Biodata, Profile } from '@/domain/types';
 import { emptyBiodata, STEP_KEYS, stepErrors } from '@/domain/validation';
 import { haptic, playSound } from '@/services/feedback';
 import { useOptions } from '@/hooks/useOptions';
+import { asyncStorageKV } from '@/services/storage';
+import { useSession } from '@/state/session';
 import { colors, radius, space } from '@/theme/tokens';
 
 type Section = keyof Biodata;
+
+/**
+ * Unsaved edits are kept on this phone while the member types, so nothing is lost if the session ends
+ * (or the app is closed) before "Save & continue". Restored on request; cleared after a successful save.
+ */
+interface LocalDraft {
+  biodata: Biodata;
+  step: number;
+  savedAt: string;
+}
+const DRAFT_TTL_MS = 14 * 86400000;
+const draftKey = (userId: string, profileId?: string) => `hr.draft.v1.${userId}.${profileId ?? 'new'}`;
 
 export interface BiodataWizardProps {
   /** The saved biodata being edited (null/undefined = a new one). */
@@ -51,6 +65,39 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
   const [step, setStep] = useState(0);
   const [showErrors, setShowErrors] = useState(false);
   const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const userId = useSession((st) => st.user?.id);
+  const key = userId ? draftKey(userId, profile?.id) : null;
+  const savedJson = useMemo(() => JSON.stringify(profile?.biodata ?? emptyBiodata()), [profile]);
+  const [restorable, setRestorable] = useState<LocalDraft | null>(null);
+
+  // A draft left from an ended session / closed app: offer to bring it back.
+  useEffect(() => {
+    if (!key || isLoading) return;
+    let alive = true;
+    asyncStorageKV.getItem(key).then((raw) => {
+      if (!alive || !raw) return;
+      try {
+        const d = JSON.parse(raw) as LocalDraft;
+        const fresh = Date.now() - new Date(d.savedAt).getTime() < DRAFT_TTL_MS;
+        if (fresh && JSON.stringify(d.biodata) !== savedJson) setRestorable(d);
+        else void asyncStorageKV.removeItem(key);
+      } catch {
+        void asyncStorageKV.removeItem(key);
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, [key, isLoading, savedJson]);
+
+  // Keep unsaved edits on the phone (debounced) while the member types.
+  useEffect(() => {
+    if (!key || !bd || JSON.stringify(bd) === savedJson) return;
+    const timer = setTimeout(() => {
+      void asyncStorageKV.setItem(key, JSON.stringify({ biodata: bd, step, savedAt: new Date().toISOString() } satisfies LocalDraft));
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [key, bd, step, savedJson]);
 
   // Initialise once from the saved draft (or a blank biodata) and resume at the last step.
   // Done during render (React's "adjust state on prop change" pattern) rather than in an effect.
@@ -61,10 +108,18 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
   }
 
   const sectionFor = (s: number): Section => STEP_KEYS[s] as Section;
-  const errors = useMemo(() => (bd && showErrors ? stepErrors(step, bd[sectionFor(step)]) : {}), [bd, step, showErrors]);
+  // Every field's problem is known at once; a field shows its own message as soon as it has been edited
+  // (right where the mistake is), and all of them after "Save & continue".
+  const [touched, setTouched] = useState<Set<string>>(() => new Set());
+  const allErrors = useMemo(() => (bd ? stepErrors(step, bd[sectionFor(step)]) : {}), [bd, step]);
+  const errors = useMemo(
+    () => (showErrors ? allErrors : Object.fromEntries(Object.entries(allErrors).filter(([k]) => touched.has(k.split('.')[0])))),
+    [allErrors, showErrors, touched],
+  );
 
   const set = useCallback(<S extends Section>(section: S, key: string, value: unknown) => {
     setBd((prev) => (prev ? { ...prev, [section]: { ...(prev[section] as object), [key]: value } } : prev));
+    setTouched((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
   }, []);
 
   if (!bd) return <Loading />;
@@ -81,12 +136,15 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
     }
     try {
       await save(bd, validate ? Math.max(step + 1, target) : step);
+      if (key) void asyncStorageKV.removeItem(key); // saved on the server: the phone copy is no longer needed
+      setRestorable(null);
       setShowErrors(false);
       if (validate) haptic('light'); // saved — quiet confirmation, no sound on every step
       if (target > 6) playSound('save');
       if (target > 6) onFinish();
       else {
         setStep(target);
+        setTouched(new Set());
         scrollRef.current?.scrollTo({ y: 0, animated: false });
       }
     } catch (e) {
@@ -466,6 +524,33 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
     >
       <View style={{ paddingTop: space.lg, gap: space.sm }}>
         {banner}
+        {restorable ? (
+          <View style={styles.restore} accessibilityRole="alert" testID="draft-restore">
+            <Text variant="label">{t('draft.foundTitle')}</Text>
+            <Text variant="caption">{t('draft.foundBody', { time: new Date(restorable.savedAt).toLocaleString() })}</Text>
+            <Row gap={space.sm}>
+              <Button
+                label={t('draft.restore')}
+                size="sm"
+                onPress={() => {
+                  setBd(restorable.biodata);
+                  setStep(Math.min(Math.max(restorable.step, 0), 6));
+                  setRestorable(null);
+                }}
+                testID="draft-restore-btn"
+              />
+              <Button
+                label={t('draft.discard')}
+                kind="ghost"
+                size="sm"
+                onPress={() => {
+                  if (key) void asyncStorageKV.removeItem(key);
+                  setRestorable(null);
+                }}
+              />
+            </Row>
+          </View>
+        ) : null}
         <Text variant="overline">{t('common.step', { n: step + 1, total: 7 })}</Text>
         <Text variant="h1" accessibilityRole="header">
           {t(`wizard.steps.${STEP_KEYS[step]}`)}
@@ -503,6 +588,7 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
 }
 
 const styles = StyleSheet.create({
+  restore: { gap: space.xs, padding: space.md, borderRadius: radius.md, backgroundColor: colors.goldSoft, borderWidth: 1, borderColor: colors.gold },
   progressTrack: { flexDirection: 'row', gap: 4, marginTop: space.xs },
   segment: { flex: 1, height: 5, borderRadius: 3, backgroundColor: colors.border },
   segmentDone: { backgroundColor: colors.gold },

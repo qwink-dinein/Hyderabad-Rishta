@@ -514,3 +514,18 @@ Normal returning login never sends one.
   `ProfileCardSkeleton({ layout: 'list' })` matches the new card.
 - **Tests:** `e2e/discovercards.js` (tabs and persistence, gold vs ordinary, no private stats, menu, shortlist,
   Send Interest, photo pager and "Photo on request", 320 px); other suites open All Profiles where they need the feed.
+
+## 29. Screen states (2026-11-01)
+- **Connection:** `expo-network` (SDK 58) feeds React Query's `onlineManager` (`wireOnlineManager` in the root layout):
+  queries pause offline and refetch on reconnect. `useOnline` + `OfflineBanner` show the state app-wide.
+  `isNetworkFailure` (services/backend.ts) recognises dropped/offline/timeout failures; the Supabase adapter maps
+  them to `AppError('network')`.
+- **Feedback primitives** (`components/ui/feedback.tsx`): `ErrorView` (message + per-kind hint + Retry),
+  `SlowNotice`/`useElapsed` (slow-network progress, also inside `Loading`), `showSuccess` + `SuccessHost` (success
+  sheet with next actions).
+- **Session expiry:** the root layout tracks the current path; `sessionLost` stores it as `returnTo` and login
+  returns there. `BiodataWizard` keeps unsaved edits in AsyncStorage (`hr.draft.v1.<user>.<profile>`, debounced,
+  14-day expiry, cleared on successful save) and offers Restore/Discard.
+- **Validation:** `BiodataWizard` computes all step errors and shows those of edited ("touched") fields live.
+- **Tests:** `__tests__/uxStates.test.ts`, `e2e/states.js` (offline/online, no results, admin denied, live
+  validation, draft restore after reload, interest success sheet).

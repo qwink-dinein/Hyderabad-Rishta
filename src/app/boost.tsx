@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { BrandMark } from '@/components/art/Illustrations';
 import { CheckoutSheet } from '@/components/Checkout';
 import { Button } from '@/components/ui/Button';
-import { Banner, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
+import { Banner, Loading, showSuccess, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { Card, Header, Row, Screen } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
@@ -48,8 +48,8 @@ export default function BoostScreen() {
       const res = await backend.startBoost(plan.id);
       if (res.order.status === 'pending') setOrder(res.order);
       else {
-        toast(t('notifications.t.boost_started'));
         invalidate();
+        boosted(plan.days);
       }
     } catch (e) {
       toast(errMsg(e), 'danger');
@@ -58,6 +58,15 @@ export default function BoostScreen() {
       setBusy(false);
     }
   };
+
+  /** Boost is live: confirm, celebrate, and point to what happens next. */
+  const boosted = (days: number) =>
+    showSuccess({
+      title: t('success.boostTitle'),
+      body: t('success.boostBody', { count: days }),
+      primary: { label: t('success.seeMyBoost'), go: () => undefined },
+      secondary: { label: t('success.explore'), go: () => router.push('/discover') },
+    });
 
   const resume = async () => {
     setBusy(true);
@@ -204,8 +213,10 @@ export default function BoostScreen() {
           invalidate();
         }}
         onDone={() => {
+          const days = order?.terms.boostDays;
           setOrder(null);
           invalidate();
+          if (days) boosted(days);
         }}
       />
     </Screen>

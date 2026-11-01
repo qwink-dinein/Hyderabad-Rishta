@@ -59,7 +59,16 @@ export type ErrorCode =
   | 'poke_limit'
   | 'poke_optout'
   | 'expired'
-  | 'photo_required';
+  | 'photo_required'
+  /** The request never reached the server (offline, dropped connection, DNS, timeout). */
+  | 'network';
+
+/** True for failures where the request never got an answer (offline, dropped connection, timeout). */
+export function isNetworkFailure(e: unknown): boolean {
+  if (e instanceof AppError) return e.code === 'network';
+  const msg = String((e as { message?: string })?.message ?? e ?? '');
+  return /network request failed|failed to fetch|fetch failed|networkerror|load failed|network error|timed? ?out|ECONNRESET|ENOTFOUND|ERR_INTERNET_DISCONNECTED/i.test(msg);
+}
 
 /** All backend failures carry a stable code; the UI maps it to `err.<code>`. */
 export class AppError extends Error {

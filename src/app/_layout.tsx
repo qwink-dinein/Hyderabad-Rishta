@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
-import { router, Stack, type ErrorBoundaryProps } from 'expo-router';
+import { router, Stack, usePathname, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
@@ -8,19 +8,22 @@ import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@ta
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import i18n, { isRTL, restoreLanguage } from '@/i18n';
+import { OfflineBanner } from '@/components/OfflineBanner';
 import { PushBridge } from '@/components/PushBridge';
+import { wireOnlineManager } from '@/hooks/useOnline';
 import { modalTransition, useStackTransitions, webScreenLayout } from '@/navigation/transitions';
 import { Button } from '@/components/ui/Button';
-import { ConfirmHost, ToastHost, useToast } from '@/components/ui/feedback';
+import { ConfirmHost, SuccessHost, ToastHost, useToast } from '@/components/ui/feedback';
 import { Text } from '@/components/ui/Text';
 import { backend } from '@/services';
 import { loadFeedbackPrefs } from '@/services/feedback';
 import { AppError } from '@/services/backend';
-import { useSession } from '@/state/session';
+import { setLastPath, lastPath, useSession } from '@/state/session';
 import { baseFontAssets } from '@/theme/fonts';
 import { colors } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
+wireOnlineManager();
 
 /**
  * The server ended this session (logout elsewhere, PIN reset on another phone, suspension, 180 idle
@@ -30,9 +33,12 @@ let endingSession = false;
 function sessionLost() {
   if (endingSession || !useSession.getState().user) return;
   endingSession = true;
+  // Come back to the same screen after logging in; the biodata form has already kept unsaved edits on
+  // this phone (BiodataWizard local draft), so nothing typed is lost.
+  useSession.getState().setReturnTo(lastPath);
   useSession.getState().setUser(null);
   queryClient.clear();
-  useToast.getState().show(i18n.t('auth.sessionEnded'), 'danger');
+  useToast.getState().show(i18n.t('auth.sessionEndedSafe'), 'danger');
   router.replace('/login');
   setTimeout(() => (endingSession = false), 1000);
 }
@@ -108,6 +114,9 @@ export default function RootLayout() {
             <PushBridge />
             <ToastHost />
             <ConfirmHost />
+            <SuccessHost />
+            <OfflineBanner />
+            <PathTracker />
           </View>
         </QueryClientProvider>
       </SafeAreaProvider>
@@ -134,4 +143,11 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
       <Button label={i18n.t('nav.goHome')} kind="ghost" onPress={() => router.replace('/')} />
     </View>
   );
+}
+
+/** Remembers the current screen (for "log in again → back where you were"). Renders nothing. */
+function PathTracker() {
+  const path = usePathname();
+  useEffect(() => setLastPath(path), [path]);
+  return null;
 }

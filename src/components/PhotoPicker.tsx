@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useUiT } from '@/i18n/uiLang';
@@ -25,12 +25,18 @@ export function PhotoPicker({ photos, onChange }: { photos: Photo[]; onChange: (
   const [error, setError] = useState<string | null>(null);
   const [busySlot, setBusySlot] = useState<number | null>(null);
   const [progress, setProgress] = useState(0);
+  const [denied, setDenied] = useState<null | 'ask' | 'settings'>(null);
 
   const pick = async (slot: number, replaceId?: string) => {
     setError(null);
     if (Platform.OS !== 'web') {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) return;
+      if (!perm.granted) {
+        // Say why we asked and how to allow it; never fail silently. Photos stay optional either way.
+        setDenied(perm.canAskAgain ? 'ask' : 'settings');
+        return;
+      }
+      setDenied(null);
     }
     // quality 1: keep the original so the 5 MB limit applies to what the member picked; we compress after.
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 5], quality: 1 });
@@ -139,11 +145,30 @@ export function PhotoPicker({ photos, onChange }: { photos: Photo[]; onChange: (
           {error}
         </Text>
       ) : null}
+      {denied ? (
+        <View style={styles.denied} accessibilityRole="alert" testID="photo-permission-denied">
+          <Icon name="lock" size={18} color={colors.goldDeep} />
+          <View style={{ flex: 1, gap: 4 }}>
+            <Text variant="label">{t('perm.photosTitle')}</Text>
+            <Text variant="caption">{t(denied === 'settings' ? 'perm.photosSettings' : 'perm.photosAsk')}</Text>
+            <Pressable
+              onPress={() => (denied === 'settings' ? Linking.openSettings().catch(() => undefined) : pick(photos.length))}
+              accessibilityRole="button"
+              hitSlop={6}
+            >
+              <Text variant="label" color={colors.emerald}>
+                {denied === 'settings' ? t('push.openSettings') : t('common.retry')}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  denied: { flexDirection: 'row', gap: space.md, padding: space.md, borderRadius: radius.md, backgroundColor: colors.goldSoft, borderWidth: 1, borderColor: colors.gold },
   headRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   counter: { paddingHorizontal: space.md, paddingVertical: 4, borderRadius: radius.pill, backgroundColor: colors.sage },
   row: { flexDirection: 'row', width: '100%' },

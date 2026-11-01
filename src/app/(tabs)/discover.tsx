@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfileCard, ProfileCardSkeleton } from '@/components/ProfileCard';
 import { ShortlistButton, TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
-import { Banner, EmptyState, ErrorView, Loading } from '@/components/ui/feedback';
+import { Banner, EmptyState, ErrorView, Loading, SlowNotice } from '@/components/ui/feedback';
 import { ChipGroup } from '@/components/ui/forms';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { Row } from '@/components/ui/layout';
@@ -310,11 +310,32 @@ export default function Discover() {
     ) : tab === 'new' ? (
       <EmptyState icon="star" title={t('discover.newEmptyTitle')} body={t('discover.newEmptyBody')} action={toAll} />
     ) : noMatches ? (
+      // Never a dead end: name the filters that can be loosened, and other places to look.
       <EmptyState
         icon="search"
-        title={t('discover.empty')}
-        body={t('discover.emptyHint')}
-        action={chips.length && tab === 'all' ? <Button label={t('discover.clearFilters')} kind="secondary" size="sm" onPress={() => setFilters({ ...EMPTY_FILTERS, sort: filters.sort })} /> : undefined}
+        title={filters.keyword ? t('discover.noResultsFor', { q: filters.keyword }) : t('discover.empty')}
+        body={filters.keyword ? t('discover.noResultsKeyword') : t('discover.emptyHint')}
+        action={
+          <View style={{ gap: space.sm, alignItems: 'center' }} testID="no-results-suggestions">
+            {tab === 'all' && chips.length ? (
+              <View style={[styles.chips, { justifyContent: 'center' }]}>
+                {chips.slice(0, 3).map((c) => (
+                  <Pressable key={c.key} onPress={c.remove} accessibilityRole="button" style={styles.chip}>
+                    <Icon name="close" size={12} />
+                    <Text variant="caption" color={colors.emerald}>
+                      {t('discover.removeFilter', { name: c.label })}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+            <Row gap={space.sm} wrap style={{ justifyContent: 'center' }}>
+              {tab === 'all' && chips.length ? <Button label={t('discover.clearFilters')} kind="secondary" size="sm" onPress={() => setFilters({ ...EMPTY_FILTERS, sort: filters.sort })} /> : null}
+              {tab === 'recommended' ? <Button label={t('discover.seeAll')} kind="secondary" size="sm" onPress={() => setTab('all')} /> : null}
+              {featuredItems.length ? <Button label={t('discover.tryFeatured')} kind="ghost" size="sm" onPress={() => setTab('featured')} /> : null}
+            </Row>
+          </View>
+        }
       />
     ) : (
       caughtUp
@@ -338,6 +359,7 @@ export default function Discover() {
         <View style={styles.column}>
           {header}
           <View style={{ padding: space.sm, gap: space.lg }}>
+            <SlowNotice active onRetry={() => (tab === 'featured' ? sections.refetch() : feed.refetch())} />
             <ProfileCardSkeleton layout="list" />
             <ProfileCardSkeleton layout="list" />
           </View>

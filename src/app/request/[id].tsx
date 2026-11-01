@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
-import { Banner, confirm, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
+import { Banner, confirm, Loading, showSuccess, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { Field, TextField } from '@/components/ui/forms';
 import { Icon } from '@/components/ui/Icon';
 import { Card, Header, Row, Screen } from '@/components/ui/layout';
@@ -68,8 +68,13 @@ export default function Connect() {
     try {
       await send.mutateAsync({ to: profile.id, input: { message: message.trim() || undefined, offerPhone: mode === 'offer', consent: mode === 'offer' && consent, idempotencyKey } });
       celebrate('sent');
-      toast(t('connect.sent'));
       router.back();
+      showSuccess({
+        title: t('success.interestTitle'),
+        body: t('success.interestBody', { name: profile.displayName }),
+        primary: { label: t('success.keepExploring'), go: () => undefined },
+        secondary: { label: t('success.viewRequests'), go: () => router.push('/requests') },
+      });
     } catch (e) {
       if (e instanceof AppError && e.code === 'duplicate') {
         // Already sent (another device, a retry that got through): show it as sent, not as an error.

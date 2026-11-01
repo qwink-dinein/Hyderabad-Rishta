@@ -10,7 +10,7 @@ import { ActivityStats, BoostPromoCard, CompletionCard, TeamCreatedNote } from '
 import { PushPrompt } from '@/components/PushSettings';
 import { TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
-import { Banner, useErrorMessage, useToast } from '@/components/ui/feedback';
+import { Banner, ErrorView, SlowNotice, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { Icon } from '@/components/ui/Icon';
 import { Row } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
@@ -146,6 +146,15 @@ export default function Home() {
 
         </View>
 
+        {loading ? (
+          <View style={styles.column}>
+            <SlowNotice active onRetry={() => sections.refetch()} />
+          </View>
+        ) : sections.isError && !sec ? (
+          <View style={styles.column}>
+            <ErrorView error={sections.error} onRetry={() => sections.refetch()} />
+          </View>
+        ) : null}
         <View style={styles.sections}>
           {/* Featured near the top (owner Mini PRD 2026-10-31): boosted profiles in a fair rotation. */}
           <ProfileRail

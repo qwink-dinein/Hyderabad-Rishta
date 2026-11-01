@@ -11,7 +11,7 @@ import type {
   Report,
   User,
 } from '@/domain/types';
-import { AppError, type AdminRequestRow, type ErrorCode, type NotificationView } from '../backend';
+import { AppError, isNetworkFailure, type AdminRequestRow, type ErrorCode, type NotificationView } from '../backend';
 
 /**
  * Database rows (snake_case) → the app's domain types (camelCase), and Postgres/Supabase errors →
@@ -213,7 +213,7 @@ const CODES: ErrorCode[] = [
   'unauthenticated', 'forbidden', 'not_found', 'validation', 'rate_limited', 'invalid_otp', 'otp_expired', 'blocked', 'duplicate',
   'phone_taken', 'fee_disabled', 'not_accepting', 'incomplete_biodata', 'profile_removed', 'boost_active', 'invalid_pin', 'pin_locked',
   'pin_not_set', 'device_not_trusted', 'otp_required', 'invalid_state', 'account_removed', 'account_suspended', 'invalid_recovery_code',
-  'declined_recently', 'consent_required', 'poke_wait', 'poke_used', 'poke_limit', 'poke_optout', 'expired', 'photo_required',
+  'declined_recently', 'consent_required', 'poke_wait', 'poke_used', 'poke_limit', 'poke_optout', 'expired', 'photo_required', 'network',
 ];
 
 /**
@@ -247,6 +247,7 @@ export function toAppError(e: unknown): AppError {
     case 'PGRST303':
       return new AppError('unauthenticated', msg);
   }
+  if (isNetworkFailure(e)) return new AppError('network', msg);
   if (err.status === 429 || /rate limit|too many/i.test(msg)) return new AppError('rate_limited', msg);
   if (/jwt|not authenticated|auth session missing/i.test(msg)) return new AppError('unauthenticated', msg);
   return new AppError('invalid_state', msg || 'Something went wrong');

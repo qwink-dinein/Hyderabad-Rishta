@@ -395,3 +395,17 @@ Design decision (not in the feature PRD, flagged for owner review): after a **de
 - **Motion:** gentle card entrance, heart animation, skeletons matching the card; all respect Reduce Motion. No
   scrolling sounds. **Small phones (< 360 px):** button icons are dropped so labels stay on one line; text never
   shrinks; no horizontal overflow (checked at 320 px).
+
+### 15.15 Screen states (owner checklist, 2026-11-01)
+| State | Behaviour |
+|---|---|
+| Empty | Every list says what will appear and offers the next action (EmptyState with a button). |
+| Loading | Skeletons shaped like the content on Home and Discover; spinner elsewhere. |
+| Slow network | After 5 s: "This is taking longer than usual — your connection seems slow"; after 10 s a Retry button; after 15 s the elapsed time. |
+| Error | Plain-words message + how to fix it (connection, wait a minute, log in again, try another profile, or Retry/restart) + Retry. Never raw server text. |
+| No internet | App-wide banner: "You're offline — what's already loaded stays here; we'll refresh as soon as you're back online". Requests pause instead of failing and refresh on reconnect; "Back online" confirms. |
+| No results | Names the search ("No profiles found for …"), suggests spelling/city/profession, offers one-tap "Remove <filter>" for active filters, Clear filters, See all profiles, See featured profiles. |
+| Permission denied | Photos: explains why access is needed, that photos are optional, and offers Retry or Open phone settings. Push: Open phone settings (existing). Admin area for members: explains it is for the team and returns to Discover. |
+| Session expired | Unsaved biodata edits are kept on the phone as the member types; the message says so; after logging in the member returns to the same screen and can restore the draft (kept 14 days, removed after a successful save). |
+| Validation | Each field shows its own message as soon as it is edited (and all after Save & continue); the message clears when fixed. |
+| Success | Publishing, submitting for review, sending an interest and activating a boost show a confirmation sheet (animated check, haptic/sound) with the next step (e.g. Explore profiles, View my requests, Boost my profile). |

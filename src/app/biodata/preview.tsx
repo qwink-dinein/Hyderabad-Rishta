@@ -7,7 +7,7 @@ import { ProfileDetails } from '@/components/ProfileDetails';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { useGoHome } from '@/hooks/useGoHome';
-import { Badge, Banner, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
+import { Badge, Banner, Loading, showSuccess, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { Header, Row, Screen } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { NO_CONSENT, profileTypeOf, projectProfile } from '@/domain/privacy';
@@ -55,8 +55,22 @@ export default function Preview() {
     invalidate();
     if (status === 'published') celebrate('published');
     else playSound('save');
-    toast(status === 'published' ? t('preview.published') : t('preview.submitted'));
     router.replace('/dashboard');
+    // Confirm, celebrate, then the obvious next step.
+    if (status === 'published')
+      showSuccess({
+        title: t('success.publishedTitle'),
+        body: t('success.publishedBody'),
+        primary: { label: t('success.explore'), go: () => router.push('/discover') },
+        secondary: { label: t('home.boostCta'), go: () => router.push('/boost') },
+      });
+    else
+      showSuccess({
+        title: t('success.submittedTitle'),
+        body: t('success.submittedBody'),
+        primary: { label: t('success.explore'), go: () => router.push('/discover') },
+        secondary: { label: t('nav.home'), go: () => router.push('/home') },
+      });
   };
 
   return (

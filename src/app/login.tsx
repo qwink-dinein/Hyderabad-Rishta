@@ -18,7 +18,7 @@ import { isAdminRole, type User } from '@/domain/types';
 import { otpSchema, phoneSchema } from '@/domain/validation';
 import { backend, backendInfo } from '@/services';
 import { AppError } from '@/services/backend';
-import { useSession } from '@/state/session';
+import { takeReturnTo, useSession } from '@/state/session';
 import { colors, radius, space } from '@/theme/tokens';
 
 /**
@@ -110,6 +110,9 @@ export default function Login() {
     if (user.language !== lang) await backend.setLanguage(lang);
     setUser({ ...user, language: lang });
     await changeLanguage(lang);
+    // Session ended mid-task: go back to that screen (guards on each screen still apply).
+    const back = takeReturnTo();
+    if (back && !isNew) return back as '/home';
     if (isAdminRole(user.role)) return '/admin';
     if (isNew || next === 'biodata') return '/biodata';
     return next === 'discover' ? '/discover' : '/home';
