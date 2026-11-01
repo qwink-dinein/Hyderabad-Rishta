@@ -11,6 +11,8 @@ import i18n, { isRTL, restoreLanguage } from '@/i18n';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { PushBridge } from '@/components/PushBridge';
 import { qk } from '@/hooks/queries';
+import { isMemberOnlyPath } from '@/hooks/useGoHome';
+import { isAdminRole } from '@/domain/types';
 import { wireOnlineManager } from '@/hooks/useOnline';
 import { modalTransition, useStackTransitions, webScreenLayout } from '@/navigation/transitions';
 import { Button } from '@/components/ui/Button';
@@ -150,6 +152,12 @@ export function ErrorBoundary({ retry }: ErrorBoundaryProps) {
 /** Remembers the current screen (for "log in again → back where you were"). Renders nothing. */
 function PathTracker() {
   const path = usePathname();
+  const user = useSession((st) => st.user);
   useEffect(() => setLastPath(path), [path]);
+  // An admin is never a member: whatever led here (a Back button, an old link, a restored screen),
+  // a member-only screen sends them straight to the admin console.
+  useEffect(() => {
+    if (user && isAdminRole(user.role) && isMemberOnlyPath(path)) router.replace('/admin');
+  }, [user, path]);
   return null;
 }

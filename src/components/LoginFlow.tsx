@@ -21,6 +21,7 @@ import { otpSchema, phoneSchema } from '@/domain/validation';
 import { hasChosenLanguage } from '@/i18n';
 import { backend, backendInfo } from '@/services';
 import { AppError } from '@/services/backend';
+import { isMemberOnlyPath } from '@/hooks/useGoHome';
 import { takeReturnTo, useSession } from '@/state/session';
 import { colors, radius, space } from '@/theme/tokens';
 
@@ -98,8 +99,9 @@ export function LoginFlow() {
     await changeLanguage(lang);
     // Session ended mid-task: go back to that screen (guards on each screen still apply).
     const back = takeReturnTo();
+    // Admins only ever go back to admin screens (never a member screen left from before).
+    if (isAdminRole(user.role)) return back && !isMemberOnlyPath(back) ? (back as '/admin') : '/admin';
     if (back && !isNew) return back as '/home';
-    if (isAdminRole(user.role)) return '/admin';
     if (isNew || next === 'biodata') return '/biodata';
     return next === 'discover' ? '/discover' : '/home';
   };

@@ -13,6 +13,7 @@ import { formatDate } from '@/domain/format';
 import { qk, useNotifications } from '@/hooks/queries';
 import { NOTIFICATION_ICONS as ICONS, useNotificationText } from '@/hooks/useNotificationText';
 import { backend, type NotificationView } from '@/services';
+import { homeHrefFor } from '@/hooks/useGoHome';
 import { useSession } from '@/state/session';
 import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
 import { safeDeepLink } from '@/domain/security';
@@ -46,7 +47,7 @@ export default function Notifications() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <Header title={t('notifications.title')} onBack={() => (router.canGoBack() ? router.back() : router.replace('/home'))} />
+      <Header title={t('notifications.title')} onBack={() => (router.canGoBack() ? router.back() : router.replace(homeHrefFor(useSession.getState().user)))} />
       <Row style={[styles.column, { padding: space.lg, justifyContent: 'space-between' }]} wrap>
         <View>
           <Text variant="label" color={colors.muted}>{unread ? t('notifications.unread', { count: unread }) : t('notifications.allRead')}</Text>

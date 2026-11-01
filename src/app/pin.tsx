@@ -14,6 +14,7 @@ import { safeDeepLink } from '@/domain/security';
 import { backend } from '@/services';
 import { AppError } from '@/services/backend';
 import { haptic, playSound } from '@/services/feedback';
+import { homeHrefFor } from '@/hooks/useGoHome';
 import { useSession } from '@/state/session';
 import { colors, space } from '@/theme/tokens';
 
@@ -28,8 +29,8 @@ export default function PinSetup() {
   const { t } = useTranslation();
   const params = useLocalSearchParams<{ mode?: string; next?: string }>();
   const mode: Mode = params.mode === 'reset' || params.mode === 'change' ? params.mode : 'create';
-  const dest = safeDeepLink(params.next, '/home') as Href;
   const { user, setUser } = useSession();
+  const dest = safeDeepLink(params.next, homeHrefFor(user) as string) as Href;
   const toast = useToast((s) => s.show);
   const errMsg = useErrorMessage();
   const [step, setStep] = useState<Step>(mode === 'change' ? 'current' : 'new');
