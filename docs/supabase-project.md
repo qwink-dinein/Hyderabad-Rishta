@@ -25,18 +25,21 @@
   them for development, preview and production builds; the web preview and tests stay on the demo.
 - **Admins:** live invites (data only, not in this repo): 2 masters + 1 sub-admin. `ensure_account()` gives the
   role on first WhatsApp sign-in. PINs are never pre-set.
-- **Not live yet:** paid checkout (payment provider), push sending (`push-dispatch` + FCM/APNs keys), master
-  backup-phone verification, photos in team-added biodatas (members add them after claiming).
-- **Live end-to-end test:** `__tests__/live/supabaseLive.test.ts` (skipped unless `LIVE_SUPABASE=1`) — needs the
-  test phone numbers below.
+- **Not live yet:** paid checkout (payment provider), push sending (`push-dispatch` + FCM/APNs keys), photos in
+  team-added biodatas (members add them after claiming).
+- **Live end-to-end test:** `__tests__/live/supabaseLive.test.ts` (skipped unless `LIVE_SUPABASE=1`) — passed 5/5
+  on 2026-11-01 with the test phone numbers; the runner gives 9000000004 an admin invite first and deletes that
+  test admin afterwards (members delete themselves in the test).
+- **WhatsApp codes:** live and confirmed 2026-11-01 (a real code arrived on WhatsApp immediately).
 
-## Owner dashboard steps still to do
-1. Authentication → Sign In / Providers → **Phone**: enable. Also enable phone + password sign-in (used
-   internally by `pin-login`; members never see a password).
-2. Authentication → Hooks → **Send SMS hook** → HTTPS →
-   `https://hlthzrznuztapfsloxkm.supabase.co/functions/v1/send-whatsapp-otp` → generate secret.
-3. Edge Functions → Secrets: `SEND_SMS_HOOK_SECRET`, `WAPLIFY_API_KEY`, `WAPLIFY_TEMPLATE_NAME`
-   (the exact Waplify template name, live: `otp_authentiction`), `WAPLIFY_CODE_KEYS` (`1`). See `docs/whatsapp-otp-setup.md`.
-4. Authentication → Phone → Test phone numbers, each with code `123456`: `919000000001` (store reviewers + live
-   test bride), `919000000002` (live test groom), `919000000004` (live test admin).
-5. Before launch: upgrade the organization to **Pro** (daily backups, no pausing).
+## Owner dashboard steps
+Done 2026-11-01: Phone provider on (phone + password sign-in is used internally by `pin-login`); Send SMS hook
+(HTTPS → `send-whatsapp-otp`, with its secret); Edge Function secrets `SEND_SMS_HOOK_SECRET`, `WAPLIFY_API_KEY`,
+`WAPLIFY_TEMPLATE_NAME` (`otp_authentiction`, exactly as in Waplify), `WAPLIFY_CODE_KEYS` (`1`); test numbers
+`919000000001`, `919000000002`, `919000000004` with code `123456` (they expire on the date set in the dashboard);
+`tmp-migrate` deleted.
+
+Still to do:
+1. Phone → OTP expiry: 300 seconds, to match the template's "Expires in 5 minutes".
+2. Before launch: remove the test numbers (keep one only if store reviewers need it).
+3. Before launch: upgrade the organization to **Pro** (daily backups, no pausing).
