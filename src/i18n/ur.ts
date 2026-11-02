@@ -1045,9 +1045,9 @@ const ur: DeepPartial<Translation> = {
     backendDemo: 'بیک اینڈ: ڈیمو (آف لائن، اسی ڈیوائس پر)',
   },
   legal: {
-    privacyTitle: 'رازداری کی پالیسی (مسودہ)',
-    termsTitle: 'استعمال کی شرائط (مسودہ)',
-    draftNote: 'لانچ سے پہلے کسی مستند وکیل سے جائزہ ضروری ہے۔',
+    privacyTitle: 'رازداری کی پالیسی',
+    termsTitle: 'استعمال کی شرائط',
+    updated: 'آخری تازہ کاری: {{date}} (متن انگریزی میں ہے)',
   },
   onb: {
     q: {

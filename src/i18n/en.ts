@@ -1072,9 +1072,9 @@ const en = {
     backendDemo: 'Backend: demo (offline, on this device)',
   },
   legal: {
-    privacyTitle: 'Privacy policy (draft)',
-    termsTitle: 'Terms of use (draft)',
-    draftNote: 'Draft for review by a qualified lawyer before launch.',
+    privacyTitle: 'Privacy policy',
+    termsTitle: 'Terms of use',
+    updated: 'Last updated: {{date}}',
   },
   onb: {
     q: {

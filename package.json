@@ -69,8 +69,9 @@
     "export:web": "expo export --platform web",
     "lint": "expo lint",
     "site:build": "node website/build.mjs",
-    "site:check": "node website/build.mjs && node website/check.mjs",
-    "store:check": "node store/check.mjs"
+    "site:check": "node --no-warnings --experimental-strip-types scripts/legal-md.mjs --check && node website/build.mjs && node website/check.mjs",
+    "store:check": "node store/check.mjs",
+    "legal:md": "node --no-warnings --experimental-strip-types scripts/legal-md.mjs"
   },
   "private": true,
   "jest": {
