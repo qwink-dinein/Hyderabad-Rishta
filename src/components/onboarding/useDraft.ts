@@ -3,7 +3,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { qk, useMyProfile } from '@/hooks/queries';
 import type { Biodata } from '@/domain/types';
 import { emptyBiodata, stepErrors } from '@/domain/validation';
+import { applyAnswers } from '@/domain/onboarding';
 import { backend } from '@/services';
+import { useOnboarding } from '@/state/onboarding';
 
 /**
  * The member's biodata while onboarding: loaded from the server, edited locally, saved on every Next
@@ -13,8 +15,10 @@ export function useDraft() {
   const qc = useQueryClient();
   const { data: profile, isLoading } = useMyProfile();
   const [edited, setBd] = useState<Biodata | null>(null);
-  // Until the member edits something, show the saved biodata (or an empty one).
-  const loaded = useMemo(() => (profile === undefined ? null : profile?.biodata ? (JSON.parse(JSON.stringify(profile.biodata)) as Biodata) : emptyBiodata()), [profile]);
+  // Until the member edits something, show the saved biodata (or an empty one) with the answers given
+  // before sign-up (who it's for, bride/groom, age range, place) always merged in, so they are never lost.
+  const answers = useOnboarding((s) => s.answers);
+  const loaded = useMemo(() => (profile === undefined ? null : applyAnswers(profile?.biodata ?? emptyBiodata(), answers)), [profile, answers]);
   const bd = edited ?? loaded;
   const save = async (next: Biodata) => {
     const saved = await backend.saveDraft(next, Math.max(profile?.lastStep ?? 0, 0));

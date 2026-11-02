@@ -143,6 +143,60 @@ const step = async (name, fn) => {
     await p3.close();
   });
 
+  await step('stuck draft (who/bride-groom never saved) → Finish goes back to the first question, then publishes', async () => {
+    const p4 = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+    const at4 = (re) => p4.waitForURL(re, { timeout: 10000 });
+    await p4.goto(BASE + '/');
+    await p4.getByTestId('welcome-find-rishta').click();
+    await p4.getByTestId('who-daughter').last().click();
+    await p4.getByTestId('wants-age-28-32').last().click();
+    await p4.getByTestId('wants-region-hyd').last().click();
+    await p4.getByTestId('wants-show').last().click();
+    await p4.getByTestId('matches-save').last().click();
+    await p4.getByTestId('onb-phone-input').fill('9876500092');
+    await p4.getByTestId('onb-send-code').click();
+    await p4.getByTestId('onb-otp-input').fill('123456');
+    await at4(/\/pin/);
+    for (let i = 0; i < 2; i++) { await p4.getByTestId('pin-setup-input').fill('4827'); await p4.getByTestId('pin-continue').click(); }
+    await at4(/\/start\/about/);
+    // Reproduce the reported state: the draft lacks who/bride-groom and this phone forgot the answers.
+    await p4.evaluate(() => {
+      const db = JSON.parse(localStorage.getItem('hr.demo.db'));
+      const me = db.users.find((u) => u.phone === '9876500092');
+      const pr = db.profiles.find((x) => x.userId === me.id);
+      pr.biodata.basic.createdFor = ''; pr.biodata.basic.lookingFor = '';
+      Object.assign(pr.biodata.basic, { fullName: 'Ayesha Khan', dob: '1998-05-04', heightCm: 160, maritalStatus: 'never_married', motherTongue: 'urdu' });
+      pr.biodata.career = { ...pr.biodata.career, education: 'bachelors', profession: 'it' };
+      localStorage.setItem('hr.demo.db', JSON.stringify(db));
+      for (const k of Object.keys(localStorage)) if (k.includes('hr.onboarding.v1')) localStorage.setItem(k, JSON.stringify({ active: true, step: 'work', answers: {} }));
+    });
+    await p4.goto(BASE + '/start/work');
+    await p4.getByTestId('work-finish').last().click();
+    await at4(/\/start\/who/);
+    await p4.getByText('Please tell us who this biodata is for first.').first().waitFor();
+    // Signed in already: answering again saves straight to the biodata, nothing typed is lost.
+    await p4.getByTestId('who-daughter').last().click();
+    await p4.getByTestId('wants-age-28-32').last().click();
+    await p4.getByTestId('wants-region-hyd').last().click();
+    await p4.getByTestId('wants-show').last().click();
+    await p4.getByTestId('matches-save').last().click();
+    await at4(/\/start\/about/);
+    if ((await p4.getByTestId('about-name').last().inputValue()) !== 'Ayesha Khan') throw new Error('name lost');
+    await p4.getByTestId('about-next').last().click();
+    await at4(/\/start\/more/);
+    await p4.getByTestId('more-next').last().click();
+    await at4(/\/start\/work/);
+    await p4.getByTestId('work-finish').last().click();
+    await at4(/\/start\/live/);
+    const b = await p4.evaluate(() => {
+      const db = JSON.parse(localStorage.getItem('hr.demo.db'));
+      const me = db.users.find((u) => u.phone === '9876500092');
+      return db.profiles.find((x) => x.userId === me.id).biodata.basic;
+    });
+    if (b.createdFor !== 'daughter' || b.lookingFor !== 'groom') throw new Error('answers not saved: ' + JSON.stringify(b));
+    await p4.close();
+  });
+
   await browser.close();
   console.log(errors.length ? 'ERRORS: ' + errors.join(' | ') : 'ONBOARDING E2E PASSED');
   process.exit(errors.length ? 1 : 0);

@@ -1047,6 +1047,7 @@ const en = {
     draftNote: 'Draft for review by a qualified lawyer before launch.',
   },
   onb: {
+    gap: { who: 'Please tell us who this biodata is for first.', about: 'Please add the name, date of birth and height first.', more: 'Please finish marital status, mother tongue and city first.', work: 'Please add education and profession first.' },
     next: "Next",
     welcome: {
       title: "Assalamu alaikum.",

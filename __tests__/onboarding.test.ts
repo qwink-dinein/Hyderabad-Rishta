@@ -1,7 +1,7 @@
 import { buildSeed, DEMO_OTP } from '@/data/seed';
 import { profileCompletion } from '@/domain/completion';
 import { ageFromDob } from '@/domain/format';
-import { AGE_BANDS, applyAnswers, computeMatchPreview, inRegion, lookingForFor, subjectOf } from '@/domain/onboarding';
+import { AGE_BANDS, applyAnswers, onboardingGap, computeMatchPreview, inRegion, lookingForFor, subjectOf } from '@/domain/onboarding';
 import { NO_CONSENT, profileTypeOf, projectProfile } from '@/domain/privacy';
 import type { Biodata, User } from '@/domain/types';
 import { emptyBiodata, firstInvalidStep, stepErrors } from '@/domain/validation';
@@ -154,5 +154,33 @@ describe('the whole journey on the demo backend', () => {
     const c = profileCompletion(profile.biodata);
     expect(c.complete).toBe(false);
     expect(c.fields[0]).toMatchObject({ field: 'photos', required: false });
+  });
+});
+
+describe('finishing: the member is sent to the exact missing answer', () => {
+  const full = (): Biodata => {
+    const b = applyAnswers(emptyBiodata(), { createdFor: 'son', lookingFor: 'bride', region: 'hyd' });
+    Object.assign(b.basic, { fullName: 'Imran Ahmed', dob: '1997-03-12', heightCm: 175, maritalStatus: 'never_married', motherTongue: 'urdu' });
+    Object.assign(b.career, { education: 'high_school', profession: 'skilled' });
+    return b;
+  };
+  it('complete → nothing missing', () => expect(onboardingGap(full())).toBeNull());
+  it('bride/groom or "for whom" missing (bug 2026-11-02: signed in before onboarding) → back to the first question', () => {
+    const b = full();
+    b.basic.createdFor = '';
+    expect(onboardingGap(b)).toBe('who');
+    const c = full();
+    c.basic.lookingFor = '' as never;
+    expect(onboardingGap(c)).toBe('who');
+  });
+  it('other gaps go to their own screen', () => {
+    const a = full(); a.basic.heightCm = undefined as never; expect(onboardingGap(a)).toBe('about');
+    const m = full(); m.basic.maritalStatus = 'divorced'; expect(onboardingGap(m)).toBe('more');
+    const l = full(); l.location.city = ''; expect(onboardingGap(l)).toBe('more');
+    const w = full(); w.career.profession = ''; expect(onboardingGap(w)).toBe('work');
+  });
+  it('the pre-sign-up answers fill a saved draft that lacks them', () => {
+    const saved = full(); saved.basic.createdFor = ''; saved.basic.lookingFor = '' as never;
+    expect(onboardingGap(applyAnswers(saved, { createdFor: 'son', lookingFor: 'bride' }))).toBeNull();
   });
 });

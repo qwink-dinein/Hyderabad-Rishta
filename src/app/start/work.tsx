@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { Select, TextField } from '@/components/ui/forms';
 import { Text } from '@/components/ui/Text';
+import { onboardingGap } from '@/domain/onboarding';
 import { useOptions } from '@/hooks/useOptions';
 import { backend } from '@/services';
 import { useOnboarding } from '@/state/onboarding';
@@ -40,6 +41,12 @@ export default function Work() {
     setBusy(true);
     try {
       await save(bd);
+      // Something needed earlier is missing (e.g. who the biodata is for): go to that screen and say so.
+      const gap = onboardingGap(bd);
+      if (gap) {
+        toast(t(`onb.gap.${gap}`), 'danger');
+        return router.push(`/start/${gap}`);
+      }
       const res = await backend.submitForPublication();
       void qc.invalidateQueries();
       // A publication fee (if the team switches one on) is paid on the existing preview screen.

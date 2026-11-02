@@ -1,15 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Redirect, router } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { OnbScreen, T } from '@/components/onboarding/kit';
 import { useSubject } from '@/components/onboarding/useSubject';
+import { seedDraft } from '@/components/onboarding/signIn';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { Stagger } from '@/components/ui/motion';
 import { Text } from '@/components/ui/Text';
 import { ageBand } from '@/domain/onboarding';
+import { qk } from '@/hooks/queries';
 import { useOptions } from '@/hooks/useOptions';
 import { backend } from '@/services';
 import { STEP_PROGRESS, useOnboarding } from '@/state/onboarding';
@@ -25,7 +27,23 @@ export default function Matches() {
   const { reach } = useOnboarding();
   const { answers, side, ctx } = useSubject();
   const user = useSession((s) => s.user);
+  const qc = useQueryClient();
+  const [saving, setSaving] = useState(false);
   useEffect(() => reach('matches'), [reach]);
+  // Already signed in (came from the login screen): save these answers to the biodata right away.
+  const next = async () => {
+    if (!user) return router.push('/start/phone');
+    setSaving(true);
+    try {
+      const p = await seedDraft(answers);
+      if (p) qc.setQueryData(qk.myProfile, p);
+    } catch {
+      // The next screens merge the answers in again and save them, so carrying on is safe.
+    } finally {
+      setSaving(false);
+    }
+    router.push('/start/about');
+  };
   const band = ageBand(answers.ageBand);
   const q = useQuery({
     queryKey: ['matchPreview', side, answers.ageBand, answers.region],
@@ -46,7 +64,7 @@ export default function Matches() {
       testID="onb-matches"
       footer={
         <View style={{ gap: space.sm }}>
-          <Button label={t('onb.matches.save')} onPress={() => router.push(user ? '/start/about' : '/start/phone')} full arrow testID="matches-save" />
+          <Button label={t('onb.matches.save')} onPress={next} loading={saving} full arrow testID="matches-save" />
           <Text variant="caption" center style={{ fontSize: T.small }}>
             {t('onb.matches.note')}
           </Text>

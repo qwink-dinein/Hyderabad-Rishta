@@ -1,5 +1,6 @@
 import { ageFromDob } from './format';
 import type { Biodata, LookingFor, Profile, User } from './types';
+import { photosSchema, privacySchema, stepErrors } from './validation';
 
 /**
  * New-member onboarding (owner request 2026-11-01): a visitor answers a few taps, sees a safe preview of
@@ -131,3 +132,28 @@ export const ONBOARDING_REQUIRED = [
   ['career', 'education'],
   ['career', 'profession'],
 ] as const;
+
+/** Which onboarding screen holds a field of the biodata. */
+const FIELD_SCREEN: Record<string, 'who' | 'about' | 'more' | 'work'> = {
+  'basic.createdFor': 'who', 'basic.lookingFor': 'who',
+  'basic.fullName': 'about', 'basic.dob': 'about', 'basic.heightCm': 'about',
+};
+
+/**
+ * The first onboarding screen with a missing or invalid answer needed to go live, or null when the
+ * biodata can be published. Used before submitting so the member is taken to the exact screen instead of
+ * a generic "complete the required sections" error.
+ */
+export function onboardingGap(b: Biodata): 'who' | 'about' | 'more' | 'work' | null {
+  const order = ['who', 'about', 'more', 'work'] as const;
+  const found = new Set<string>();
+  const sections = [['basic', 0], ['location', 1], ['career', 2]] as const;
+  for (const [key, step] of sections) {
+    for (const k of Object.keys(stepErrors(step, b[key]))) {
+      const field = `${key}.${k.split('.')[0]}`;
+      found.add(FIELD_SCREEN[field] ?? (key === 'career' ? 'work' : 'more'));
+    }
+  }
+  if (!privacySchema.safeParse(b.privacy).success || !photosSchema.safeParse(b.photos).success) found.add('more');
+  return order.find((s) => found.has(s)) ?? null;
+}
