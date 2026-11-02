@@ -3,6 +3,32 @@ import type { Translation } from './en';
 
 /** Urdu (RTL). Machine-assisted draft — schedule native-speaker review before launch (see Tasks.md). */
 const ur: DeepPartial<Translation> = {
+  photo: {
+    addTitle: "تصویر شامل کریں",
+    tip1: "چہرہ صاف نظر آئے",
+    tip2: "اچھی روشنی",
+    tip3: "حالیہ تصویر",
+    tip4: "گروپ تصویر نہیں",
+    gallery: "گیلری سے منتخب کریں",
+    camera: "ابھی تصویر لیں",
+    note: "صرف وہی اراکین آپ کی تصاویر دیکھ سکتے ہیں جنہیں آپ اجازت دیں۔",
+    adjust: "اپنی تصویر درست کریں",
+    help: "زوم کے لیے دو انگلیوں سے پھیلائیں · ہلانے کے لیے گھسیٹیں · چہرہ فریم کے اندر رکھیں",
+    helpWeb: "ہلانے کے لیے گھسیٹیں · زوم کے لیے بٹن استعمال کریں",
+    rotate: "گھمائیں",
+    fit: "پوری تصویر",
+    fill: "فریم بھریں",
+    use: "یہ تصویر استعمال کریں",
+    different: "دوسری تصویر منتخب کریں",
+    discardTitle: "یہ تصویر چھوڑ دیں؟",
+    discardBody: "یہ ابھی شامل نہیں ہوئی۔",
+    discard: "چھوڑ دیں",
+    keep: "جاری رکھیں",
+    added: "تصویر شامل ہو گئی۔ بدلنے یا ہٹانے کے لیے اس پر ٹیپ کریں۔",
+    zoomIn: "زوم ان",
+    zoomOut: "زوم آؤٹ",
+    cameraDenied: "کیمرہ کی اجازت بند ہے۔ آپ گیلری سے تصویر منتخب کر سکتے ہیں۔",
+  },
   common: {
     hideKeyboard: 'چھپائیں', prevField: 'پچھلا خانہ', nextField: 'اگلا خانہ', fieldOf: 'خانہ {{n}} از {{total}}',
     appName: 'حیدرآباد رشتہ',

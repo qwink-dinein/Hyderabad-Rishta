@@ -51,7 +51,7 @@
         "expo-image-picker",
         {
           "photosPermission": "Allow Hyderabad Rishta to access your photos so you can add them to your biodata.",
-          "cameraPermission": false,
+          "cameraPermission": "Allow Hyderabad Rishta to use the camera so you can take a photo for your biodata.",
           "microphonePermission": false
         }
       ],

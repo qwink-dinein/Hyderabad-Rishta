@@ -34,10 +34,18 @@ const noisyJpeg = (page, side) =>
   await loginWithOtp(page, BASE, '9876500888');
   await page.getByTestId('photo-slot-1').waitFor({ timeout: 15000 });
 
-  const upload = async (slot, file) => {
-    const chooser = page.waitForEvent('filechooser');
+  // Slot → "Add a photo" sheet → gallery → our adjust screen → big "Use this photo" (approved 2026-11-02).
+  const upload = async (slot, file, adjust = true) => {
     await page.getByTestId(`photo-slot-${slot}`).click();
+    await page.getByTestId('photo-source-sheet').waitFor();
+    const chooser = page.waitForEvent('filechooser');
+    await page.getByTestId('photo-from-gallery').click();
     await (await chooser).setFiles(file);
+    if (!adjust) return;
+    await page.getByTestId('photo-adjust').waitFor({ timeout: 15000 });
+    await page.screenshot({ path: `${SHOTS}/89-photo-adjust.png` });
+    await page.getByTestId('photo-zoom-in').click();
+    await page.getByTestId('photo-use').click();
   };
   const big = Buffer.from(await noisyJpeg(page, 2400), 'base64');
   const huge = Buffer.from(await noisyJpeg(page, 2800), 'base64');
@@ -47,6 +55,7 @@ const noisyJpeg = (page, side) =>
     if (big.length <= 4 * 1048576 || big.length >= 5 * 1048576) throw new Error(`fixture size ${big.length}`);
     await upload(1, { name: 'wedding.jpg', mimeType: 'image/jpeg', buffer: big });
     await page.getByRole('button', { name: /Replace: Main photo/ }).waitFor({ timeout: 20000 });
+    await page.getByText('Photo added. Tap it to change or remove.').first().waitFor();
     const src = await page.locator('img').evaluateAll((els) => els.map((e) => e.src).find((s) => s.startsWith('data:image/jpeg')) || '');
     const stored = Math.floor((src.length - src.indexOf(',') - 1) * 0.75);
     console.log(`  stored after compression: ${(stored / 1024).toFixed(0)} KB (picked ${(big.length / 1024).toFixed(0)} KB)`);
@@ -55,12 +64,12 @@ const noisyJpeg = (page, side) =>
   });
   await step('a photo over 5 MB is refused with a clear message', async () => {
     if (huge.length <= 5 * 1048576) throw new Error(`fixture size ${huge.length}`);
-    await upload(2, { name: 'huge.jpg', mimeType: 'image/jpeg', buffer: huge });
+    await upload(2, { name: 'huge.jpg', mimeType: 'image/jpeg', buffer: huge }, false);
     await page.getByText('under 5 MB').waitFor({ timeout: 10000 });
     await page.screenshot({ path: `${SHOTS}/91-photo-too-large.png` });
   });
   await step('an SVG (can carry scripts) is refused', async () => {
-    await upload(2, { name: 'evil.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>') });
+    await upload(2, { name: 'evil.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>') }, false);
     await page.getByText('Please choose a JPG, PNG, WEBP or HEIC photo.').waitFor({ timeout: 10000 });
   });
 

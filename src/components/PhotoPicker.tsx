@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import { Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Linking, Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useUiT } from '@/i18n/uiLang';
 import { uid } from '@/domain/format';
 import type { Photo } from '@/domain/types';
 import { AppError } from '@/services/backend';
-import { preparePhoto } from '@/services/photos';
+import { uploadProblem } from '@/domain/security';
+import { preparePhoto, type PhotoCrop } from '@/services/photos';
 import { colors, radius, space } from '@/theme/tokens';
+import { PhotoAdjust, type PickedPhoto } from './PhotoAdjust';
+import { useToast } from './ui/feedback';
 import { Icon } from './ui/Icon';
 import { Text } from './ui/Text';
 
@@ -27,34 +30,62 @@ export function PhotoPicker({ photos, onChange }: { photos: Photo[]; onChange: (
   const [progress, setProgress] = useState(0);
   const [denied, setDenied] = useState<null | 'ask' | 'settings'>(null);
 
-  const pick = async (slot: number, replaceId?: string) => {
+  // Where the next photo goes, while the "Add a photo" sheet / adjust screen are open.
+  const [target, setTarget] = useState<{ slot: number; replaceId?: string } | null>(null);
+  const [sheet, setSheet] = useState(false);
+  const [editing, setEditing] = useState<PickedPhoto | null>(null);
+  const toast = useToast((s) => s.show);
+
+  // Tapping a slot opens the "Add a photo" sheet (gallery or camera, with quick tips).
+  const pick = (slot: number, replaceId?: string) => {
     setError(null);
+    setTarget({ slot, replaceId });
+    setSheet(true);
+  };
+
+  const choose = async (from: 'gallery' | 'camera') => {
+    setSheet(false);
     if (Platform.OS !== 'web') {
-      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const perm = from === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
         // Say why we asked and how to allow it; never fail silently. Photos stay optional either way.
-        setDenied(perm.canAskAgain ? 'ask' : 'settings');
+        if (from === 'camera') setError(t('photo.cameraDenied'));
+        else setDenied(perm.canAskAgain ? 'ask' : 'settings');
         return;
       }
       setDenied(null);
     }
+    // No built-in crop screen (its tiny ✓ was easy to miss): our own adjust screen comes next.
     // quality 1: keep the original so the 5 MB limit applies to what the member picked; we compress after.
-    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 5], quality: 1 });
+    const opts = { mediaTypes: ['images'] as ImagePicker.MediaType[], allowsEditing: false, quality: 1 };
+    const res = from === 'camera' ? await ImagePicker.launchCameraAsync(opts) : await ImagePicker.launchImageLibraryAsync(opts);
     if (res.canceled || !res.assets[0]) return;
+    const a = res.assets[0];
+    // Too big / not a photo: say so now, before any adjusting.
+    const problem = uploadProblem(a);
+    if (problem) return setError(t(problem));
+    setEditing({ uri: a.uri, width: a.width, height: a.height, fileSize: a.fileSize, mimeType: a.mimeType });
+  };
+
+  const use = async (img: PickedPhoto, crop?: PhotoCrop) => {
+    if (!target) return;
+    const { slot, replaceId } = target;
     setBusySlot(slot);
     setProgress(25);
     let uri: string;
     try {
-      uri = await preparePhoto(res.assets[0]);
+      uri = await preparePhoto(img as ImagePicker.ImagePickerAsset, crop);
     } catch (e) {
       setBusySlot(null);
+      setEditing(null);
       return setError(t(e instanceof AppError && e.message.startsWith('v.') ? e.message : 'v.photoInvalid'));
     }
     setProgress(90);
-    await new Promise((r) => setTimeout(r, 90));
     setBusySlot(null);
+    setEditing(null);
     if (replaceId) onChange(photos.map((p) => (p.id === replaceId ? { id: uid('ph_'), uri } : p)));
     else onChange([...photos, { id: uid('ph_'), uri }].slice(0, MAX_PHOTOS));
+    toast(t('photo.added'));
   };
 
   const slotLabel = (i: number) => (i === 0 ? t('f.photoMain') : t('f.photoN', { n: i + 1 }));
@@ -163,11 +194,61 @@ export function PhotoPicker({ photos, onChange }: { photos: Photo[]; onChange: (
           </View>
         </View>
       ) : null}
+
+      {/* "Add a photo": gallery or camera, with four quick tips. */}
+      <Modal visible={sheet} transparent animationType="slide" onRequestClose={() => setSheet(false)}>
+        <Pressable style={styles.scrim} onPress={() => setSheet(false)} accessibilityLabel={t('common.close')} />
+        <View style={styles.sheet} testID="photo-source-sheet">
+          <View style={styles.grab} />
+          <Text variant="h2">{t('photo.addTitle')}</Text>
+          <View style={styles.tips}>
+            {(['tip1', 'tip2', 'tip3'] as const).map((k) => (
+              <View key={k} style={styles.tip}>
+                <Icon name="check" size={14} color={colors.success} />
+                <Text variant="caption" color={colors.charcoal}>{t(`photo.${k}`)}</Text>
+              </View>
+            ))}
+            <View style={styles.tip}>
+              <Icon name="close" size={14} color={colors.danger} />
+              <Text variant="caption" color={colors.charcoal}>{t('photo.tip4')}</Text>
+            </View>
+          </View>
+          <Pressable onPress={() => choose('gallery')} accessibilityRole="button" style={styles.option} testID="photo-from-gallery">
+            <View style={styles.optIcon}><Icon name="image" size={18} color={colors.emerald} /></View>
+            <Text variant="bodyStrong">{t('photo.gallery')}</Text>
+          </Pressable>
+          <Pressable onPress={() => choose('camera')} accessibilityRole="button" style={styles.option} testID="photo-from-camera">
+            <View style={styles.optIcon}><Icon name="camera" size={18} color={colors.emerald} /></View>
+            <Text variant="bodyStrong">{t('photo.camera')}</Text>
+          </Pressable>
+          <Text variant="caption" center>{t('photo.note')}</Text>
+        </View>
+      </Modal>
+
+      {editing ? (
+        <PhotoAdjust
+          photo={editing}
+          busy={busySlot !== null}
+          onUse={use}
+          onCancel={() => setEditing(null)}
+          onChooseAnother={() => {
+            setEditing(null);
+            setSheet(true);
+          }}
+        />
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  scrim: { flex: 1, backgroundColor: colors.overlay },
+  sheet: { backgroundColor: colors.white, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: space.xl, paddingTop: space.sm, paddingBottom: space.xl, gap: space.md, width: '100%', maxWidth: 560, alignSelf: 'center' },
+  grab: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: '#D9CCC6' },
+  tips: { flexDirection: 'row', flexWrap: 'wrap', rowGap: space.xs },
+  tip: { width: '50%', flexDirection: 'row', alignItems: 'center', gap: 6 },
+  option: { minHeight: 60, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg },
+  optIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FBF0EE', alignItems: 'center', justifyContent: 'center' },
   denied: { flexDirection: 'row', gap: space.md, padding: space.md, borderRadius: radius.md, backgroundColor: colors.goldSoft, borderWidth: 1, borderColor: colors.gold },
   headRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   counter: { paddingHorizontal: space.md, paddingVertical: 4, borderRadius: radius.pill, backgroundColor: colors.sage },
