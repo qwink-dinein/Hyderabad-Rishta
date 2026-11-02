@@ -37,6 +37,11 @@ export const CATEGORY: Record<NotificationType, PushCategory> = {
   admin_alert: 'account',
   team_created: 'account',
   announcement: 'announcements',
+  // Referrals sit with interests & connections (owner: use existing preferences, no spam; at most 3 per family).
+  referral_joined: 'interests',
+  referral_completed: 'interests',
+  referral_reward: 'account',
+  referral_welcome: 'account',
 };
 
 export const DEFAULT_PUSH_PREFS: PushPrefs = { enabled: true, interests: true, activity: true, announcements: true, showNames: false };
@@ -93,6 +98,10 @@ const T: Record<Lang, { title: string; types: Partial<Record<NotificationType | 
       security: { generic: 'Security alert for the admin team. Open the app to review.' },
       admin_alert: { generic: 'New admin alert. Open the dashboard to review.' },
       announcement: { generic: 'New announcement from Hyderabad Rishta.' },
+      referral_joined: { generic: 'A family joined Hyderabad Rishta with your invitation.' },
+      referral_completed: { generic: 'A family you invited finished their biodata. It is waiting for approval.' },
+      referral_reward: { generic: 'You earned a free {{days}}-day Boost! Open the app to use it.' },
+      referral_welcome: { generic: 'Welcome gift: your biodata has a free {{days}}-day Boost ready.' },
     },
   },
   ur: {
@@ -126,6 +135,10 @@ const T: Record<Lang, { title: string; types: Partial<Record<NotificationType | 
       security: { generic: 'ایڈمن ٹیم کے لیے سیکیورٹی الرٹ۔ جائزے کے لیے ایپ کھولیں۔' },
       admin_alert: { generic: 'نیا ایڈمن الرٹ۔ جائزے کے لیے ڈیش بورڈ کھولیں۔' },
       announcement: { generic: 'حیدرآباد رشتہ کی جانب سے نیا اعلان۔' },
+      referral_joined: { generic: 'آپ کی دعوت پر ایک خاندان حیدرآباد رشتہ میں شامل ہوا۔' },
+      referral_completed: { generic: 'آپ کے مدعو کردہ خاندان نے بایوڈیٹا مکمل کر لیا۔ منظوری کا انتظار ہے۔' },
+      referral_reward: { generic: 'آپ کو {{days}} دن کا مفت بوسٹ ملا! استعمال کرنے کے لیے ایپ کھولیں۔' },
+      referral_welcome: { generic: 'خوش آمدید تحفہ: آپ کے بایوڈیٹا کے لیے {{days}} دن کا مفت بوسٹ تیار ہے۔' },
     },
   },
   // Roman Urdu: its own wording in English letters (not a transliteration of the Urdu copy).
@@ -160,6 +173,10 @@ const T: Record<Lang, { title: string; types: Partial<Record<NotificationType | 
       security: { generic: 'Admin team ke liye security alert. Dekhne ke liye app kholiye.' },
       admin_alert: { generic: 'Naya admin alert. Dekhne ke liye dashboard kholiye.' },
       announcement: { generic: 'Hyderabad Rishta ki taraf se naya announcement.' },
+      referral_joined: { generic: 'Aap ki dawat par ek family Hyderabad Rishta mein shamil hui.' },
+      referral_completed: { generic: 'Aap ki bulayi hui family ne biodata poora kar liya. Approval ka intezaar hai.' },
+      referral_reward: { generic: 'Aap ko {{days}} din ka free Boost mila! Istemal ke liye app kholiye.' },
+      referral_welcome: { generic: 'Khush-aamdeed tohfa: aap ke biodata ke liye {{days}} din ka free Boost tayyar hai.' },
     },
   },
   te: {
@@ -193,6 +210,10 @@ const T: Record<Lang, { title: string; types: Partial<Record<NotificationType | 
       security: { generic: 'అడ్మిన్ బృందానికి భద్రతా హెచ్చరిక. సమీక్షించడానికి యాప్ తెరవండి.' },
       admin_alert: { generic: 'కొత్త అడ్మిన్ హెచ్చరిక. సమీక్షించడానికి డాష్‌బోర్డ్ తెరవండి.' },
       announcement: { generic: 'హైదరాబాద్ రిష్తా నుండి కొత్త ప్రకటన.' },
+      referral_joined: { generic: 'మీ ఆహ్వానంతో ఒక కుటుంబం హైదరాబాద్ రిష్తాలో చేరింది.' },
+      referral_completed: { generic: 'మీరు ఆహ్వానించిన కుటుంబం బయోడేటా పూర్తి చేసింది. ఆమోదం కోసం వేచి ఉంది.' },
+      referral_reward: { generic: 'మీకు {{days}} రోజుల ఉచిత బూస్ట్ వచ్చింది! వాడటానికి యాప్ తెరవండి.' },
+      referral_welcome: { generic: 'స్వాగత బహుమతి: మీ బయోడేటాకు {{days}} రోజుల ఉచిత బూస్ట్ సిద్ధంగా ఉంది.' },
     },
   },
 };
@@ -221,6 +242,6 @@ export function pushContent(n: Pick<AppNotification, 'type' | 'params'>, lang: L
   const copy = pack.types[key as keyof typeof pack.types] ?? T.en.types[key as keyof typeof pack.types];
   const name = (n.params.name ?? '').trim().slice(0, 40);
   const tpl = copy ? (showNames && copy.named && name ? copy.named : copy.generic) : pack.fallback;
-  const body = tpl.replace('{{name}}', name).replace('{{count}}', String(Number(n.params.count) || 1));
+  const body = tpl.replace('{{name}}', name).replace('{{count}}', String(Number(n.params.count) || 1)).replace('{{days}}', String(Number(n.params.days) || 7));
   return { title: pack.title, body: scrubContact(body) };
 }

@@ -1,4 +1,5 @@
 import type { DiscoverSections, FeedPage, FeedRequest } from '@/domain/feed';
+import type { AdminReferralFilter, AdminReferralOverview, AdminReferralRow, MyReferral, ReferralSettings } from '@/domain/referral';
 import type { SearchFilters } from '@/domain/search';
 import type { AnnouncementStats } from '@/domain/metrics';
 import type { MatchPreview, MatchPreviewInput } from '@/domain/onboarding';
@@ -61,6 +62,13 @@ export type ErrorCode =
   | 'poke_optout'
   | 'expired'
   | 'photo_required'
+  // Referral free Boosts (20261203)
+  | 'no_free_boost'
+  | 'referral_invalid'
+  | 'referral_self'
+  | 'referral_locked'
+  | 'referral_not_eligible'
+  | 'referral_closed'
   /** The request never reached the server (offline, dropped connection, DNS, timeout). */
   | 'network';
 
@@ -376,6 +384,22 @@ export interface Backend {
 
   // pricing
   getPricing(): Promise<PricingConfig>;
+
+  // referral free Boosts (owner spec 2026-11-02; additive — the paid Boost methods above are unchanged)
+  /** Public: which Boost experience to show (also before sign-up). */
+  getReferralSettings(): Promise<ReferralSettings>;
+  /** Public: a referral link was opened. Counts a visit only; true if the code exists. */
+  recordReferralVisit(code: string): Promise<boolean>;
+  /** The signed-in, brand-new account attaches the code it signed up with (once; never changed later). */
+  claimReferral(code: string): Promise<void>;
+  getMyReferral(): Promise<MyReferral>;
+  /** Starts one earned free Boost now (same Featured treatment as a paid Boost). */
+  useReferralBoost(): Promise<{ profile: Profile }>;
+  adminReferralOverview(): Promise<AdminReferralOverview>;
+  adminListReferrals(filter?: AdminReferralFilter, query?: string): Promise<AdminReferralRow[]>;
+  adminDecideReferral(referralId: string, approve: boolean, reason?: string): Promise<void>;
+  adminRevokeReferralReward(rewardId: string, reason: string): Promise<void>;
+  adminUpdateReferralSettings(s: ReferralSettings): Promise<ReferralSettings>;
 
   // admin
   adminStats(): Promise<AdminStats>;

@@ -9,6 +9,7 @@ import { normalizePhone } from '@/domain/phone';
 import type { AnnouncementStats } from '@/domain/metrics';
 import { syncBoostSummary, validatePricing } from '@/domain/pricing';
 import { matchesFilters, sortProfiles, type SearchFilters } from '@/domain/search';
+import { DEFAULT_REFERRAL_SETTINGS, normalizeReferralCode, type AdminReferralFilter, type AdminReferralOverview, type AdminReferralRow, type MyReferral, type ReferralSettings } from '@/domain/referral';
 import type {
   AdminMember,
   Announcement,
@@ -640,6 +641,55 @@ export class SupabaseBackend implements Backend {
     const cfg = mapPricing(data);
     this.pricing = { cfg, at: this.now().getTime() };
     return cfg;
+  }
+
+  // ---------- referral free Boosts (supabase/migrations/20261203000000_referral_boost.sql) ----------
+  async getReferralSettings(): Promise<ReferralSettings> {
+    const r = await this.rpc<Partial<ReferralSettings> | null>('get_referral_settings');
+    return { ...DEFAULT_REFERRAL_SETTINGS, ...(r ?? {}) };
+  }
+
+  async recordReferralVisit(code: string) {
+    const c = normalizeReferralCode(code);
+    return c ? !!(await this.rpc<boolean>('record_referral_visit', { p_code: c })) : false;
+  }
+
+  async claimReferral(code: string) {
+    const c = normalizeReferralCode(code);
+    if (!c) throw new AppError('referral_invalid');
+    await this.rpc('claim_referral', { p_code: c });
+  }
+
+  async getMyReferral() {
+    return this.rpc<MyReferral>('get_my_referral');
+  }
+
+  async useReferralBoost() {
+    const r = await this.rpc<{ profile: Row }>('use_referral_boost');
+    return { profile: await this.ownProfile(r.profile) };
+  }
+
+  async adminReferralOverview() {
+    return this.rpc<AdminReferralOverview>('admin_referral_overview');
+  }
+
+  async adminListReferrals(filter?: AdminReferralFilter, query?: string) {
+    return (await this.rpc<AdminReferralRow[]>('admin_list_referrals', { p_filter: filter ?? null, p_query: query?.trim() || null })) ?? [];
+  }
+
+  async adminDecideReferral(referralId: string, approve: boolean, reason?: string) {
+    await this.rpc('admin_decide_referral', { p_id: referralId, p_approve: approve, p_reason: reason ?? null });
+  }
+
+  async adminRevokeReferralReward(rewardId: string, reason: string) {
+    await this.rpc('admin_revoke_referral_reward', { p_reward: rewardId, p_reason: reason });
+  }
+
+  async adminUpdateReferralSettings(next: ReferralSettings) {
+    const r = await this.rpc<ReferralSettings>('admin_referral_settings_update', {
+      p_mode: next.mode, p_enabled: next.enabled, p_days: next.rewardDays, p_invitee: next.inviteeReward, p_review: next.review,
+    });
+    return { ...DEFAULT_REFERRAL_SETTINGS, ...r };
   }
 
   // ---------- admin console (every call re-checked by the database: is_admin / is_master) ----------

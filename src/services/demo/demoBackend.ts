@@ -45,6 +45,7 @@ import type {
 } from '@/domain/types';
 import { isAdminRole } from '@/domain/types';
 import { firstInvalidStep, otpSchema, requestMessageSchema } from '@/domain/validation';
+import { DEFAULT_REFERRAL_SETTINGS, isProfileFull, newReferralCode, normalizeReferralCode, REFERRAL_CLAIM_WINDOW_MS, REFERRAL_VELOCITY, referralInitial, referralStage, type AdminReferralFilter, type AdminReferralOverview, type AdminReferralRow, type MyReferral, type Referral, type ReferralFlag, type ReferralReward, type ReferralSettings } from '@/domain/referral';
 import { REPORT_REASONS } from '@/domain/options';
 import { biodataProblem, normalizePhone, isHttpsUrl, isInternalLink, LANGS, MAX_IDEM_KEY, MAX_PUSH_TOKEN, MAX_REPORTS_PER_DAY, MAX_SEARCH_PAGE, stripUnsafe, unsafeText } from '@/domain/security';
 import { AppError, type AdminMemberDraft, type AdminPhoneCheck, type AdminRequestRow, type AdminStats, type Backend, type MemberDetail, type MemberRow, type ConnectionMetrics, type SendInterestInput, type NotificationView, type Page, type RecipientRow, type RequestView, type TrashItem, type DeletedAccount, type DeletedAccountDetail } from '../backend';
@@ -144,6 +145,13 @@ export interface DemoDb {
   seen: (SeenRecord & { viewerId: string; impressions: number })[];
   /** Discover rotation: one stored feed per member and filter set (stable order, resumable). */
   feedStates: (FeedSnapshot & { userId: string })[];
+  // Referral free Boosts (owner spec 2026-11-02). Optional: older saved demo data gets them in place on load.
+  referralSettings?: ReferralSettings;
+  referralCodes?: { userId: string; code: string; visits: number; createdAt: string }[];
+  /** Every number that ever had an account → its first account (a deleted-and-back number is not "new"). */
+  phoneLedger?: { key: string; firstUserId: string }[];
+  referrals?: Referral[];
+  referralRewards?: ReferralReward[];
 }
 
 const SCHEMA_VERSION = 8;
@@ -270,6 +278,8 @@ export class DemoBackend implements Backend {
         d.feedStates ??= [];
         d.pricing.feedImpressionCooldownDays ??= DEFAULT_PRICING.feedImpressionCooldownDays;
         d.pricing.feedViewCooldownDays ??= DEFAULT_PRICING.feedViewCooldownDays;
+        // Referral free Boosts (2026-11-02): added in place; every existing account gets a code.
+        this.referralBackfill(d);
         if (d.sessionUserId) {
           if (!this.currentSession(d) && d.users.some((u) => u.id === d.sessionUserId)) this.startSession(d, d.sessionUserId, {});
           d.sessionUserId = undefined;
@@ -296,6 +306,13 @@ export class DemoBackend implements Backend {
     } finally {
       // Also on errors: a wrong OTP/PIN must be counted on "disk", not only in memory.
       if (write) {
+        // Referrals move on whatever changed (biodata saved, published, approved) — like the server's trigger.
+        try {
+          this.referralBackfill(db);
+          this.evaluateReferrals(db);
+        } catch {
+          // a referral problem must never break the member's own action
+        }
         this.prune(db);
         await this.persist();
       }
@@ -430,7 +447,7 @@ export class DemoBackend implements Backend {
   }
 
   /** Admin bell: reports, payments, approvals, deletions, security. Never contains phone numbers. */
-  private alertAdmins(db: DemoDb, kind: 'report' | 'payment' | 'pending_profile' | 'account_deleted' | 'security', params: Record<string, string>, deepLink: string) {
+  private alertAdmins(db: DemoDb, kind: 'report' | 'payment' | 'pending_profile' | 'account_deleted' | 'security' | 'referral_review', params: Record<string, string>, deepLink: string) {
     for (const u of db.users) if (isAdminRole(u.role) && !u.deletedAt && !u.deactivatedAt) this.notify(db, u.id, 'admin_alert', { kind, ...params }, deepLink);
   }
 
@@ -1812,6 +1829,309 @@ export class DemoBackend implements Backend {
   // ---------- pricing ----------
   getPricing() {
     return this.run((db) => clone(db.pricing));
+  }
+
+  // ---------- referral free Boosts (owner spec 2026-11-02) ----------
+  // Additive: the paid Boost methods above are untouched. A free Boost sets the same profile fields applyBoost()
+  // sets, so Featured placement, rotation, "one Boost at a time" and expiry behave exactly like any Boost.
+  private referralBackfill(d: DemoDb) {
+    d.referralSettings = { ...DEFAULT_REFERRAL_SETTINGS, ...(d.referralSettings ?? {}) };
+    d.referralCodes ??= [];
+    d.phoneLedger ??= [];
+    d.referrals ??= [];
+    d.referralRewards ??= [];
+    const codes = new Set(d.referralCodes.map((c) => c.code));
+    const hasCode = new Set(d.referralCodes.map((c) => c.userId));
+    const seen = new Set(d.phoneLedger.map((l) => l.key));
+    for (const u of [...d.users].sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
+      const key = `${u.countryCode}${u.phone}`;
+      if (!seen.has(key)) {
+        d.phoneLedger.push({ key, firstUserId: u.id });
+        seen.add(key);
+      }
+      if (!hasCode.has(u.id) && !u.deletedAt) {
+        const code = newReferralCode((c) => codes.has(c));
+        codes.add(code);
+        hasCode.add(u.id);
+        d.referralCodes.push({ userId: u.id, code, visits: 0, createdAt: this.iso() });
+      }
+    }
+  }
+
+  private refData(db: DemoDb) {
+    this.referralBackfill(db);
+    return { settings: db.referralSettings!, codes: db.referralCodes!, ledger: db.phoneLedger!, referrals: db.referrals!, rewards: db.referralRewards! };
+  }
+
+  private referralFlags(db: DemoDb, r: Referral): ReferralFlag[] {
+    const flags: ReferralFlag[] = [];
+    const mine = new Set(db.devices.filter((x) => x.userId === r.referrerUserId).map((x) => x.id));
+    if (db.devices.some((x) => x.userId === r.referredUserId && mine.has(x.id))) flags.push('same_device');
+    const since = this.now().getTime() - REFERRAL_VELOCITY.windowMs;
+    const recent = db.referrals!.filter((x) => x.referrerUserId === r.referrerUserId && x.id !== r.id && x.qualifiedAt && new Date(x.qualifiedAt).getTime() > since);
+    if (recent.length >= REFERRAL_VELOCITY.count) flags.push('many_recent');
+    const p = r.referredUserId ? this.myProfile(db, r.referredUserId) : undefined;
+    if (p && db.reports.some((x) => x.profileId === p.id && x.status === 'open')) flags.push('reported');
+    return flags;
+  }
+
+  /** Exactly once per referral: a referral already decided is never rewarded again. */
+  private referralIssue(db: DemoDb, r: Referral, adminId?: string) {
+    if (r.status !== 'registered' && r.status !== 'review') return;
+    const s = db.referralSettings!;
+    r.status = 'rewarded';
+    r.decidedAt = this.iso();
+    r.decidedBy = adminId;
+    const give = (userId: string | undefined, role: 'referrer' | 'invitee') => {
+      if (!userId || db.referralRewards!.some((w) => w.referralId === r.id && w.role === role)) return;
+      db.referralRewards!.push({ id: uid('rw_'), referralId: r.id, userId, role, days: s.rewardDays, status: 'available', createdAt: this.iso() });
+      this.notify(db, userId, role === 'referrer' ? 'referral_reward' : 'referral_welcome', { days: String(s.rewardDays) }, '/refer');
+    };
+    give(r.referrerUserId, 'referrer');
+    if (s.inviteeReward) give(r.referredUserId, 'invitee');
+    this.audit(db, adminId ?? 'system', 'referral.rewarded', r.id, { days: s.rewardDays, invitee: s.inviteeReward });
+    this.track(db, 'referral_rewarded', r.referrerUserId, { invitee: s.inviteeReward }, `referral_rewarded:${r.id}`);
+  }
+
+  /** The server's trigger: a referral qualifies once the invited biodata is 100% and live. */
+  private evaluateReferrals(db: DemoDb) {
+    const { settings, referrals } = this.refData(db);
+    if (!settings.enabled) return;
+    for (const r of referrals) {
+      if (r.status !== 'registered' || !r.referredUserId) continue;
+      const p = this.myProfile(db, r.referredUserId);
+      if (!p || p.status !== 'published' || !isProfileFull(p.biodata)) continue;
+      r.flags = this.referralFlags(db, r);
+      r.qualifiedAt ??= this.iso();
+      this.track(db, 'referral_qualified', r.referrerUserId, {}, `referral_qualified:${r.id}`);
+      if (settings.review || r.flags.length) {
+        r.status = 'review';
+        if (r.referrerUserId) this.notify(db, r.referrerUserId, 'referral_completed', {}, '/refer');
+        this.alertAdmins(db, 'referral_review', { code: p.code, flagged: String(r.flags.length > 0) }, '/admin/referrals');
+      } else {
+        this.referralIssue(db, r);
+      }
+    }
+  }
+
+  getReferralSettings() {
+    return this.run((db) => {
+      const { settings } = this.refData(db);
+      return { mode: settings.mode, enabled: settings.enabled, rewardDays: settings.rewardDays, inviteeReward: settings.inviteeReward, review: settings.review };
+    });
+  }
+
+  recordReferralVisit(code: string) {
+    return this.run((db) => {
+      const c = normalizeReferralCode(code);
+      const row = c ? this.refData(db).codes.find((x) => x.code === c) : undefined;
+      if (row) row.visits += 1;
+      return !!row;
+    }, true);
+  }
+
+  claimReferral(code: string) {
+    return this.run((db) => {
+      const u = this.me(db);
+      const { settings, codes, ledger, referrals } = this.refData(db);
+      const c = normalizeReferralCode(code);
+      const owner = c ? codes.find((x) => x.code === c) : undefined;
+      if (!c || !owner) throw new AppError('referral_invalid');
+      const existing = referrals.find((r) => r.referredUserId === u.id);
+      if (existing) {
+        if (existing.code === c) return; // a retry of the same claim
+        throw new AppError('referral_locked');
+      }
+      if (!settings.enabled) throw new AppError('referral_closed');
+      if (owner.userId === u.id) throw new AppError('referral_self');
+      if (u.role !== 'user' || u.createdBy) throw new AppError('referral_not_eligible');
+      if (this.now().getTime() - new Date(u.createdAt).getTime() > REFERRAL_CLAIM_WINDOW_MS) throw new AppError('referral_locked');
+      const first = ledger.find((l) => l.key === `${u.countryCode}${u.phone}`);
+      if (first && first.firstUserId !== u.id) throw new AppError('referral_not_eligible');
+      if (this.myProfile(db, u.id)?.publishedAt) throw new AppError('referral_locked');
+      const r: Referral = { id: uid('rf_'), referrerUserId: owner.userId, referredUserId: u.id, code: c, status: 'registered', flags: [], createdAt: this.iso() };
+      referrals.push(r);
+      this.notify(db, owner.userId, 'referral_joined', {}, '/refer');
+      this.audit(db, u.id, 'referral.claimed', r.id, { code: c });
+      this.track(db, 'referral_registered', owner.userId, {}, `referral_registered:${r.id}`);
+    }, true);
+  }
+
+  getMyReferral() {
+    return this.run((db): MyReferral => {
+      const u = this.me(db);
+      const { settings, codes, referrals, rewards } = this.refData(db);
+      let row = codes.find((x) => x.userId === u.id);
+      if (!row) {
+        row = { userId: u.id, code: newReferralCode((c) => codes.some((x) => x.code === c)), visits: 0, createdAt: this.iso() };
+        codes.push(row);
+      }
+      const mine = referrals.filter((r) => r.referrerUserId === u.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      const myRewards = rewards.filter((w) => w.userId === u.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      return {
+        code: row.code,
+        mode: settings.mode,
+        enabled: settings.enabled,
+        rewardDays: settings.rewardDays,
+        inviteeReward: settings.inviteeReward,
+        invited: referrals.some((r) => r.referredUserId === u.id),
+        stats: {
+          referred: mine.length,
+          approved: mine.filter((r) => r.status === 'rewarded').length,
+          earned: myRewards.filter((w) => w.status !== 'revoked').length,
+          available: myRewards.filter((w) => w.status === 'available').length,
+          used: myRewards.filter((w) => w.status === 'used').length,
+        },
+        referrals: mine.map((r) => {
+          const p = r.referredUserId ? this.myProfile(db, r.referredUserId) : undefined;
+          return { id: r.id, initial: referralInitial(p?.biodata.basic.fullName), side: p ? profileTypeOf(p) : undefined, joinedAt: r.createdAt, stage: referralStage(r.status, p) };
+        }),
+        rewards: myRewards.map((w) => ({ id: w.id, role: w.role, days: w.days, status: w.status, createdAt: w.createdAt, usedAt: w.usedAt, boostUntil: w.boostUntil })),
+      };
+    }, true);
+  }
+
+  useReferralBoost() {
+    return this.run((db) => {
+      const u = this.me(db);
+      const p = this.myProfile(db, u.id);
+      if (!p) throw new AppError('not_found');
+      if (p.status !== 'published') throw new AppError('invalid_state');
+      if (isBoostActive(p, this.now())) throw new AppError('boost_active', undefined, { until: p.boostUntil });
+      if (db.pricing.boostRequirePhoto && !p.biodata.photos?.length) throw new AppError('photo_required');
+      const w = this.refData(db).rewards.filter((x) => x.userId === u.id && x.status === 'available').sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
+      if (!w) throw new AppError('no_free_boost');
+      const start = this.now().getTime();
+      p.boostStartedAt = this.iso();
+      p.boostUntil = new Date(start + w.days * 86400000).toISOString();
+      p.boostNotices = w.days * 86400000 <= BOOST_ENDING_NOTICE_MS ? { ending: p.boostUntil } : {};
+      w.status = 'used';
+      w.usedAt = p.boostStartedAt;
+      w.boostUntil = p.boostUntil;
+      w.profileId = p.id;
+      this.audit(db, u.id, 'boost.applied', `referral:${w.id}`, { days: w.days, source: 'referral' });
+      this.notify(db, u.id, 'boost_started', { until: p.boostUntil }, '/boost');
+      this.track(db, 'referral_boost_used', u.id, { days: w.days }, `referral_boost_used:${w.id}`);
+      return { profile: clone(p) };
+    }, true);
+  }
+
+  adminReferralOverview() {
+    return this.run((db): AdminReferralOverview => {
+      this.admin(db);
+      const { settings, codes, referrals, rewards } = this.refData(db);
+      return {
+        settings: { ...settings },
+        visits: codes.reduce((n, c) => n + c.visits, 0),
+        referred: referrals.length,
+        inProgress: referrals.filter((r) => r.status === 'registered').length,
+        toCheck: referrals.filter((r) => r.status === 'review').length,
+        flagged: referrals.filter((r) => r.status === 'review' && r.flags.length).length,
+        approved: referrals.filter((r) => r.status === 'rewarded').length,
+        rejected: referrals.filter((r) => r.status === 'rejected' || r.status === 'revoked').length,
+        rewardsIssued: rewards.length,
+        rewardsUsed: rewards.filter((w) => w.status === 'used').length,
+        rewardsRevoked: rewards.filter((w) => w.status === 'revoked').length,
+        paidBoosts: db.orders.filter((o) => o.kind === 'boost' && o.status === 'paid').length,
+        freeReferralBoosts: rewards.filter((w) => !!w.usedAt).length,
+      };
+    });
+  }
+
+  adminListReferrals(filter?: AdminReferralFilter, query?: string) {
+    return this.run((db): AdminReferralRow[] => {
+      this.admin(db);
+      const q = (query ?? '').trim().toLowerCase();
+      if (q.length > 60) throw new AppError('validation');
+      const { referrals, rewards } = this.refData(db);
+      const nameOf = (userId?: string) => (userId ? this.myProfile(db, userId)?.biodata.basic.fullName : undefined);
+      const rows = referrals
+        .filter((r) =>
+          !filter ? true
+          : filter === 'review' ? r.status === 'review'
+          : filter === 'flagged' ? r.status === 'review' && r.flags.length > 0
+          : filter === 'approved' ? r.status === 'rewarded'
+          : filter === 'progress' ? r.status === 'registered'
+          : r.status === 'rejected' || r.status === 'revoked')
+        .map((r): AdminReferralRow => {
+          const rp = r.referrerUserId ? this.myProfile(db, r.referrerUserId) : undefined;
+          const p = r.referredUserId ? this.myProfile(db, r.referredUserId) : undefined;
+          return {
+            id: r.id, code: r.code, status: r.status, flags: [...r.flags], createdAt: r.createdAt, qualifiedAt: r.qualifiedAt, decidedAt: r.decidedAt, reason: r.reason,
+            decidedBy: r.decidedBy ? (nameOf(r.decidedBy) ?? 'Admin') : undefined,
+            referrer: { userId: r.referrerUserId, name: rp?.biodata.basic.fullName, profileCode: rp?.code },
+            referred: { userId: r.referredUserId, name: p?.biodata.basic.fullName, profileCode: p?.code, profileStatus: p?.status, full: !!p && isProfileFull(p.biodata) },
+            rewards: rewards.filter((w) => w.referralId === r.id).map((w) => ({ id: w.id, role: w.role, status: w.status, days: w.days, reason: w.reason })),
+            history: db.audit.filter((e) => e.target === r.id && e.action.startsWith('referral.')).map((e) => ({ action: e.action, at: e.at, meta: e.meta })),
+          };
+        })
+        .filter((row) => !q || [row.code, row.referrer.name, row.referred.name, row.referrer.profileCode, row.referred.profileCode].some((v) => (v ?? '').toLowerCase().includes(q)));
+      return rows.sort((a, b) => Number(b.status === 'review') - Number(a.status === 'review') || b.createdAt.localeCompare(a.createdAt)).slice(0, 300);
+    });
+  }
+
+  adminDecideReferral(referralId: string, approve: boolean, reason?: string) {
+    return this.run((db) => {
+      const a = this.admin(db);
+      const why = (reason ?? '').trim() || undefined;
+      if (why && why.length > 500) throw new AppError('validation');
+      const r = this.refData(db).referrals.find((x) => x.id === referralId);
+      if (!r) throw new AppError('not_found');
+      if (r.status === 'rewarded' && approve) return; // double tap
+      if (r.status !== 'review') throw new AppError('invalid_state');
+      r.reason = why;
+      if (approve) this.referralIssue(db, r, a.id);
+      else {
+        r.status = 'rejected';
+        r.decidedAt = this.iso();
+        r.decidedBy = a.id;
+        this.track(db, 'referral_rejected', r.referrerUserId, {}, `referral_rejected:${r.id}`);
+      }
+      this.audit(db, a.id, approve ? 'referral.approved' : 'referral.rejected', r.id, { reason: why });
+    }, true);
+  }
+
+  adminRevokeReferralReward(rewardId: string, reason: string) {
+    return this.run((db) => {
+      const a = this.admin(db);
+      const why = (reason ?? '').trim();
+      if (!why || why.length > 500) throw new AppError('validation');
+      const { referrals, rewards } = this.refData(db);
+      const w = rewards.find((x) => x.id === rewardId);
+      if (!w) throw new AppError('not_found');
+      if (w.status === 'revoked') return;
+      // Ends the Boost only if it is still THIS reward's Boost, so a later paid Boost is never cut.
+      if (w.status === 'used' && w.profileId) {
+        const p = db.profiles.find((x) => x.id === w.profileId);
+        if (p && isBoostActive(p, this.now()) && p.boostUntil === w.boostUntil && p.boostStartedAt === w.usedAt) p.boostUntil = this.iso();
+      }
+      w.status = 'revoked';
+      w.revokedAt = this.iso();
+      w.revokedBy = a.id;
+      w.reason = why;
+      const r = referrals.find((x) => x.id === w.referralId);
+      if (r && r.status === 'rewarded' && rewards.filter((x) => x.referralId === r.id).every((x) => x.status === 'revoked')) {
+        r.status = 'revoked';
+        r.decidedAt = this.iso();
+        r.decidedBy = a.id;
+        r.reason = why;
+      }
+      this.audit(db, a.id, 'referral.revoked', w.referralId ?? w.id, { reward: w.id, role: w.role, reason: why });
+      this.track(db, 'referral_revoked', w.userId, {}, `referral_revoked:${w.id}`);
+    }, true);
+  }
+
+  adminUpdateReferralSettings(next: ReferralSettings) {
+    return this.run((db) => {
+      const a = this.admin(db);
+      if (next.mode !== 'paid' && next.mode !== 'referral') throw new AppError('validation');
+      if (!Number.isInteger(next.rewardDays) || next.rewardDays < 1 || next.rewardDays > 90) throw new AppError('validation');
+      const { settings } = this.refData(db);
+      const before = { ...settings };
+      db.referralSettings = { mode: next.mode, enabled: !!next.enabled, rewardDays: next.rewardDays, inviteeReward: !!next.inviteeReward, review: !!next.review, updatedAt: this.iso() };
+      this.audit(db, a.id, 'referral.settings', 'referral_settings', { before, after: db.referralSettings });
+      return { ...db.referralSettings };
+    }, true);
   }
 
   // ---------- admin ----------

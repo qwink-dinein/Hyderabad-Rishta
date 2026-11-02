@@ -429,7 +429,12 @@ export type NotificationType =
   | 'boost_ended'
   | 'boost_reminder'
   | 'team_created'
-  | 'announcement';
+  | 'announcement'
+  // Referral free Boosts (20261203): a family joined with my code / finished their biodata / I earned a Boost / my welcome Boost.
+  | 'referral_joined'
+  | 'referral_completed'
+  | 'referral_reward'
+  | 'referral_welcome';
 
 export interface AppNotification {
   id: string;
