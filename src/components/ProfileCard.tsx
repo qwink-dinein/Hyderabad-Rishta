@@ -184,6 +184,7 @@ export const ProfileCard = memo(function ProfileCard({ profile, shortlisted, onT
         onOpen={onOpen}
         primary={primary}
         facts={{ edu, prof, place, tongue, maslak, marital: label('marital', profile.maritalStatus) ?? '' }}
+        more={moreFacts(profile, label, t)}
         rel={rel && relLabel ? { label: relLabel, tone: rel.tone, connected: rel.key === 'connected' } : null}
         summary={summary}
       />
@@ -260,6 +261,34 @@ export const ProfileCard = memo(function ProfileCard({ profile, shortlisted, onT
   );
 });
 
+type MoreFacts = { about?: string; prays?: string; native?: string; family?: string; income?: string; seeks?: string };
+type LabelFn = ReturnType<typeof useOptions>['label'];
+type TFn = ReturnType<typeof useTranslation>['t'];
+
+/**
+ * The extra card details (owner request 2026-11-02: the card looked empty on wide screens). Everything
+ * here comes from the privacy-filtered profile the server sent: hidden family / income never arrive.
+ */
+function moreFacts(p: PublicProfile, label: LabelFn, t: TFn): MoreFacts {
+  const keep = (v?: string) => (v && v !== 'prefer_not' && v !== 'undisclosed' ? v : undefined);
+  const namaz = keep(p.religion.namaz);
+  const familyType = p.family?.familyType === 'other' ? undefined : keep(p.family?.familyType);
+  const income = keep(p.career.income);
+  const native = p.location.nativePlace?.trim();
+  const pr = p.preferences;
+  const seeking = p.profileType === 'groom' ? 'bride' : 'groom';
+  const ages = pr?.ageMin && pr?.ageMax ? `\u2066${pr.ageMin}–${pr.ageMax}\u2069` : '';
+  const where = pr?.cities?.[0] ?? pr?.states?.[0] ?? '';
+  return {
+    about: p.aboutMe?.trim() || undefined,
+    prays: namaz ? t('card.prays', { v: label('practice', namaz) }) : undefined,
+    native: native ? t('card.native', { v: native }) : undefined,
+    family: familyType ? t('card.family', { v: label('familyType', familyType) }) : undefined,
+    income: income ? t('card.income', { v: label('income', income) }) : undefined,
+    seeks: t('card.seeks', { who: label('lookingFor', seeking), more: [ages, where].filter(Boolean).join(' · ') }).replace(/[,،]\s*$/, ''),
+  };
+}
+
 /** Loading placeholder with a soft pulse (static when Reduce Motion is on). */
 type Primary = { label: string; kind: 'primary' | 'secondary'; icon?: IconName; go: () => void } | null;
 const NEW_DAYS = 14;
@@ -270,13 +299,14 @@ const NEW_DAYS = 14;
  * profiles get the champagne-gold edge, gold photo frame and ★ Boosted badge; ordinary cards are more compact.
  * No public engagement numbers and no verification tick (neither exists as a real, private-safe signal).
  */
-const ListCard = memo(function ListCard({ profile, shortlisted, onToggleShortlist, onOpen, primary, facts, rel, summary }: {
+const ListCard = memo(function ListCard({ profile, shortlisted, onToggleShortlist, onOpen, primary, facts, more, rel, summary }: {
   profile: PublicProfile;
   shortlisted: boolean;
   onToggleShortlist: (id: string) => void;
   onOpen: (id: string) => void;
   primary: Primary;
   facts: { edu?: string; prof?: string; place: string; tongue?: string; maslak?: string; marital: string };
+  more: MoreFacts;
   rel: { label: string; tone: 'gold' | 'emerald' | 'muted' | 'danger' | 'success'; connected: boolean } | null;
   summary: string;
 }) {
@@ -284,7 +314,10 @@ const ListCard = memo(function ListCard({ profile, shortlisted, onToggleShortlis
   const qc = useQueryClient();
   const reduced = useReducedMotion();
   // Small phones: keep both button labels on one line by dropping their icons (text never shrinks).
-  const narrow = useWindowDimensions().width < 360;
+  const { width } = useWindowDimensions();
+  const narrow = width < 360;
+  // Wide screens (tablet / laptop) have room beside the tall photo: show the extra details there.
+  const wide = width >= 600;
   const boosted = !!profile.boosted;
   const photos = profile.photos.length;
   const [idx, setIdx] = useState(0);
@@ -392,6 +425,27 @@ const ListCard = memo(function ListCard({ profile, shortlisted, onToggleShortlis
             {facts.tongue ? <Badge label={facts.tongue} tone="emerald" /> : null}
             {facts.maslak ? <Badge label={facts.maslak} tone="muted" /> : null}
           </View>
+          {more.about && (wide || boosted) ? (
+            <Text variant="body" color={colors.charcoal} numberOfLines={wide ? 3 : 2} style={styles.labout} testID={`card-about-${profile.id}`}>
+              “{more.about}”
+            </Text>
+          ) : null}
+          {wide ? (
+            <View style={styles.lmoreFacts} testID={`card-more-${profile.id}`}>
+              <Meta icon="star" text={more.prays} />
+              <Meta icon="home" text={more.native} />
+              <Meta icon="users" text={more.family} />
+              <Meta icon="chart" text={more.income} />
+              {more.seeks ? (
+                <View style={styles.lseeks}>
+                  <Icon name="search" size={15} color={colors.goldDeep} />
+                  <Text variant="label" color={colors.goldDeep} numberOfLines={2} style={{ flexShrink: 1 }}>
+                    {more.seeks}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
         </View>
       </View>
 
@@ -542,6 +596,9 @@ const styles = StyleSheet.create({
   lheart: { width: 36, height: 36 },
   lmore: { width: 32, height: 36, alignItems: 'center', justifyContent: 'center' },
   lactions: { flexDirection: 'row', gap: space.sm },
+  labout: { marginTop: space.sm, fontSize: 14, lineHeight: 21, fontStyle: 'italic', borderStartWidth: 2, borderStartColor: colors.gold, paddingStart: space.sm },
+  lmoreFacts: { marginTop: space.sm, gap: 5, paddingTop: space.sm, borderTopWidth: 1, borderTopColor: colors.border },
+  lseeks: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
   lmenu: { position: 'absolute', top: 48, right: space.md, backgroundColor: colors.white, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingVertical: 4, minWidth: 170, ...shadow.card, elevation: 8, zIndex: 10 },
   lmenuItem: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingHorizontal: space.md, paddingVertical: space.sm + 2 },
 });
