@@ -186,7 +186,7 @@ const urLatn: DeepPartial<Translation> = {
       s4: { title: 'Biodata se achhe rishton tak.', sub: 'Ek baar profile banaiye, munasib rishte dekhiye aur saari requests ek jagah sambhaliye.' },
     },
     howTitle: 'Kaise kaam karta hai',
-    how1: { title: 'Biodata banaiye', body: 'English, Urdu, Roman Urdu ya Telugu mein aasaan form. Photos zaroori nahi.' },
+    how1: { title: 'Biodata banaiye', body: 'English, Urdu ya Telugu mein aasaan form. Photos zaroori nahi.' },
     how2: { title: 'Dekhiye aur Shortlist kijiye', body: 'Tafseeli Filters ke saath publish hui profiles dekhiye.' },
     how3: { title: 'Raza-mandi se judiye', body: 'Request bhejiye. Contact details tab hi share hoti hain jab woh chahein.' },
     pause: 'Slideshow rokiye',

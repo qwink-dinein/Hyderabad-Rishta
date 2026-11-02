@@ -15,7 +15,7 @@ fs.mkdirSync(SHOTS, { recursive: true });
 const LANGS = [
   { code: 'en', name: 'English', home: 'Here’s what’s new for you today', settings: 'Language', dir: 'ltr' },
   { code: 'ur', name: 'اردو', home: 'آج آپ کے لیے نیا کیا ہے', settings: 'زبان', dir: 'rtl' },
-  { code: 'ur-Latn', name: 'Roman Urdu', home: 'Aaj aap ke liye kya naya hai', settings: 'Zabaan', dir: 'ltr' },
+  { code: 'ur-Latn', name: 'Urdu', home: 'Aaj aap ke liye kya naya hai', settings: 'Zabaan', dir: 'ltr' },
   { code: 'te', name: 'తెలుగు', home: 'ఈరోజు మీకోసం కొత్తవి', settings: 'భాష', dir: 'ltr' },
 ];
 
@@ -60,7 +60,7 @@ const memberData = (page) =>
     for (const l of LANGS) {
       await step(`${vp.label}: ${l.code} — whole app switches, data kept, survives reload, ${l.dir}`, async () => {
         await page.goto(BASE + '/settings');
-        await page.getByRole('radio', { name: l.name }).first().click();
+        await page.getByRole('radio', { name: l.name, exact: true }).first().click();
         await page.getByText(l.settings, { exact: true }).first().waitFor({ timeout: 5000 });
         await page.goto(BASE + '/home');
         await page.getByText(l.home).first().waitFor({ timeout: 8000 });
@@ -83,7 +83,7 @@ const memberData = (page) =>
 
     await step(`${vp.label}: validation messages in Roman Urdu`, async () => {
       await page.goto(BASE + '/settings');
-      await page.getByRole('radio', { name: 'Roman Urdu' }).first().click();
+      await page.getByRole('radio', { name: 'Urdu', exact: true }).first().click();
       await page.goto(BASE + '/biodata?step=0');
       const name = page.locator('input[aria-label="Poora naam"]').first();
       await name.waitFor({ timeout: 8000 });

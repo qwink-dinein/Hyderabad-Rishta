@@ -23,7 +23,7 @@ const ROLES = [
 const WIDTHS = [360, 320];
 // LANGS=en,ur node e2e/crawl.js to limit; default is all four app languages.
 const LANGS = (process.env.LANGS || 'en,ur,ur-Latn,te').split(',');
-const LANG_NAME = { en: 'English', ur: 'اردو', 'ur-Latn': 'Roman Urdu', te: 'తెలుగు' };
+const LANG_NAME = { en: 'English', ur: 'اردو', 'ur-Latn': 'Urdu', te: 'తెలుగు' };
 
 const issues = [];
 const add = (sev, role, lang, width, route, kind, detail) => issues.push({ sev, role, lang, width, route, kind, detail });
@@ -76,7 +76,7 @@ async function audit(page) {
       if (lang !== 'en') {
         // Pick the language in Settings like a member would (it is saved on the account too).
         await page.goto(BASE + '/settings');
-        const pick = page.getByRole('radio', { name: LANG_NAME[lang] }).first();
+        const pick = page.getByRole('radio', { name: LANG_NAME[lang], exact: true }).first();
         if (await pick.count()) await pick.click().catch(() => undefined);
         else {
           const sw = page.getByText(LANG_NAME[lang], { exact: true }).first();

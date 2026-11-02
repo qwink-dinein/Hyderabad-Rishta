@@ -17,7 +17,7 @@ export async function changeLanguage(lang: Lang) {
 }
 
 /** Short, script-native labels for tight headers (full names remain the accessibility labels). */
-const SHORT: Record<Lang, string> = { en: 'EN', ur: 'اردو', 'ur-Latn': 'Roman', te: 'తె' };
+const SHORT: Record<Lang, string> = { en: 'EN', ur: 'اردو', 'ur-Latn': 'Urdu', te: 'తె' };
 
 export function LanguageSwitcher({ tone = 'light', compact = false }: { tone?: 'light' | 'dark'; compact?: boolean }) {
   const { t } = useTranslation();

@@ -72,7 +72,7 @@ const en = {
     saved: 'Saved',
     somethingWrong: 'Something went wrong',
   },
-  lang: { title: 'Choose your preferred language', sub: 'You can change this anytime in settings.', en: 'English', ur: 'اردو', 'ur-Latn': 'Roman Urdu', te: 'తెలుగు', choose: 'Choose language' },
+  lang: { title: 'Choose your preferred language', sub: 'You can change this anytime in settings.', en: 'English', ur: 'اردو', 'ur-Latn': 'Urdu', te: 'తెలుగు', choose: 'Choose language' },
   home: {
     boostCta: "Boost My Profile",
     recommended: "Recommended for you",
