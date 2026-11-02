@@ -485,3 +485,8 @@ people who leave). Mockups: docs/mockups/hq/onboarding-*.png. Palette: Lac, Pear
   shows and nothing is sent. Switching on later = provider + DLT template + secrets + the flag; no code change.
 - WhatsApp onboarding reminders (max 2, 09:00–20:30 IST) are built; they start once the live update is applied
   and a Waplify Utility template is approved (secret `WAPLIFY_REMINDER_TEMPLATE`).
+- Reminder template (owner will submit to WhatsApp via Waplify, Utility category; {{1}} = first name, or
+  "your family member" when no name yet): "Assalamu alaikum. The biodata for {{1}} on Hyderabad Rishta is almost
+  ready. It takes about a minute to finish, and then you can see matching profiles. Open the app to continue."
+  When approved: apply migration 20261127000000 on live, deploy `onboarding-reminders` (verify_jwt off), set
+  `WAPLIFY_REMINDER_TEMPLATE` to the template name. Urdu/Telugu templates optional (`_UR` / `_TE`).
