@@ -30,10 +30,26 @@ const step = async (name, fn) => {
     await at(/\/start\/who/);
     await page.getByTestId('who-son').click();
     await at(/\/start\/wants/);
-    await page.getByText('First, a little about him').waitFor(); // asks about the son, not the partner
+    await page.getByText('A little about him').waitFor();
+    if (await page.getByText('Are you looking for a bride or a groom?').count()) throw new Error('bride/groom asked although implied'); // asks about the son, not the partner
     await page.getByText('His age').waitFor();
     await page.getByText('Where does he live?').waitFor();
     if (await page.getByTestId('wants-side').count()) throw new Error('asked bride/groom although implied');
+  });
+  await step('myself: bride/groom on its own screen, then only questions about me', async () => {
+    const p5 = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+    await p5.goto(BASE + '/');
+    await p5.getByTestId('welcome-find-rishta').click();
+    await p5.getByTestId('who-self').click();
+    await p5.waitForURL(/\/start\/side/);
+    await p5.getByText('Are you looking for a bride or a groom?').waitFor();
+    await p5.getByTestId('side-groom').click();
+    await p5.waitForURL(/\/start\/wants/);
+    await p5.getByText('A little about you').last().waitFor();
+    await p5.getByText('Your age').last().waitFor();
+    await p5.getByText('Where do you live?').last().waitFor();
+    if (await p5.getByText('I am looking for').count()) throw new Error('partner question mixed into the about-you screen');
+    await p5.close();
   });
   await step('wants: button waits for age + place, then shows real matches before any number', async () => {
     if (await page.getByTestId('wants-show').isEnabled()) throw new Error('enabled before answers');

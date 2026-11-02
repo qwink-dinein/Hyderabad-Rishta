@@ -14,7 +14,7 @@ export default function Index() {
   const onb = useOnboarding();
   if (user && isAdminRole(user.role)) return <Redirect href="/admin" />;
   // Signed up but not finished (anything after the number was verified): offer to continue.
-  if (user && onb.active && !['who', 'wants', 'matches'].includes(onb.step)) return <Redirect href="/start/resume" />;
+  if (user && onb.active && !['who', 'side', 'wants', 'matches'].includes(onb.step)) return <Redirect href="/start/resume" />;
   if (user) return <Redirect href="/home" />;
   return <Welcome />;
 }

@@ -34,7 +34,8 @@ export default function Who() {
     answer({ createdFor: v, lookingFor: side ?? (answers.createdFor === v ? answers.lookingFor : undefined) });
     // Let the selection register visually (≈220 ms), then move on.
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => router.push('/start/wants'), 220);
+    // Bride/groom is implied for son/daughter/brother/sister; otherwise it gets its own screen.
+    timer.current = setTimeout(() => router.push(side ? '/start/wants' : '/start/side'), 220);
   };
   return (
     <OnbScreen step="who" title={t('onb.who.title')} subtitle={t('onb.who.sub')} testID="onb-who">

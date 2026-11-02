@@ -35,7 +35,7 @@ export function Welcome() {
   const artW = Math.min(280, artBox.w, (artBox.h * 300) / 230);
   const find = () => {
     // Coming back before signing up: continue where they left off, never re-ask.
-    if (onb.active && ['wants', 'matches', 'phone', 'code'].includes(onb.step)) return router.push(`/start/${onb.step === 'code' ? 'phone' : onb.step}`);
+    if (onb.active && ['side', 'wants', 'matches', 'phone', 'code'].includes(onb.step)) return router.push(`/start/${onb.step === 'code' ? 'phone' : onb.step}`);
     onb.start();
     router.push('/start/who');
   };

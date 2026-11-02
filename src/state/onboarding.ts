@@ -7,11 +7,11 @@ import { asyncStorageKV } from '@/services/storage';
  * the number is verified); after sign-up every answer is saved to the biodata as it is given. `step` is
  * the last onboarding screen reached, so reopening the app continues exactly there.
  */
-export type OnbStep = 'who' | 'wants' | 'matches' | 'phone' | 'code' | 'about' | 'more' | 'work';
+export type OnbStep = 'who' | 'side' | 'wants' | 'matches' | 'phone' | 'code' | 'about' | 'more' | 'work';
 const KEY = 'hr.onboarding.v1';
 
 /** How far each screen is through the journey (drives the progress bar; early steps move fast). */
-export const STEP_PROGRESS: Record<OnbStep | 'live', number> = { who: 0.08, wants: 0.18, matches: 0.3, phone: 0.42, code: 0.5, about: 0.68, more: 0.8, work: 0.92, live: 1 };
+export const STEP_PROGRESS: Record<OnbStep | 'live', number> = { who: 0.08, side: 0.13, wants: 0.18, matches: 0.3, phone: 0.42, code: 0.5, about: 0.68, more: 0.8, work: 0.92, live: 1 };
 
 interface OnbState {
   loaded: boolean;
