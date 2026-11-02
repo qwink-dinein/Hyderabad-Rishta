@@ -54,7 +54,7 @@ export function ReferralBoostPanel({ boostActiveUntil }: { boostActiveUntil?: st
       {me ? <FreeBoostBalance me={me} boostActiveUntil={boostActiveUntil} /> : null}
       <View style={{ gap: space.sm }}>
         <Text variant="h3">{t('referral.howTitle')}</Text>
-        {[t('referral.how1'), t('referral.how2'), me?.inviteeReward ? t('referral.how3Both', { days }) : t('referral.how3', { days })].map((line, i) => (
+        {[t('referral.how1'), t('referral.how2'), me?.inviteeReward ? t('referral.how3Both', { days }) : t('referral.how3', { days }), t('referral.how4')].map((line, i) => (
           <Row key={i} gap={space.md} style={{ alignItems: 'flex-start' }}>
             <View style={styles.step}>
               <Text variant="label" color={colors.goldDeep}>

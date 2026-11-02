@@ -70,7 +70,7 @@ async function step(name, fn) {
     await page.goto(BASE + '/boost');
     await page.getByTestId('referral-boost-panel').waitFor({ timeout: 10000 });
     await page.getByText('Refer a Family. Get More Visibility!').first().waitFor();
-    if (await page.getByTestId('plan-d7').count()) throw new Error('paid plan still offered');
+    if (await page.locator('[data-testid^="plan-"]').count()) throw new Error('a Boost plan is still offered in Referral mode');
     await page.getByTestId('referral-balance').waitFor();
     await shot('03-referral-boost');
     await page.goto(BASE + '/home');

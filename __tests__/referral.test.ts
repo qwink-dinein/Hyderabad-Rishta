@@ -185,6 +185,17 @@ describe('earning free Boosts', () => {
     await b.saveDraft({ ...bio, basic: { ...bio.basic, lookingFor: 'groom' } }, 6);
     await b.submitForPublication();
     await as(b, DEMO_USER_PHONE);
+    // Referral mode is referral ONLY: no plan (paid or free) can start.
+    await fails(b.startBoost(), 'boost_referral_only');
+    // The referrer's own biodata must be 100% before a free Boost can be used.
+    const mine = (await b.getMyProfile())!;
+    if (!isProfileFull(mine.biodata)) {
+      await fails(b.useReferralBoost(), 'referral_profile_incomplete');
+      expect((await b.getMyReferral()).stats.available).toBe(1); // refused use keeps the Boost
+      await b.saveDraft({ ...bio, basic: { ...bio.basic, fullName: mine.biodata.basic.fullName, lookingFor: mine.biodata.basic.lookingFor } }, 6);
+      await b.submitForPublication().catch(() => undefined);
+    }
+    expect(isProfileFull((await b.getMyProfile())!.biodata)).toBe(true);
     const ordersBefore = (await b.getMyOrders()).length;
     const { profile } = await b.useReferralBoost();
     expect(new Date(profile.boostUntil!).getTime() - clock).toBeGreaterThan(6.9 * DAY);

@@ -69,6 +69,8 @@ export type ErrorCode =
   | 'referral_locked'
   | 'referral_not_eligible'
   | 'referral_closed'
+  | 'boost_referral_only'
+  | 'referral_profile_incomplete'
   /** The request never reached the server (offline, dropped connection, DNS, timeout). */
   | 'network';
 

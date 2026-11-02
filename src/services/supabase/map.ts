@@ -216,6 +216,7 @@ const CODES: ErrorCode[] = [
   'pin_not_set', 'device_not_trusted', 'otp_required', 'invalid_state', 'account_removed', 'account_suspended', 'invalid_recovery_code',
   'declined_recently', 'consent_required', 'poke_wait', 'poke_used', 'poke_limit', 'poke_optout', 'expired', 'photo_required', 'network',
   'no_free_boost', 'referral_invalid', 'referral_self', 'referral_locked', 'referral_not_eligible', 'referral_closed',
+  'boost_referral_only', 'referral_profile_incomplete',
 ];
 
 /**

@@ -643,6 +643,7 @@ const en = {
     how2: 'They sign up with their own number and fill their biodata 100%.',
     how3: 'Once our team approves it, you get a free {{days}}-day Boost. No limit.',
     how3Both: 'Once our team approves it, you both get a free {{days}}-day Boost. No limit on how many families you invite.',
+    how4: 'Your own biodata must also be 100% complete to use a free Boost.',
     leftover_one: 'You have {{count}} free Boost from referrals',
     leftover_other: 'You have {{count}} free Boosts from referrals',
     useOne: 'Use one',
@@ -803,6 +804,8 @@ const en = {
     referral_locked: 'An invitation code can only be added while signing up.',
     referral_not_eligible: "This account can't use an invitation code.",
     referral_closed: 'Invitations are paused right now.',
+    boost_referral_only: 'Boosts are earned by inviting families right now. Open Refer & Earn to get yours.',
+    referral_profile_incomplete: 'Complete your biodata 100% to use your free Boost.',
   },
   preview: {
     title: 'Preview your biodata',

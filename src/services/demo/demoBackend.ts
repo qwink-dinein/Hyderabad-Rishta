@@ -1092,6 +1092,8 @@ export class DemoBackend implements Backend {
       if (p.status !== 'published') throw new AppError('invalid_state');
       // One boost at a time: no buying another while the current one runs (owner rule 2026-10-28).
       if (isBoostActive(p, this.now())) throw new AppError('boost_active', undefined, { until: p.boostUntil });
+      // Referral Boost mode: no plan can be started, paid or free — Boosts are earned by inviting (20261204).
+      if (this.refData(db).settings.mode === 'referral') throw new AppError('boost_referral_only');
       const pricing = resolvePricing(db.pricing, profileTypeOf(p));
       if (!pricing.plans.length) throw new AppError('fee_disabled');
       // Admin eligibility rule: a boosted profile must have a photo.
@@ -2004,6 +2006,7 @@ export class DemoBackend implements Backend {
       const p = this.myProfile(db, u.id);
       if (!p) throw new AppError('not_found');
       if (p.status !== 'published') throw new AppError('invalid_state');
+      if (!isProfileFull(p.biodata)) throw new AppError('referral_profile_incomplete'); // own biodata 100% too
       if (isBoostActive(p, this.now())) throw new AppError('boost_active', undefined, { until: p.boostUntil });
       if (db.pricing.boostRequirePhoto && !p.biodata.photos?.length) throw new AppError('photo_required');
       const w = this.refData(db).rewards.filter((x) => x.userId === u.id && x.status === 'available').sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];

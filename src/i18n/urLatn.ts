@@ -648,6 +648,7 @@ const urLatn: DeepPartial<Translation> = {
     how2: "Woh apne number se sign up karein aur biodata 100% poora karein.",
     how3: "Hamari team ke approve karne par aap ko {{days}} din ka free Boost milta hai. Koi limit nahi.",
     how3Both: "Hamari team ke approve karne par aap dono ko {{days}} din ka free Boost milta hai. Jitni chahein families invite kijiye.",
+    how4: "Free Boost istemal karne ke liye aap ka apna biodata bhi 100% poora hona chahiye.",
     leftover_one: "Aap ke paas referrals se {{count}} free Boost hai",
     leftover_other: "Aap ke paas referrals se {{count}} free Boosts hain",
     useOne: "Ek lagaiye",
@@ -807,6 +808,8 @@ const urLatn: DeepPartial<Translation> = {
     referral_locked: "Invitation code sirf sign up ke waqt joda ja sakta hai.",
     referral_not_eligible: "Yeh account invitation code istemal nahi kar sakta.",
     referral_closed: "Abhi invitations band hain.",
+    boost_referral_only: "Abhi Boost families ko invite karke milta hai. Apna Boost paane ke liye Refer & Earn kholiye.",
+    referral_profile_incomplete: "Free Boost istemal karne ke liye apna biodata 100% poora kijiye.",
   },
   preview: {
     title: 'Apna biodata dekhiye',

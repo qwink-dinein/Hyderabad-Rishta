@@ -193,6 +193,25 @@ do $$ begin
   assert (select count(*) from referral_rewards where user_id = '00000000-0000-0000-0000-0000000ef001' and status = 'available') = 1, 'one left';
 end $$;
 
+-- Referral mode is referral ONLY (20261204): no plan can start, paid or free; the guard is the database's own.
+set role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000ef002', false);
+do $$ begin
+  begin perform start_boost('d7'); assert false, 'plan started in Referral mode'; exception when others then assert sqlerrm like 'boost_referral_only%', sqlerrm; end;
+end $$;
+reset role;
+-- A free Boost needs the member's OWN biodata at 100%: B (has a welcome Boost) with a short About me is refused.
+update profiles set biodata = jsonb_set(biodata, '{basic,aboutMe}', '"Short"') where user_id = '00000000-0000-0000-0000-0000000ef002';
+set role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000ef002', false);
+do $$ begin
+  begin perform use_referral_boost(); assert false, 'incomplete profile used a free Boost'; exception when others then assert sqlerrm like 'referral_profile_incomplete%', sqlerrm; end;
+end $$;
+reset role;
+do $$ begin
+  assert (select count(*) from referral_rewards where user_id = '00000000-0000-0000-0000-0000000ef002' and status = 'available') = 1, 'refused use keeps the Boost';
+end $$;
+
 -- Revoke the running one (reason required): the Boost ends now; the unused one is untouched.
 set role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000ef008', false);

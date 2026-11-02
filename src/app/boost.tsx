@@ -36,13 +36,13 @@ export default function BoostScreen() {
   const [picked, setPicked] = useState<string | null>(null);
   const [order, setOrder] = useState<Order | null>(null);
   const [busy, setBusy] = useState(false);
-  // Referral Boost mode (admin): the paid options are not offered; free options (e.g. brides' 7 days) stay.
-  // Paid mode: exactly as before.
+  // Referral Boost mode (admin, owner 2026-11-02): no plans at all — paid or free. A Boost is earned only by
+  // inviting a family (server refuses start_boost in this mode). Paid mode: exactly as before.
   const referral = useReferralMode().on;
   if (!user) return <Redirect href="/login" />;
 
   const active = s.nudge === 'active';
-  const plans = referral ? s.plans.filter((p) => p.fee.mode === 'free') : s.plans;
+  const plans = referral ? [] : s.plans;
   const plan = plans.find((p) => p.id === picked) ?? plans[0];
   const canBuy = s.nudge === 'ready' && !!plan && !s.needsPhoto;
 
