@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { FadeIn, Stagger } from '@/components/ui/motion';
 import { Text } from '@/components/ui/Text';
+import { useFit } from '@/hooks/useFit';
 import { useOnboarding } from '@/state/onboarding';
 import { colors, space } from '@/theme/tokens';
 import { T } from './kit';
@@ -27,6 +29,10 @@ export function Welcome() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const onb = useOnboarding();
+  const { short, tiny, sp } = useFit();
+  // The drawing takes only the room left over, so the whole screen fits without scrolling.
+  const [artBox, setArtBox] = useState({ w: 0, h: 0 });
+  const artW = Math.min(280, artBox.w, (artBox.h * 300) / 230);
   const find = () => {
     // Coming back before signing up: continue where they left off, never re-ask.
     if (onb.active && ['wants', 'matches', 'phone', 'code'].includes(onb.step)) return router.push(`/start/${onb.step === 'code' ? 'phone' : onb.step}`);
@@ -44,14 +50,14 @@ export function Welcome() {
             </Text>
             <LanguageSwitcher tone="dark" compact />
           </View>
-          <Stagger delay={80} step={70} style={{ marginTop: space.xxl }}>
-            <Text variant="display" color={colors.ivory} accessibilityRole="header" style={styles.hello}>
+          <Stagger delay={80} step={70} style={{ marginTop: sp(space.xxl) }}>
+            <Text variant="display" color={colors.ivory} accessibilityRole="header" style={[styles.hello, short && { fontSize: tiny ? 30 : 34 }]}>
               {t('onb.welcome.title')}
             </Text>
-            <Text variant="body" color={colors.sage} style={styles.lede}>
+            <Text variant="body" color={colors.sage} style={[styles.lede, short && { fontSize: 17, marginTop: space.sm }]}>
               {t('onb.welcome.lede')}
             </Text>
-            <View style={styles.promises}>
+            <View style={[styles.promises, { gap: sp(space.md), marginTop: sp(space.xl) }]}>
               {PROMISES.map(([icon, key]) => (
                 <View key={key} style={styles.promise}>
                   <Icon name={icon} size={24} color={colors.gold} />
@@ -62,16 +68,20 @@ export function Welcome() {
               ))}
             </View>
           </Stagger>
-          <FadeIn delay={320} rise={0} duration={600} style={styles.art}>
-            <Charminar width={280} />
-          </FadeIn>
-          <View style={styles.actions}>
+          <View style={[styles.art, { paddingVertical: sp(space.lg) }]} onLayout={(e) => setArtBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height - 2 * sp(space.lg) })}>
+            {artW >= 120 ? (
+              <FadeIn delay={320} rise={0} duration={600}>
+                <Charminar width={artW} />
+              </FadeIn>
+            ) : null}
+          </View>
+          <View style={[styles.actions, { marginTop: 0 }]}>
             <Button label={t('onb.welcome.find')} kind="gold" onPress={find} full arrow testID="welcome-find-rishta" />
             <Text variant="caption" color="#CDA79C" center style={{ fontSize: T.small }}>
               {t('onb.welcome.findNote')}
             </Text>
             <Button label={t('onb.welcome.member')} kind="light" onPress={() => router.push('/login')} full testID="welcome-member-login" style={{ marginTop: space.sm }} />
-            <View style={styles.links}>
+            <View style={[styles.links, { marginTop: sp(space.md) }]}>
               <Text variant="caption" color={colors.sage} onPress={() => router.push('/welcome')} accessibilityRole="link" style={styles.link} testID="how-it-works">
                 {t('auth.howItWorks')}
               </Text>
@@ -98,7 +108,7 @@ const styles = StyleSheet.create({
   lede: { fontSize: 19, marginTop: space.md },
   promises: { gap: space.md, marginTop: space.xl },
   promise: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  art: { alignItems: 'center', marginTop: 'auto', paddingTop: space.xl },
+  art: { flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'flex-end' },
   actions: { gap: space.sm, marginTop: space.md },
   links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: space.lg, marginTop: space.md },
   link: { textDecorationLine: 'underline' },

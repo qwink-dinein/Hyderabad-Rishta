@@ -64,5 +64,6 @@ export const Text = memo(function Text({ variant = 'body', color, center, style,
   // A caller-set size without its own line height keeps the script's spacing (Nastaliq needs ~2×).
   const custom = style ? (StyleSheet.flatten(style) as TextStyle) : null;
   if (custom?.fontSize && custom.lineHeight == null) base.lineHeight = Math.round(custom.fontSize * (v.role === 'display' && lang === 'en' ? 1.24 : lineHeightScale[lang]));
-  return <RNText {...rest} style={[base, style]} />;
+  // Large system font sizes still grow text, but capped so screens keep fitting on the phone.
+  return <RNText maxFontSizeMultiplier={1.25} {...rest} style={[base, style]} />;
 });

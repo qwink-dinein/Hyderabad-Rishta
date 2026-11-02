@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { colors, maxContentWidth, radius, shadow, space } from '@/theme/tokens';
 import { isRTL } from '@/i18n';
 import { useGoHome } from '@/hooks/useGoHome';
+import { useFit } from '@/hooks/useFit';
 import { Icon } from './Icon';
 import { Text } from './Text';
 import { useUiLang, useUiT } from '@/i18n/uiLang';
@@ -30,6 +31,7 @@ export function Screen({
   edges?: ('top' | 'bottom')[];
 }) {
   const insets = useSafeAreaInsets();
+  const { sp } = useFit();
   const inner = <View style={[styles.column, padded && styles.padded, contentStyle]}>{children}</View>;
   return (
     <View style={[styles.root, { paddingTop: edges.includes('top') ? insets.top : 0 }]}>
@@ -37,7 +39,7 @@ export function Screen({
       {scroll ? (
         <ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingBottom: (edges.includes('bottom') ? insets.bottom : 0) + space.xxxl }}
+          contentContainerStyle={{ paddingBottom: (edges.includes('bottom') ? insets.bottom : 0) + sp(space.xxxl) }}
           {...scrollProps}
         >
           {inner}

@@ -1,5 +1,6 @@
 import { forwardRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { useFit } from '@/hooks/useFit';
 import { colors, radius, space } from '@/theme/tokens';
 import { Text } from './Text';
 
@@ -22,6 +23,7 @@ export const CodeInput = forwardRef<React.ComponentRef<typeof TextInput>, {
 }>(function CodeInput({ value, onChange, length, secure, error, label, testID, autoFocus, oneTimeCode, onSubmit }, ref) {
   const [focused, setFocused] = useState(false);
   const pin = length <= 4;
+  const { short } = useFit();
   return (
     <Pressable onPress={() => (ref as React.RefObject<React.ComponentRef<typeof TextInput> | null>)?.current?.focus()} style={styles.wrap} accessible={false}>
       <View style={[styles.cells, pin && styles.cellsPin]} pointerEvents="none">
@@ -29,7 +31,7 @@ export const CodeInput = forwardRef<React.ComponentRef<typeof TextInput>, {
           const active = focused && i === Math.min(value.length, length - 1);
           const ch = value[i];
           return (
-            <View key={i} style={[styles.cell, pin ? styles.cellPin : styles.cellOtp, ch ? styles.filled : null, active && styles.active, error ? styles.error : null]}>
+            <View key={i} style={[styles.cell, pin ? [styles.cellPin, short && { height: 54 }] : styles.cellOtp, ch ? styles.filled : null, active && styles.active, error ? styles.error : null]}>
               {ch ? secure ? <View style={styles.dot} /> : <Text variant="bodyStrong" color={colors.charcoal} style={{ fontSize: 22, lineHeight: 28 }}>{ch}</Text> : null}
             </View>
           );

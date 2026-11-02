@@ -10,6 +10,7 @@ import { isRTL } from '@/i18n';
 import { haptic } from '@/services/feedback';
 import { STEP_PROGRESS, useOnboarding, type OnbStep } from '@/state/onboarding';
 import { useSession } from '@/state/session';
+import { useFit } from '@/hooks/useFit';
 import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
 
 /** Larger type for the onboarding screens: elders read these on small phones (body 17, titles 28). */
@@ -45,6 +46,7 @@ export function OnbScreen({
   const [from] = useState(() => useOnboarding.getState().lastProgress);
   // Remember where the bar ended so the next screen glides on from here.
   useFocusEffect(useCallback(() => useOnboarding.getState().setLastProgress(target), [target]));
+  const { sp } = useFit();
   const back = onBack ?? (() => (router.canGoBack() ? router.back() : router.replace('/')));
   return (
     <KeyboardAvoidingView style={[styles.root, { paddingTop: insets.top }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined} testID={testID}>
@@ -55,9 +57,9 @@ export function OnbScreen({
         <ProgressBar value={target} from={from} testID="onb-progress" />
         <View style={styles.right}>{right}</View>
       </View>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.scroll, { paddingBottom: sp(space.xxl) }]}>
         <View style={styles.column}>
-          <Text variant="h1" accessibilityRole="header" style={styles.title}>
+          <Text variant="h1" accessibilityRole="header" style={[styles.title, { marginTop: sp(space.md) }]}>
             {title}
           </Text>
           {subtitle ? (
@@ -65,11 +67,11 @@ export function OnbScreen({
               {subtitle}
             </Text>
           ) : null}
-          <View style={styles.body}>{children}</View>
+          <View style={[styles.body, { gap: sp(space.lg), marginTop: sp(space.xl) }]}>{children}</View>
         </View>
       </ScrollView>
       {footer ? (
-        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, space.lg) }]}>
+        <View style={[styles.footer, { paddingTop: sp(space.md), paddingBottom: Math.max(insets.bottom, sp(space.lg)) }]}>
           <View style={styles.column}>{footer}</View>
         </View>
       ) : null}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +21,7 @@ import { AppError } from '@/services/backend';
 import { isMemberOnlyPath } from '@/hooks/useGoHome';
 import { useAuthChannels } from '@/hooks/useAuthChannels';
 import { takeReturnTo, useSession } from '@/state/session';
+import { useFit } from '@/hooks/useFit';
 import { useOnboarding } from '@/state/onboarding';
 import { colors, radius, space } from '@/theme/tokens';
 
@@ -37,6 +38,7 @@ type Purpose = 'login' | 'reset' | 'setup';
 
 export function LoginFlow() {
   const { t } = useTranslation();
+  const fit = useFit();
   const params = useLocalSearchParams<{ next?: string; purpose?: string }>();
   const next = params.next;
   const qc = useQueryClient();
@@ -231,7 +233,7 @@ export function LoginFlow() {
   if (stage === 'login') {
     return (
       <Screen padded={false} edges={['top', 'bottom']}>
-        <View style={[styles.inner, styles.body]}>
+        <View style={[styles.inner, styles.body, { paddingTop: fit.sp(space.xl), gap: fit.sp(space.md) }]}>
           <Row style={{ justifyContent: 'space-between', alignItems: 'center' }}>
             <BrandMark size={34} color={colors.goldMuted} />
             <Row gap={space.sm}>
@@ -243,9 +245,11 @@ export function LoginFlow() {
             <Text variant="h1" accessibilityRole="header" style={{ fontSize: 28 }}>
               {t('auth.welcomeBack')}
             </Text>
-            <Text variant="body" color={colors.muted} style={{ marginTop: space.xs, fontSize: 16 }}>
-              {t('onb.login.sub')}
-            </Text>
+            {fit.tiny ? null : (
+              <Text variant="body" color={colors.muted} style={{ marginTop: space.xs, fontSize: 16 }}>
+                {t('onb.login.sub')}
+              </Text>
+            )}
           </View>
           <PhoneField
             testID="login-phone"
@@ -279,11 +283,11 @@ export function LoginFlow() {
             />
           </Field>
           <Button label={busy ? t('auth.loggingIn') : t('auth.login')} onPress={() => pinLogin()} loading={busy} disabled={pin.length !== PIN_LENGTH || !digits} full arrow testID="pin-login" />
-          <Row style={{ justifyContent: 'space-between' }} wrap>
+          <Row style={{ justifyContent: 'space-between' }}>
             <Button label={t('auth.forgotPin')} kind="ghost" size="sm" onPress={forgotPin} testID="forgot-pin" />
             <Button label={t('auth.whatsappLogin')} kind="ghost" size="sm" onPress={whatsappLogin} testID="whatsapp-login" />
           </Row>
-          <Row gap={space.sm} style={styles.divider}>
+          <Row gap={space.sm} style={[styles.divider, fit.short && { marginTop: 0 }]}>
             <View style={styles.rule} />
             <Text variant="caption">{t('auth.newDivider')}</Text>
             <View style={styles.rule} />
@@ -300,7 +304,27 @@ export function LoginFlow() {
             testID="cta-create"
           />
           {footerLinks}
-          {extras}
+          {backendInfo.kind === 'demo' ? (
+            <Banner tone="warning" icon="sparkle">
+              <Text variant="caption" color={colors.goldDeep}>
+                {t('auth.demoNote')}
+              </Text>
+              <Text variant="caption" color={colors.goldDeep}>
+                {t('auth.demoAccounts')}
+              </Text>
+            </Banner>
+          ) : null}
+          {/* Fine print kept small so the whole login card fits on one phone screen. */}
+          <View style={styles.fine}>
+            <Text variant="caption" center style={{ fontSize: 12 }}>
+              {t('auth.terms')}
+            </Text>
+            <Pressable onPress={() => router.push('/recover')} hitSlop={12} accessibilityRole="link">
+              <Text variant="caption" color={colors.emerald} center style={{ fontSize: 12 }}>
+                {t('auth.masterRecovery')}
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </Screen>
     );
@@ -474,6 +498,7 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: space.xl, paddingTop: space.xl, gap: space.md },
   divider: { alignItems: 'center', marginTop: space.sm },
   rule: { flex: 1, height: 1, backgroundColor: colors.border },
+  fine: { gap: space.xs, alignItems: 'center' },
   newActions: { gap: space.md },
   links: { justifyContent: 'center', paddingVertical: space.sm },
   underline: { textDecorationLine: 'underline' },
