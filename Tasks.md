@@ -82,7 +82,8 @@
 | T-076 | Discover: filter button beside the search box (same as Home) with an active-filter count badge | ✅ |
 | T-099 | Completion: exact missing fields (incl. the six recommended ones behind "99 %"), Home card lists them and opens the form scrolled to the first one (highlighted), "Counts toward 100%" markers, tappable To-reach-100% list, footer hint; EN/UR/TE; unit + e2e | ✅ |
 | T-125 | Onboarding redesign: welcome + member login card, see-matches-first (match_preview), one-number sign-up, 7 answers to go live (wheels, follow-ups), win + resume screens, Lac/Pearl/Antique-gold palette + icon, premium press/transition motion, children/married-siblings fields, photo counts toward 100 %; EN/UR/TE; unit + e2e | ✅ |
-| T-126 | Onboarding reminders on WhatsApp (1 h + next day, max 2, stop on finish) — needs an approved Waplify template | ⏳ owner |
+| T-126 | Onboarding reminders on WhatsApp (1 h + next day, max 2, quiet hours) — built; live once the update is applied and a Waplify Utility template is approved | ⏳ owner |
+| T-127 | Login-code SMS backup (MSG91/Twilio, Send by SMS) — built, kept OFF by owner decision 2026-11-02 (WhatsApp only) | ⏸ off |
 | T-098 | Login-first opening: number (always blank) + PIN + Log in, Forgot PIN, Log in with WhatsApp code, new phone → automatic one-time WhatsApp code; Create your biodata / Find your match buttons below (option C); old landing moved to /welcome (How it works); EN/UR/TE; e2e updated | ✅ |
 | T-097 | Fix: Bride/Groom filter could override the member's own side (feed, Recently published). Own side always wins — demo, adapter, discover-feed, SQL search_profiles; filters screen explains; unit + SQL tests | ✅ |
 | T-096 | Biodata progress: live field-by-field %, exact fields left per section (tappable), N-left/✓ tabs, sticky footer progress; Home uses the same %; EN/UR/TE; unit + e2e | ✅ |

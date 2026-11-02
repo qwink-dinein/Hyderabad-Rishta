@@ -477,3 +477,11 @@ people who leave). Mockups: docs/mockups/hq/onboarding-*.png. Palette: Lac, Pear
   with a light haptic on primary/gold buttons; labels cross-fade between states (Send → Sending… → Sent with an
   emerald tick); the progress bar glides on from the previous screen; preview rows rise in 50 ms apart once; the
   success tick pops in with a success haptic; native stack transitions for screens; Reduce Motion ⇒ fades only.
+
+### 15.21 Login-code SMS backup: built, kept OFF (owner decision, 2026-11-02)
+- Login codes stay **WhatsApp only** for now (owner: costs of SMS + DLT registration not wanted yet).
+- The SMS backup (same code by SMS when WhatsApp fails; "Send by SMS instead" button) is built and tested but
+  dormant: no SMS provider secrets are set and `app_flags.sms_otp_enabled` stays false, so the button never
+  shows and nothing is sent. Switching on later = provider + DLT template + secrets + the flag; no code change.
+- WhatsApp onboarding reminders (max 2, 09:00–20:30 IST) are built; they start once the live update is applied
+  and a Waplify Utility template is approved (secret `WAPLIFY_REMINDER_TEMPLATE`).
