@@ -372,6 +372,37 @@ ${listed.map((a) => `- [${a.h1 || a.title}](${abs(`/blog/${a.slug}/`)}): ${a.des
 - Email: ${BRAND.email}
 `);
 
+// ───────────── invitations (referral links) ─────────────
+// https://<domain>/r/HRXXXX — opens the app straight away on Android once App Links are verified (assetlinks.json
+// below); otherwise this page shows the code, an "Open the app" button and how to use the code at sign-up.
+// One static page serves every code (_redirects rewrites /r/* to it); a tiny same-origin script fills the code in.
+const ANDROID_PACKAGE = 'com.hyderabadrishta.app';
+// SHA-256 of the app's signing certificates: the EAS upload key now; add Google Play's app-signing key once the
+// Play listing exists (Play Console → App integrity), or links open the website instead of the app.
+const ANDROID_CERTS = (process.env.ANDROID_CERT_SHA256 || '5B:30:37:0C:07:69:41:42:5D:7A:67:25:C0:5F:9D:3A:3C:08:40:AB:7C:1E:9D:19:B7:12:72:8F:FD:0A:B2:8A')
+  .split(',').map((x) => x.trim()).filter(Boolean);
+const store = PLAY_URL ? `<p><a class="btn btn-gold" href="${esc(PLAY_URL)}" rel="noopener">Get the app on Google Play</a></p>` : '';
+write('/r/', page({
+  path: '/r/', title: 'You are invited to Hyderabad Rishta', noindex: true, hideCta: true,
+  description: 'A family invited you to Hyderabad Rishta. Use their invitation code when you sign up.',
+  h1: 'A family invited you',
+  lead: 'Join Hyderabad Rishta with this invitation code. Both families get a free Boost once your biodata is complete and approved.',
+  bodyHtml: `<p class="invite-code" id="invite-code">—</p>
+<p><a class="btn btn-gold" id="invite-open" href="hyderabadrishta://">Open Hyderabad Rishta</a></p>
+${store}
+<h2>How to use the code</h2>
+<ol><li>Open or install the Hyderabad Rishta app.</li><li>Tap <strong>Find a rishta</strong> and sign up with your own mobile number.</li><li>On the mobile-number step, enter the code above (the app fills it in if you opened this link on your phone).</li></ol>
+<p class="meta">The code can only be added while signing up. Your number and biodata are never shown to the family who invited you.</p>
+<script src="/r.js" defer></script>`,
+}));
+writeFileSync(join(OUT, 'r.js'), `(function(){var m=location.pathname.match(/^\\/r\\/([A-Za-z0-9]{6,8})\\/?$/);var c=m?m[1].toUpperCase():'';if(!/^HR[2-9A-HJKMNP-Z]{4,6}$/.test(c))return;document.getElementById('invite-code').textContent=c;document.getElementById('invite-open').href='hyderabadrishta://r/'+c;})();\n`);
+mkdirSync(join(OUT, '.well-known'), { recursive: true });
+writeFileSync(join(OUT, '.well-known', 'assetlinks.json'), JSON.stringify([{
+  relation: ['delegate_permission/common.handle_all_urls'],
+  target: { namespace: 'android_app', package_name: ANDROID_PACKAGE, sha256_cert_fingerprints: ANDROID_CERTS },
+}], null, 2) + '\n');
+writeFileSync(join(OUT, '_redirects'), `/r/*  /r/  200\n`);
+
 // Hosting headers (Netlify / Cloudflare Pages format). Long cache for hashed/static assets.
 writeFileSync(join(OUT, '_headers'), `/*
   X-Content-Type-Options: nosniff
@@ -386,6 +417,9 @@ ${PRODUCTION ? '' : '  X-Robots-Tag: noindex, nofollow\n'}/site.*.css
   Cache-Control: public, max-age=31536000, immutable
 /img/*
   Cache-Control: public, max-age=604800
+/.well-known/assetlinks.json
+  Content-Type: application/json
+  Access-Control-Allow-Origin: *
 `);
 
 if (!existsSync(join(OUT, 'index.html'))) throw new Error('no home page built');

@@ -9,22 +9,27 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://hlthzrznuztapfsloxkm.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsdGh6cnpudXp0YXBmc2xveGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyNjYwMzAsImV4cCI6MjEwODg0MjAzMH0.-Ie_8KcCJzy9dnuxPqmwSmySza0Phl7KhtRjxfxBO0c"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsdGh6cnpudXp0YXBmc2xveGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyNjYwMzAsImV4cCI6MjEwODg0MjAzMH0.-Ie_8KcCJzy9dnuxPqmwSmySza0Phl7KhtRjxfxBO0c",
+        "EXPO_PUBLIC_SITE_URL": "https://hyderabadrishta.com"
       }
     },
     "preview": {
       "distribution": "internal",
-      "android": { "buildType": "apk" },
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://hlthzrznuztapfsloxkm.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsdGh6cnpudXp0YXBmc2xveGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyNjYwMzAsImV4cCI6MjEwODg0MjAzMH0.-Ie_8KcCJzy9dnuxPqmwSmySza0Phl7KhtRjxfxBO0c"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsdGh6cnpudXp0YXBmc2xveGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyNjYwMzAsImV4cCI6MjEwODg0MjAzMH0.-Ie_8KcCJzy9dnuxPqmwSmySza0Phl7KhtRjxfxBO0c",
+        "EXPO_PUBLIC_SITE_URL": "https://hyderabadrishta.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://hlthzrznuztapfsloxkm.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsdGh6cnpudXp0YXBmc2xveGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyNjYwMzAsImV4cCI6MjEwODg0MjAzMH0.-Ie_8KcCJzy9dnuxPqmwSmySza0Phl7KhtRjxfxBO0c"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsdGh6cnpudXp0YXBmc2xveGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyNjYwMzAsImV4cCI6MjEwODg0MjAzMH0.-Ie_8KcCJzy9dnuxPqmwSmySza0Phl7KhtRjxfxBO0c",
+        "EXPO_PUBLIC_SITE_URL": "https://hyderabadrishta.com"
       }
     }
   },

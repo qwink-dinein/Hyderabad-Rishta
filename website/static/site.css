@@ -100,3 +100,4 @@ summary { cursor: pointer; font-weight: 600; color: var(--lac); }
 .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 22px; margin: 22px 0; }
 .small { font-size: 13.5px; color: #b8a8a3; }
 @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+.invite-code { font: 600 34px var(--serif); letter-spacing: 4px; margin: 8px 0 16px; }

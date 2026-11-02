@@ -33,6 +33,6 @@ Server decides everything (completion, approval, eligibility); rewards are idemp
 SQL: `99_referral_boost.test.sql` (codes, privacy, every refusal, incomplete vs complete, team check, double approval, review off, no cap, mode switches, use, one-at-a-time, revoke, overview) + all 28 suites. Unit: 10 referral tests + all 394. E2E: `e2e/referral.js` (both modes in the real screens, link → sign-up → referrer view → admin), Boost, onboarding, languages, crawl of every screen × role × 4 languages.
 
 ## 10. Known limits
-- No domain yet: until `EXPO_PUBLIC_SITE_URL` is set, members share the **code** (the link row is hidden). Android "install from link" attribution (Play Install Referrer) needs the Play listing; the code covers it meanwhile.
+- Domain: https://hyderabadrishta.com (see `DOMAIN_SETUP.md`); links are `/r/<CODE>`. Until the website is hosted there, the link shows but opens nothing — members can still share the code. Android "install from link" attribution (Play Install Referrer) needs the Play listing; the code covers it meanwhile.
 - Live database: migration not applied yet (needs the owner's go-ahead).
 - Payments are not live, so "Paid Boost" mode still ends at "payment not open yet" exactly as before.
