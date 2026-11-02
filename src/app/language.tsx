@@ -14,7 +14,7 @@ import { colors, radius, space } from '@/theme/tokens';
 import { fontFamily, isFontLoaded } from '@/theme/fonts';
 
 /** Each language is labelled in its own script, whatever the current UI language. */
-const BADGE: Record<Lang, string> = { en: 'EN', ur: 'اردو', te: 'తె' };
+const BADGE: Record<Lang, string> = { en: 'EN', ur: 'اردو', 'ur-Latn': 'Ur', te: 'తె' };
 
 /** Registration step 1 (Design PRD §5.2) — shown only when no language was chosen yet. */
 export default function ChooseLanguage() {

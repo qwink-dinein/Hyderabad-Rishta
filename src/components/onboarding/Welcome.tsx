@@ -45,7 +45,7 @@ export function Welcome() {
         <View style={styles.column}>
           <View style={styles.brand}>
             <BrandMark size={34} />
-            <Text variant="h3" color={colors.ivory} style={{ flex: 1, fontSize: 19 }} numberOfLines={1}>
+            <Text variant="h3" color={colors.ivory} style={{ flexGrow: 1, flexShrink: 1, minWidth: 150, fontSize: 19 }} numberOfLines={1}>
               {t('common.appName')}
             </Text>
             <LanguageSwitcher tone="dark" compact />
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.emerald },
   scroll: { flexGrow: 1 },
   column: { flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', paddingHorizontal: space.xl },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingTop: space.sm },
+  brand: { flexWrap: 'wrap', rowGap: space.sm, flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingTop: space.sm },
   hello: { fontSize: 40 },
   lede: { fontSize: 19, marginTop: space.md },
   promises: { gap: space.md, marginTop: space.xl },

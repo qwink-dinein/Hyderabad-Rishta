@@ -27,7 +27,7 @@ export function formatMoney(amount: number, currency = 'INR'): string {
   return `${symbol}${amount.toLocaleString('en-IN')}`;
 }
 
-const DATE_LOCALES = { en: 'en-GB', ur: 'ur-PK', te: 'te-IN' } as const;
+const DATE_LOCALES = { en: 'en-GB', ur: 'ur-PK', 'ur-Latn': 'en-GB', te: 'te-IN' } as const;
 let dateLang: keyof typeof DATE_LOCALES = 'en';
 /** Called when the app language changes, so dates read naturally inside Urdu/Telugu sentences. */
 export function setDateLanguage(lang: keyof typeof DATE_LOCALES) {

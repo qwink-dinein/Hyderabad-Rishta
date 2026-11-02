@@ -8,9 +8,11 @@ import { ensureFonts } from '@/theme/fonts';
 import en from './en';
 import te from './te';
 import ur from './ur';
+import urLatn from './urLatn';
 import { setDateLanguage } from '@/domain/format';
 
-export const LANGS: Lang[] = ['en', 'ur', 'te'];
+/** Selector order (owner spec 2026-11-02): English, Urdu, Roman Urdu, Telugu. */
+export const LANGS: Lang[] = ['en', 'ur', 'ur-Latn', 'te'];
 export const RTL_LANGS: Lang[] = ['ur'];
 const STORAGE_KEY = 'hr.lang';
 const CHOSEN_KEY = 'hr.langChosen';
@@ -23,7 +25,9 @@ function deviceLanguage(): Lang {
 }
 
 i18n.use(initReactI18next).init({
-  resources: { en: { translation: en }, ur: { translation: ur }, te: { translation: te } },
+  resources: { en: { translation: en }, ur: { translation: ur }, 'ur-Latn': { translation: urLatn }, te: { translation: te } },
+  // 'ur-Latn' must never fall back to Urdu script ('ur'): resolve only the exact language, then English.
+  load: 'currentOnly',
   lng: deviceLanguage(),
   // Per-key fallback: an untranslated string shows English rather than a raw key (PRD §4).
   fallbackLng: 'en',

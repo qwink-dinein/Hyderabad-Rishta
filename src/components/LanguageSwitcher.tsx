@@ -17,7 +17,7 @@ export async function changeLanguage(lang: Lang) {
 }
 
 /** Short, script-native labels for tight headers (full names remain the accessibility labels). */
-const SHORT: Record<Lang, string> = { en: 'EN', ur: 'اردو', te: 'తె' };
+const SHORT: Record<Lang, string> = { en: 'EN', ur: 'اردو', 'ur-Latn': 'Roman', te: 'తె' };
 
 export function LanguageSwitcher({ tone = 'light', compact = false }: { tone?: 'light' | 'dark'; compact?: boolean }) {
   const { t } = useTranslation();
@@ -57,7 +57,8 @@ const styles = StyleSheet.create({
   wrap: { flexDirection: 'row', backgroundColor: colors.white, borderRadius: radius.pill, padding: 3, borderWidth: 1, borderColor: colors.border, alignSelf: 'flex-start' },
   wrapDark: { backgroundColor: 'rgba(255,255,255,0.12)', borderColor: 'rgba(255,255,255,0.25)' },
   item: { paddingHorizontal: space.md, minHeight: 34, minWidth: 54, alignItems: 'center', justifyContent: 'center', borderRadius: radius.pill },
-  itemCompact: { paddingHorizontal: space.sm, minWidth: 40, minHeight: 32 },
+  // Four languages must fit beside the app name on a 320 px phone.
+  itemCompact: { paddingHorizontal: space.xs + 2, minWidth: 34, minHeight: 32 },
   itemOn: { backgroundColor: colors.emerald },
   itemOnDark: { backgroundColor: colors.gold },
 });

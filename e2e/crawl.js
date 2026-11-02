@@ -1,4 +1,4 @@
-// QA crawler: visits EVERY screen as every role, in English and Urdu (RTL), at phone widths, and
+// QA crawler: visits EVERY screen as every role, in English, Urdu (RTL), Roman Urdu and Telugu, at phone widths, and
 // reports: page crashes, console errors, error screens, horizontal overflow, controls without an
 // accessible name, and touch targets that are too small. `node e2e/crawl.js [--strict]`
 const { chromium } = require('playwright');
@@ -21,7 +21,9 @@ const ROLES = [
   { name: 'sub-admin', phone: '9000000009', routes: ['/admin', '/admin/add-member', '/admin/team', '/admin/pricing', '/admin/trash', '/admin/member/u_2'] },
 ];
 const WIDTHS = [360, 320];
-const LANGS = ['en', 'ur'];
+// LANGS=en,ur node e2e/crawl.js to limit; default is all four app languages.
+const LANGS = (process.env.LANGS || 'en,ur,ur-Latn,te').split(',');
+const LANG_NAME = { en: 'English', ur: 'اردو', 'ur-Latn': 'Roman Urdu', te: 'తెలుగు' };
 
 const issues = [];
 const add = (sev, role, lang, width, route, kind, detail) => issues.push({ sev, role, lang, width, route, kind, detail });
@@ -71,12 +73,13 @@ async function audit(page) {
         } catch {}
       }, lang);
       if (role.phone) await loginWithOtp(page, BASE, role.phone);
-      if (lang === 'ur') {
+      if (lang !== 'en') {
+        // Pick the language in Settings like a member would (it is saved on the account too).
         await page.goto(BASE + '/settings');
-        const ur = page.getByRole('button', { name: 'اردو' }).first();
-        if (await ur.count()) await ur.click().catch(() => undefined);
+        const pick = page.getByRole('radio', { name: LANG_NAME[lang] }).first();
+        if (await pick.count()) await pick.click().catch(() => undefined);
         else {
-          const sw = page.getByText('اردو').first();
+          const sw = page.getByText(LANG_NAME[lang], { exact: true }).first();
           if (await sw.count()) await sw.click().catch(() => undefined);
         }
         await page.waitForTimeout(400);
@@ -90,6 +93,17 @@ async function audit(page) {
           const a = await audit(page);
           if (a.errorScreen && route !== '/does-not-exist') add('high', role.name, lang, w, route, 'error-screen', 'shows an error screen');
           if (a.overflow > 1) add('high', role.name, lang, w, route, 'overflow', `${a.overflow}px wider than the screen`);
+          // Roman Urdu must stay in English letters (only the Urdu option's own name 'اردو' may appear) and left-to-right.
+          if (lang === 'ur-Latn') {
+            const s2 = await page.evaluate(() => ({ text: document.body.innerText.replace(/اردو/g, ''), dir: document.documentElement.dir }));
+            const m = s2.text.match(/[\u0600-\u06FF][\u0600-\u06FF\s]{3,}/);
+            if (m) add('high', role.name, lang, w, route, 'wrong-script', `Urdu script in Roman Urdu: "${m[0].slice(0, 40)}"`);
+            if (s2.dir === 'rtl') add('high', role.name, lang, w, route, 'wrong-direction', 'right-to-left in Roman Urdu');
+          }
+          if (lang === 'ur') {
+            const dir = await page.evaluate(() => document.documentElement.dir);
+            if (dir !== 'rtl') add('high', role.name, lang, w, route, 'wrong-direction', 'Urdu is not right-to-left');
+          }
           for (const u of a.unnamed) add('med', role.name, lang, w, route, 'unnamed-control', u);
           for (const s of a.small) add('low', role.name, lang, w, route, 'small-target', s);
           for (const n of a.nested) add('med', role.name, lang, w, route, 'nested-control', n);

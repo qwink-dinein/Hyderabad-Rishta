@@ -4,7 +4,8 @@
  * Keep this file framework-free so it can be shared by the app, tests and edge functions.
  */
 
-export type Lang = 'en' | 'ur' | 'te';
+/** 'ur-Latn' = Roman Urdu: Urdu written in English letters, left-to-right (its own translation, not a transliteration). */
+export type Lang = 'en' | 'ur' | 'ur-Latn' | 'te';
 /** `admin` = sub-admin (everything except team & recovery); `master` = exactly one owner account. */
 export type Role = 'user' | 'admin' | 'master';
 export const isAdminRole = (r?: Role) => r === 'admin' || r === 'master';

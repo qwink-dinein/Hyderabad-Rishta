@@ -39,7 +39,7 @@ export const reminderConfigured = (c: ReminderConfig) => !!(c.apiKey && c.templa
 export function displayName(name: string | null | undefined, lang?: string | null): string {
   const first = (name ?? '').trim().split(/\s+/)[0]?.replace(/[^\p{L}\p{M}'.-]/gu, '').slice(0, 30);
   if (first) return first;
-  return lang === 'ur' ? 'آپ کے گھر والے' : lang === 'te' ? 'మీ కుటుంబ సభ్యుడు' : 'your family member';
+  return lang === 'ur' ? 'آپ کے گھر والے' : lang === 'ur-Latn' ? 'aap ke ghar wale' : lang === 'te' ? 'మీ కుటుంబ సభ్యుడు' : 'your family member';
 }
 
 export async function runOnce(cfg: ReminderConfig, deps: ReminderDeps, now = new Date(), batch = 50) {

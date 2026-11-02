@@ -17,7 +17,7 @@ export const MAX_IDEM_KEY = 100;
 export const MAX_PUSH_TOKEN = 200;
 export const MAX_SEARCH_PAGE = 50;
 export const MAX_REPORTS_PER_DAY = 10;
-export const LANGS: readonly Lang[] = ['en', 'ur', 'te'];
+export const LANGS: readonly Lang[] = ['en', 'ur', 'ur-Latn', 'te'];
 
 /**
  * Invisible characters that can spoof what a member reads: bidi overrides/isolates (make

@@ -28,7 +28,7 @@ export interface Deps {
 type Ticket = { status: 'ok'; id: string } | { status: 'error'; message?: string; details?: { error?: string } };
 
 export function buildMessage(r: ClaimedRow) {
-  const lang = r.lang === 'ur' || r.lang === 'te' ? r.lang : 'en';
+  const lang = r.lang === 'ur' || r.lang === 'ur-Latn' || r.lang === 'te' ? r.lang : 'en';
   const { title, body } = pushContent({ type: r.type, params: r.params ?? {} }, lang, !!r.show_names);
   return {
     to: r.token,

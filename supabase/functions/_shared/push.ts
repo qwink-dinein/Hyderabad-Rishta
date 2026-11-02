@@ -1,6 +1,6 @@
 // GENERATED from src/domain/push.ts by scripts/sync-shared.js — do not edit here.
 // Types inlined for Deno (the app imports them from src/domain/types.ts).
-type Lang = 'en' | 'ur' | 'te';
+type Lang = 'en' | 'ur' | 'ur-Latn' | 'te';
 type NotificationType = string;
 type PushCategory = 'interests' | 'activity' | 'account' | 'announcements';
 interface PushPrefs { enabled: boolean; interests: boolean; activity: boolean; announcements: boolean; showNames: boolean }
@@ -132,6 +132,40 @@ const T: Record<Lang, { title: string; types: Partial<Record<NotificationType | 
       security: { generic: 'ایڈمن ٹیم کے لیے سیکیورٹی الرٹ۔ جائزے کے لیے ایپ کھولیں۔' },
       admin_alert: { generic: 'نیا ایڈمن الرٹ۔ جائزے کے لیے ڈیش بورڈ کھولیں۔' },
       announcement: { generic: 'حیدرآباد رشتہ کی جانب سے نیا اعلان۔' },
+    },
+  },
+  // Roman Urdu: its own wording in English letters (not a transliteration of the Urdu copy).
+  'ur-Latn': {
+    title: 'Hyderabad Rishta',
+    fallback: 'Aap ke liye nayi update hai. Dekhne ke liye app kholiye.',
+    types: {
+      request_received: { generic: 'Aap ko ek nayi interest aayi hai.', named: '{{name}} ne aap ki profile mein interest dikhaya.' },
+      request_received_offer: { generic: 'Nayi interest — unhon ne apna number share karne ki offer bhi ki.', named: '{{name}} ne interest dikhaya aur apna number share karne ki offer ki.' },
+      request_accepted: { generic: 'Aap ki interest accept ho gayi.', named: '{{name}} ne aap ki interest accept kar li.' },
+      request_declined: { generic: 'Aap ki bheji hui interest par update hai.', named: '{{name}} ne aap ki interest ka jawab diya.' },
+      request_expired: { generic: 'Aap ki bheji hui interest ka waqt khatam ho gaya. Aap nayi bhej sakte hain.' },
+      phone_offer_received: { generic: 'Kisi ne apna phone number share karne ki offer ki.', named: '{{name}} ne apna phone number share karne ki offer ki.' },
+      phone_offer_accepted: { generic: 'Aap ki number offer accept ho gayi.', named: '{{name}} ne aap ki number offer accept kar li.' },
+      phone_offer_declined: { generic: 'Aap ki number offer par update hai.', named: '{{name}} ne aap ki number offer ka jawab diya.' },
+      phone_offer_withdrawn: { generic: 'Ek number offer wapas le li gayi.', named: '{{name}} ne apni number offer wapas le li.' },
+      poke: { generic: 'Koi aap ke jawab ka intezaar kar raha hai. Fursat se jawab dijiye.' },
+      contact_shared: { generic: 'Aap ke saath nayi details share ki gayi hain.', named: '{{name}} ne aap ke saath details share kiye.' },
+      profile_viewed: { generic: 'Kisi ne aap ki profile dekhi.' },
+      profile_viewed_many: { generic: '{{count}} logon ne aap ki profile dekhi.' },
+      profile_shortlisted: { generic: 'Kisi ne aap ki profile shortlist ki.' },
+      profile_approved: { generic: 'Aap ki profile approve ho gayi aur ab live hai.' },
+      profile_rejected: { generic: 'Aap ki profile mein thode badlav chahiye. Details app mein dekhiye.' },
+      profile_published: { generic: 'Aap ki profile publish ho gayi hai.' },
+      boost_started: { generic: 'Aap ka Boost chalu hai — aap ki profile featured hai.' },
+      boost_ending: { generic: 'Aap ka Boost 24 ghante mein khatam hoga.' },
+      boost_ended: { generic: 'Aap ka Boost khatam ho gaya. Jab chahe dobara Boost kar sakte hain.' },
+      boost_reminder: { generic: 'Jaldi nazar mein aaiye — apni profile Boost karke Discover mein sab se upar laiye.' },
+      payment_paid: { generic: 'Payment confirm ho gaya.' },
+      payment_failed: { generic: 'Payment fail ho gaya — aap se paise nahi kate.' },
+      safety: { generic: 'Safety review ki wajah se aap ki profile kaun dekh sakta hai, woh badal gaya.' },
+      security: { generic: 'Admin team ke liye security alert. Dekhne ke liye app kholiye.' },
+      admin_alert: { generic: 'Naya admin alert. Dekhne ke liye dashboard kholiye.' },
+      announcement: { generic: 'Hyderabad Rishta ki taraf se naya announcement.' },
     },
   },
   te: {

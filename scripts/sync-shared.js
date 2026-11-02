@@ -15,7 +15,7 @@ const FILES = [
   ['src/domain/feed.ts', 'supabase/functions/_shared/feed.ts', 'module'],
 ];
 const TYPES = `// Types inlined for Deno (the app imports them from src/domain/types.ts).
-type Lang = 'en' | 'ur' | 'te';
+type Lang = 'en' | 'ur' | 'ur-Latn' | 'te';
 type NotificationType = string;
 type PushCategory = 'interests' | 'activity' | 'account' | 'announcements';
 interface PushPrefs { enabled: boolean; interests: boolean; activity: boolean; announcements: boolean; showNames: boolean }

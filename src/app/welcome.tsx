@@ -63,7 +63,7 @@ export default function Welcome() {
       <LinearGradient colors={[colors.forest, colors.emerald]} style={[styles.hero, { paddingTop: insets.top + space.sm }]}>
         <View style={styles.inner}>
           <Row style={styles.header}>
-            <Row gap={space.sm} style={{ flexShrink: 1 }}>
+            <Row gap={space.sm} style={{ flexShrink: 1, minWidth: 170 }}>
               <BrandMark size={34} />
               <View style={{ flexShrink: 1 }}>
                 <Text variant="h2" color={colors.ivory} numberOfLines={1}>
@@ -234,7 +234,8 @@ const styles = StyleSheet.create({
   hero: { paddingBottom: space.xl, borderBottomLeftRadius: radius.xl, borderBottomRightRadius: radius.xl, overflow: 'hidden' },
   inner: { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center' },
   padded: { paddingHorizontal: space.xl },
-  header: { justifyContent: 'space-between', paddingHorizontal: space.lg, paddingBottom: space.md, gap: space.sm },
+  // Wraps: on the smallest phones the four language buttons drop under the name instead of cutting it.
+  header: { justifyContent: 'space-between', paddingHorizontal: space.lg, paddingBottom: space.md, gap: space.sm, flexWrap: 'wrap' },
   ctas: { gap: space.md, marginTop: space.xl },
   ctasShort: { gap: space.sm, marginTop: space.lg },
   link: { textDecorationLine: 'underline' },
