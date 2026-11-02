@@ -293,6 +293,20 @@ describe('10–11: notifications, analytics, audit and admin visibility', () => 
     expect(notes.find((n) => n.type === 'phone_offer_received')?.params.shared).toBe('1');
   });
 
+  it('both press "Share my number": both numbers show without an extra tap (load test, 2 Nov 2026)', async () => {
+    const b = make();
+    await as(b, GROOM);
+    const r = await b.sendRequest(BRIDE_PROFILE, intro());
+    await as(b, BRIDE);
+    await b.respondToRequest(r.id, 'accepted');
+    expect((await b.offerPhone(r.id, true, 'both1')).status).toBe('offered'); // she offers first: waits
+    await as(b, GROOM);
+    expect((await b.offerPhone(r.id, true, 'both2')).status).toBe('accepted'); // he offers too: a swap
+    expect((await b.getProfile(BRIDE_PROFILE)).contact?.phone).toBe(BRIDE);
+    await as(b, BRIDE);
+    expect((await b.getProfile(GROOM_PROFILE)).contact?.phone).toBe(GROOM);
+  });
+
   it('no notification ever contains a phone number', async () => {
     const b = make();
     await as(b, GROOM);

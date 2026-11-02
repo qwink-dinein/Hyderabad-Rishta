@@ -1589,7 +1589,10 @@ export class DemoBackend implements Backend {
       if (existing) throw new AppError('duplicate');
       // They already shared THEIR number with me on this connection: a swap, so mine is shown at once
       // (owner report 2026-11-02: the second "accept" step was missed and the number never appeared).
-      const mutual = db.phoneOffers.some((o) => o.requestId === r.id && o.fromUserId === toUserId && o.toUserId === u.id && o.status === 'accepted');
+      // Their offer still waiting for my tap counts too: both agreed, so both numbers show (load test, 2 Nov 2026).
+      const theirs = db.phoneOffers.find((o) => o.requestId === r.id && o.fromUserId === toUserId && o.toUserId === u.id && (o.status === 'accepted' || o.status === 'offered'));
+      const mutual = !!theirs;
+      if (theirs && theirs.status === 'offered') { theirs.status = 'accepted'; theirs.respondedAt = this.iso(); }
       const offer: PhoneOffer = { id: uid('po_'), requestId: r.id, fromUserId: u.id, toUserId, status: mutual ? 'accepted' : 'offered', withInterest: false, consentText: PHONE_CONSENT_TEXT, consentAt: this.iso(), createdAt: this.iso(), ...(mutual ? { respondedAt: this.iso() } : {}) };
       db.phoneOffers.push(offer);
       if (idempotencyKey) db.idem.push({ key: `offer:${idempotencyKey}`, userId: u.id, resultId: offer.id, at: this.iso() });

@@ -48,3 +48,25 @@ do $$ begin
   assert not (consent_scopes('00000000-0000-0000-0000-0000000cc002', '00000000-0000-0000-0000-0000000cc003') ->> 'phone')::boolean, 'no leak across pairs';
 end $$;
 select 'ALL CONNECT-CLARITY TESTS PASSED' as result;
+
+-- 20261201: both press "Share my number" before either taps "Show number" → a swap, both visible.
+reset role;
+insert into auth.users (id, phone) values ('00000000-0000-0000-0000-0000000cc004', '919611400004'), ('00000000-0000-0000-0000-0000000cc005', '919611400005');
+insert into app_users (id, country_code, phone) values ('00000000-0000-0000-0000-0000000cc004', '+91', '9611400004'), ('00000000-0000-0000-0000-0000000cc005', '+91', '9611400005');
+insert into profiles (id, user_id, biodata, status, published_at) values
+ ('2000000c-0000-0000-0000-0000000cc004', '00000000-0000-0000-0000-0000000cc004', :'g', 'published', now()),
+ ('2000000c-0000-0000-0000-0000000cc005', '00000000-0000-0000-0000-0000000cc005', jsonb_set(:'g'::jsonb, '{basic,lookingFor}', '"groom"'), 'published', now());
+set role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000cc004', false);
+select id as r3 from send_request('2000000c-0000-0000-0000-0000000cc005', null, false, false, 'cc-3') \gset
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000cc005', false);
+select respond_request(:'r3', 'accepted');
+select (offer_phone(:'r3', true, 'cc-o3')).status as first_status \gset
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000cc004', false);
+select (offer_phone(:'r3', true, 'cc-o4')).status as second_status \gset
+reset role;
+do $$ begin
+  assert (consent_scopes('00000000-0000-0000-0000-0000000cc005', '00000000-0000-0000-0000-0000000cc004') ->> 'phone')::boolean, 'both offered: he sees hers';
+  assert (consent_scopes('00000000-0000-0000-0000-0000000cc004', '00000000-0000-0000-0000-0000000cc005') ->> 'phone')::boolean, 'both offered: she sees his';
+end $$;
+select 'ALL BOTH-OFFERED SWAP TESTS PASSED' as result where :'first_status' = 'offered' and :'second_status' = 'accepted';

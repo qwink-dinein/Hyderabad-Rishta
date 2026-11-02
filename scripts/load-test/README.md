@@ -21,3 +21,7 @@ Results of 2 Nov 2026 (4-CPU test machine, app and database on the same box):
 | 150 | 50 | 1,270 | 59 / 99 ms | 0 real (only rule refusals: duplicate interest, declined recently) |
 | 5,000 (before fix) | 50 | 876 | 205 / 334 ms | 0 real |
 | 5,000 (after 20261130) | 50 | 1,203 | 84 / 137 ms | 0 real |
+
+Sharing check (`pairs.mjs`, after `psql -d rishta_load -f scripts/load-test/couples.sql`): 100 couples at once, 20 checks each
+from both sides plus a stranger — photos, numbers (swap, one-sided, both-at-once), photo off again, block.
+Found and fixed: when both pressed "Share my number" neither number appeared (migration 20261201).
