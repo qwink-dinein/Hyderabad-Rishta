@@ -71,54 +71,60 @@ const step = async (name, fn) => {
     await page.getByTestId('onb-otp-input').fill('123456'); // no Verify tap needed
     await at(/\/pin/);
     for (let i = 0; i < 2; i++) { await page.getByTestId('pin-setup-input').fill('4827'); await page.getByTestId('pin-continue').click(); }
-    await at(/\/start\/about/);
+    await at(/\/start\/q\/name/);
   });
   await step('leave halfway → reopening the app offers "continue where I left off"', async () => {
     await page.goto(BASE + '/');
     await at(/\/start\/resume/);
     await page.getByTestId('resume-continue').click();
-    await at(/\/start\/about/);
+    await at(/\/start\/q\/name/);
   });
-  await step('about: name, date of birth wheels, height from the full scroll list', async () => {
-    if (await page.getByTestId('about-next').isEnabled()) throw new Error('Next enabled with nothing filled');
-    await page.getByTestId('about-name').fill('Imran Ahmed');
-    await page.getByTestId('dob-year-1997').click();
-    await page.getByTestId('dob-month-3').click();
-    await page.getByTestId('dob-day-12').click();
-    await page.getByText('Age: ').waitFor();
-    await page.getByTestId('about-height').click();
-    await page.getByTestId('about-height-sheet').waitFor();
-    await page.getByTestId('about-height-wheel-198').click(); // 6′ 6″ — every inch is there
-    await page.getByTestId('about-height-done').click();
-    await page.getByText('6′ 6″ · 198 cm').waitFor();
-    await shot('03-about');
-    await page.getByTestId('about-next').click();
-    await at(/\/start\/more/);
+  const L = (id) => page.getByTestId(id).last();
+  await step('one question per screen: name → date of birth → height, with "1 of 8" and a "Next: …" button', async () => {
+    await L('onb-count').waitFor();
+    if ((await L('onb-count').innerText()) !== '1 of 8') throw new Error('counter: ' + (await L('onb-count').innerText()));
+    if (await L('q-next').isEnabled()) throw new Error('Next enabled with no name');
+    await L('q-name-input').fill('Imran Ahmed');
+    await page.getByText('Next: date of birth').last().waitFor();
+    await L('q-next').click();
+    await at(/\/start\/q\/dob/);
+    await L('dob-year-1997').click();
+    await L('dob-month-3').click();
+    await L('dob-day-12').click();
+    await L('q-age').waitFor();
+    await shot('03-dob');
+    await L('q-next').click();
+    await at(/\/start\/q\/height/);
+    await L('q-height-wheel-198').click(); // 6′ 6″ — every inch is there
+    await page.getByText('6′ 6″ · 198 cm').last().waitFor();
+    await L('q-next').click();
+    await at(/\/start\/q\/marital/);
   });
-  await step('more: children only after "divorced" (required, 0 fine); live-with + note only with children', async () => {
-    if (await page.getByTestId('more-children').count()) throw new Error('children asked before marital status');
-    await page.getByTestId('more-marital-divorced').click();
-    await page.getByTestId('more-children').waitFor();
-    if (await page.getByTestId('more-livewith').count()) throw new Error('live-with shown with no children');
-    await page.getByTestId('more-children-plus').click(); // 0
-    await page.getByTestId('more-children-plus').click(); // 1
-    await page.getByTestId('more-livewith').waitFor();
-    await page.getByTestId('more-livewith-yes').click();
-    await page.getByTestId('more-note').fill('Our son is 6 and lives with us');
-    await page.getByTestId('more-tongue-urdu').click();
-    await page.getByTestId('more-place').waitFor(); // Hyderabad pre-filled from the earlier answer
-    await shot('04-more');
-    await page.getByTestId('more-next').click();
-    await at(/\/start\/work/);
+  await step('marital: one tap moves on; "divorced" adds the children question (counter becomes 9)', async () => {
+    await shot('04-marital');
+    await L('q-marital-divorced').click();
+    await at(/\/start\/q\/children/);
+    if ((await L('onb-count').innerText()) !== '5 of 9') throw new Error('counter: ' + (await L('onb-count').innerText()));
+    if (await L('q-livewith').count()) throw new Error('live-with shown with no children');
+    await L('q-children-plus').click(); // 0
+    await L('q-children-plus').click(); // 1
+    await L('q-livewith-yes').click();
+    await L('q-note').fill('Our son is 6 and lives with us');
+    await L('q-next').click();
+    await at(/\/start\/q\/tongue/);
+    await L('q-tongue-urdu').click();
+    await at(/\/start\/q\/city/);
+    await L('q-place').waitFor(); // Hyderabad pre-filled from the earlier answer
+    await page.getByText("Yes, that's right").last().click();
+    await at(/\/start\/q\/education/);
   });
-  await step('work: "Other" asks to write it; Finish publishes; win screen; on to Discover', async () => {
-    await page.getByLabel(/^Highest education:/).first().click();
-    await page.getByText("Bachelor's", { exact: true }).first().click();
-    await page.getByLabel(/^Profession:/).first().click();
-    await page.getByText('Other', { exact: true }).last().click();
-    if (await page.getByTestId('work-finish').isEnabled()) throw new Error('finish enabled without the written profession');
-    await page.getByTestId('work-profession-other').fill('Software engineer');
-    await page.getByTestId('work-finish').click();
+  await step('education one tap; profession "Other" asks to write it; Finish publishes; win screen; on to Discover', async () => {
+    await L('q-education-bachelors').click();
+    await at(/\/start\/q\/profession/);
+    await L('q-profession-other').click();
+    if (await L('q-next').isEnabled()) throw new Error('finish enabled without the written profession');
+    await L('q-profession-other-text').fill('Software engineer');
+    await L('q-next').click();
     await at(/\/start\/live/);
     await page.getByText(/biodata is live|sent for review/).first().waitFor();
     const db = await page.evaluate(() => JSON.parse(localStorage.getItem('hr.demo.db')));
@@ -176,7 +182,7 @@ const step = async (name, fn) => {
     await p4.getByTestId('onb-otp-input').fill('123456');
     await at4(/\/pin/);
     for (let i = 0; i < 2; i++) { await p4.getByTestId('pin-setup-input').fill('4827'); await p4.getByTestId('pin-continue').click(); }
-    await at4(/\/start\/about/);
+    await at4(/\/start\/q\/name/);
     // Reproduce the reported state: the draft lacks who/bride-groom and this phone forgot the answers.
     await p4.evaluate(() => {
       const db = JSON.parse(localStorage.getItem('hr.demo.db'));
@@ -186,10 +192,10 @@ const step = async (name, fn) => {
       Object.assign(pr.biodata.basic, { fullName: 'Ayesha Khan', dob: '1998-05-04', heightCm: 160, maritalStatus: 'never_married', motherTongue: 'urdu' });
       pr.biodata.career = { ...pr.biodata.career, education: 'bachelors', profession: 'it' };
       localStorage.setItem('hr.demo.db', JSON.stringify(db));
-      for (const k of Object.keys(localStorage)) if (k.includes('hr.onboarding.v1')) localStorage.setItem(k, JSON.stringify({ active: true, step: 'work', answers: {} }));
+      for (const k of Object.keys(localStorage)) if (k.includes('hr.onboarding.v1')) localStorage.setItem(k, JSON.stringify({ active: true, step: 'profession', answers: {} }));
     });
-    await p4.goto(BASE + '/start/work');
-    await p4.getByTestId('work-finish').last().click();
+    await p4.goto(BASE + '/start/q/profession');
+    await p4.getByTestId('q-profession-it').last().click(); // last question: one tap tries to finish
     await at4(/\/start\/who/);
     await p4.getByText('Please tell us who this biodata is for first.').first().waitFor();
     // Signed in already: answering again saves straight to the biodata, nothing typed is lost.
@@ -198,13 +204,20 @@ const step = async (name, fn) => {
     await p4.getByTestId('wants-region-hyd').last().click();
     await p4.getByTestId('wants-show').last().click();
     await p4.getByTestId('matches-save').last().click();
-    await at4(/\/start\/about/);
-    if ((await p4.getByTestId('about-name').last().inputValue()) !== 'Ayesha Khan') throw new Error('name lost');
-    await p4.getByTestId('about-next').last().click();
-    await at4(/\/start\/more/);
-    await p4.getByTestId('more-next').last().click();
-    await at4(/\/start\/work/);
-    await p4.getByTestId('work-finish').last().click();
+    await at4(/\/start\/q\/name/);
+    const L4 = (id) => p4.getByTestId(id).last();
+    if ((await L4('q-name-input').inputValue()) !== 'Ayesha Khan') throw new Error('name lost');
+    for (const q of ['name', 'dob', 'height']) { await at4(new RegExp('/start/q/' + q)); await L4('q-next').click(); }
+    await at4(/\/start\/q\/marital/);
+    await L4('q-marital-never_married').click();
+    await at4(/\/start\/q\/tongue/);
+    await L4('q-tongue-urdu').click();
+    await at4(/\/start\/q\/city/);
+    await L4('q-next').click();
+    await at4(/\/start\/q\/education/);
+    await L4('q-education-bachelors').click();
+    await at4(/\/start\/q\/profession/);
+    await L4('q-profession-it').click();
     await at4(/\/start\/live/);
     const b = await p4.evaluate(() => {
       const db = JSON.parse(localStorage.getItem('hr.demo.db'));

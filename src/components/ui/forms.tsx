@@ -10,6 +10,7 @@ import { useUiLang, useUiT } from '@/i18n/uiLang';
 import { Button } from './Button';
 import { Icon, type IconName } from './Icon';
 import { Text } from './Text';
+import { useFieldNav } from './fieldNav';
 
 export interface Option {
   value: string;
@@ -63,16 +64,27 @@ export function Field({ label, error, hint, optional, children, required }: { la
   );
 }
 
-export const TextField = memo(function TextField({ error, multiline, style, ...props }: TextInputProps & { error?: boolean; ref?: React.Ref<React.ComponentRef<typeof TextInput>> }) {
+export const TextField = memo(function TextField({ error, multiline, style, ref, ...props }: TextInputProps & { error?: boolean; ref?: React.Ref<React.ComponentRef<typeof TextInput>> }) {
   const lang = useUiLang();
   const [focused, setFocused] = useState(false);
+  // Joins the keyboard bar's ↑ ↓ navigation when the screen has one.
+  const nav = useFieldNav();
+  const inner = useRef<React.ComponentRef<typeof TextInput> | null>(null);
+  const register = nav?.register;
+  useEffect(() => register?.(inner), [register]);
   return (
     <TextInput
       placeholderTextColor={colors.muted}
       {...props}
+      ref={(node) => {
+        inner.current = node;
+        if (typeof ref === 'function') ref(node);
+        else if (ref) (ref as React.RefObject<React.ComponentRef<typeof TextInput> | null>).current = node;
+      }}
       multiline={multiline}
       onFocus={(e) => {
         setFocused(true);
+        nav?.focused(inner);
         props.onFocus?.(e);
       }}
       onBlur={(e) => {

@@ -156,27 +156,52 @@ export const ONBOARDING_REQUIRED = [
   ['career', 'profession'],
 ] as const;
 
-/** Which onboarding screen holds a field of the biodata. */
-const FIELD_SCREEN: Record<string, 'who' | 'about' | 'more' | 'work'> = {
-  'basic.createdFor': 'who', 'basic.lookingFor': 'who',
-  'basic.fullName': 'about', 'basic.dob': 'about', 'basic.heightCm': 'about',
-};
+/**
+ * The first onboarding screen with a missing or invalid answer needed to go live ('who' for who / bride
+ * or groom, else the exact question), or null when the biodata can be published. Used before submitting
+ * so the member is taken to the exact screen instead of a generic "complete the required sections" error.
+ */
+export function onboardingGap(b: Biodata): 'who' | QKey | null {
+  const basic = Object.keys(stepErrors(0, b.basic)).map((k) => k.split('.')[0]);
+  if (basic.includes('createdFor') || basic.includes('lookingFor')) return 'who';
+  const q = firstUnansweredQuestion(b);
+  if (q) return q;
+  if (!privacySchema.safeParse(b.privacy).success || !photosSchema.safeParse(b.photos).success) return 'name';
+  return null;
+}
 
 /**
- * The first onboarding screen with a missing or invalid answer needed to go live, or null when the
- * biodata can be published. Used before submitting so the member is taken to the exact screen instead of
- * a generic "complete the required sections" error.
+ * One question per screen after sign-up (owner request 2026-11-02: people read the lower half of the
+ * screen and missed fields at the top). "children" is asked only for someone married before.
  */
-export function onboardingGap(b: Biodata): 'who' | 'about' | 'more' | 'work' | null {
-  const order = ['who', 'about', 'more', 'work'] as const;
-  const found = new Set<string>();
-  const sections = [['basic', 0], ['location', 1], ['career', 2]] as const;
-  for (const [key, step] of sections) {
-    for (const k of Object.keys(stepErrors(step, b[key]))) {
-      const field = `${key}.${k.split('.')[0]}`;
-      found.add(FIELD_SCREEN[field] ?? (key === 'career' ? 'work' : 'more'));
-    }
+export const QUESTIONS = ['name', 'dob', 'height', 'marital', 'children', 'tongue', 'city', 'education', 'profession'] as const;
+export type QKey = (typeof QUESTIONS)[number];
+export const isQKey = (k: unknown): k is QKey => typeof k === 'string' && (QUESTIONS as readonly string[]).includes(k);
+
+export function questionOrder(b: Biodata): QKey[] {
+  const before = !!b.basic.maritalStatus && b.basic.maritalStatus !== 'never_married';
+  return QUESTIONS.filter((q) => q !== 'children' || before);
+}
+
+/** The fields each question answers (validated before moving on). */
+export const QUESTION_FIELDS: Record<QKey, { section: 'basic' | 'location' | 'career'; step: number; fields: string[] }> = {
+  name: { section: 'basic', step: 0, fields: ['fullName'] },
+  dob: { section: 'basic', step: 0, fields: ['dob'] },
+  height: { section: 'basic', step: 0, fields: ['heightCm'] },
+  marital: { section: 'basic', step: 0, fields: ['maritalStatus'] },
+  children: { section: 'basic', step: 0, fields: ['children', 'childrenNote'] },
+  tongue: { section: 'basic', step: 0, fields: ['motherTongue'] },
+  city: { section: 'location', step: 1, fields: ['country', 'state', 'city'] },
+  education: { section: 'career', step: 2, fields: ['education', 'educationOther'] },
+  profession: { section: 'career', step: 2, fields: ['profession', 'professionOther'] },
+};
+
+/** The first question with a missing or invalid answer (null when all are answered). */
+export function firstUnansweredQuestion(b: Biodata): QKey | null {
+  for (const q of questionOrder(b)) {
+    const { section, step, fields } = QUESTION_FIELDS[q];
+    const errs = Object.keys(stepErrors(step, b[section])).map((k) => k.split('.')[0]);
+    if (errs.some((k) => fields.includes(k))) return q;
   }
-  if (!privacySchema.safeParse(b.privacy).success || !photosSchema.safeParse(b.photos).success) found.add('more');
-  return order.find((s) => found.has(s)) ?? null;
+  return null;
 }

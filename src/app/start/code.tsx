@@ -66,8 +66,8 @@ export default function Code() {
         finish();
         toast(t('onb.code.welcomeBack'), 'success');
       }
-      const next = live ? '/home' : '/start/about';
-      if (!live) reach('about'); // signed up: a restart from here continues at the first question
+      const next = live ? '/home' : '/start/q/name';
+      if (!live) reach('name'); // signed up: a restart from here continues at the first question
       if (needsPin) router.replace({ pathname: '/pin', params: { mode: 'create', next } });
       else router.replace(next);
     } catch (e) {

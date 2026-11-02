@@ -7,7 +7,7 @@ import { T } from '@/components/onboarding/kit';
 import { Button } from '@/components/ui/Button';
 import { FadeIn, ProgressBar } from '@/components/ui/motion';
 import { Text } from '@/components/ui/Text';
-import { subjectOf } from '@/domain/onboarding';
+import { isQKey, subjectOf } from '@/domain/onboarding';
 import { useMyProfile } from '@/hooks/queries';
 import { STEP_PROGRESS, useOnboarding } from '@/state/onboarding';
 import { colors, space } from '@/theme/tokens';
@@ -22,9 +22,10 @@ export default function Resume() {
   const ctx = subjectOf(b?.createdFor || answers.createdFor || 'self', b?.lookingFor || answers.lookingFor);
   const name = b?.fullName?.split(' ')[0];
   // Before sign-up steps can't be resumed here (no account yet); after it, start at the first question.
-  const at = step === 'more' || step === 'work' ? step : 'about';
+  const at = isQKey(step) ? step : step === 'more' ? 'marital' : step === 'work' ? 'education' : 'name';
   const pct = Math.round(STEP_PROGRESS[at] * 100);
-  const left = at;
+  // Copy groups: about him (name/dob/height), a little more (marital…city), work.
+  const left = ['name', 'dob', 'height'].includes(at) ? 'about' : ['education', 'profession'].includes(at) ? 'work' : 'more';
   return (
     <View style={[styles.root, { paddingTop: insets.top + space.lg, paddingBottom: Math.max(insets.bottom, space.lg) }]} testID="onb-resume">
       <View style={styles.column}>
@@ -44,7 +45,7 @@ export default function Resume() {
         </View>
       </View>
       <View style={[styles.column, { marginTop: 'auto', gap: space.sm }]}>
-        <Button label={t('onb.resume.continue')} kind="gold" onPress={() => router.replace(`/start/${at}`)} full arrow testID="resume-continue" />
+        <Button label={t('onb.resume.continue')} kind="gold" onPress={() => router.replace(`/start/q/${at}`)} full arrow testID="resume-continue" />
         <Button
           label={t('onb.resume.startOver')}
           kind="light"

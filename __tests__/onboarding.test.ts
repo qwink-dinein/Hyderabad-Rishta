@@ -1,7 +1,7 @@
 import { buildSeed, DEMO_OTP } from '@/data/seed';
 import { profileCompletion } from '@/domain/completion';
 import { ageFromDob } from '@/domain/format';
-import { AGE_BANDS, applyAnswers, partnerAgeRange, previewRegion, onboardingGap, computeMatchPreview, inRegion, lookingForFor, subjectOf } from '@/domain/onboarding';
+import { AGE_BANDS, applyAnswers, questionOrder, partnerAgeRange, previewRegion, onboardingGap, computeMatchPreview, inRegion, lookingForFor, subjectOf } from '@/domain/onboarding';
 import { NO_CONSENT, profileTypeOf, projectProfile } from '@/domain/privacy';
 import type { Biodata, User } from '@/domain/types';
 import { emptyBiodata, firstInvalidStep, stepErrors } from '@/domain/validation';
@@ -174,10 +174,10 @@ describe('finishing: the member is sent to the exact missing answer', () => {
     expect(onboardingGap(c)).toBe('who');
   });
   it('other gaps go to their own screen', () => {
-    const a = full(); a.basic.heightCm = undefined as never; expect(onboardingGap(a)).toBe('about');
-    const m = full(); m.basic.maritalStatus = 'divorced'; expect(onboardingGap(m)).toBe('more');
-    const l = full(); l.location.city = ''; expect(onboardingGap(l)).toBe('more');
-    const w = full(); w.career.profession = ''; expect(onboardingGap(w)).toBe('work');
+    const a = full(); a.basic.heightCm = undefined as never; expect(onboardingGap(a)).toBe('height');
+    const m = full(); m.basic.maritalStatus = 'divorced'; expect(onboardingGap(m)).toBe('children');
+    const l = full(); l.location.city = ''; expect(onboardingGap(l)).toBe('city');
+    const w = full(); w.career.profession = ''; expect(onboardingGap(w)).toBe('profession');
   });
   it('the pre-sign-up answers fill a saved draft that lacks them', () => {
     const saved = full(); saved.basic.createdFor = ''; saved.basic.lookingFor = '' as never;
@@ -203,5 +203,15 @@ describe('the second screen asks about the person, not the partner (owner reques
     const b = applyAnswers(emptyBiodata(), { createdFor: 'daughter', lookingFor: 'groom', ageBand: '23-27', region: 'abroad' });
     expect(b.location.city).toBeFalsy();
     expect([b.preferences.ageMin, b.preferences.ageMax]).toEqual([23, 34]);
+  });
+});
+
+describe('one question per screen (owner request 2026-11-02)', () => {
+  it('8 questions; "children" only for someone married before', () => {
+    const b = emptyBiodata();
+    expect(questionOrder(b)).toEqual(['name', 'dob', 'height', 'marital', 'tongue', 'city', 'education', 'profession']);
+    b.basic.maritalStatus = 'widowed';
+    expect(questionOrder(b)).toHaveLength(9);
+    expect(questionOrder(b)[4]).toBe('children');
   });
 });

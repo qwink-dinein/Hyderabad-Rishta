@@ -1,5 +1,6 @@
+import type React from 'react';
 import { useCallback, useRef, useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +12,8 @@ import { haptic } from '@/services/feedback';
 import { STEP_PROGRESS, useOnboarding, type OnbStep } from '@/state/onboarding';
 import { useSession } from '@/state/session';
 import { useFit } from '@/hooks/useFit';
+import { useKeyboardOverlap } from '@/hooks/useKeyboard';
+import { KeyboardBar } from '@/components/ui/KeyboardBar';
 import { colors, maxContentWidth, radius, space } from '@/theme/tokens';
 
 /** Larger type for the onboarding screens: elders read these on small phones (body 17, titles 28). */
@@ -29,6 +32,9 @@ export function OnbScreen({
   right,
   onBack,
   testID,
+  low,
+  count,
+  progress,
 }: {
   step: OnbStep | 'live';
   title: string;
@@ -38,26 +44,37 @@ export function OnbScreen({
   right?: ReactNode;
   onBack?: () => void;
   testID?: string;
+  /** One question per screen: question + answer sit in the lower half, near the button and thumb. */
+  low?: boolean;
+  /** "3 of 8", shown at the top right. */
+  count?: string;
+  /** Overrides the step's bar position (questions move it a little per screen). */
+  progress?: number;
 }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const rtl = isRTL(useSession((s) => s.lang));
-  const target = STEP_PROGRESS[step];
+  const target = progress ?? STEP_PROGRESS[step];
+  const rootRef = useRef<React.ComponentRef<typeof View>>(null);
+  const kbOverlap = useKeyboardOverlap(rootRef);
+  const kbOpen = kbOverlap > 0;
   const [from] = useState(() => useOnboarding.getState().lastProgress);
   // Remember where the bar ended so the next screen glides on from here.
   useFocusEffect(useCallback(() => useOnboarding.getState().setLastProgress(target), [target]));
   const { sp } = useFit();
   const back = onBack ?? (() => (router.canGoBack() ? router.back() : router.replace('/')));
   return (
-    <KeyboardAvoidingView style={[styles.root, { paddingTop: insets.top }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined} testID={testID}>
+    <View ref={rootRef} style={[styles.root, { paddingTop: insets.top, paddingBottom: kbOverlap }]} testID={testID}>
       <View style={styles.top}>
         <Pressable onPress={back} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('common.back')} style={styles.iconBtn} testID="onb-back">
           <Icon name={rtl ? 'chevronRight' : 'chevronLeft'} size={26} color={colors.charcoal} />
         </Pressable>
         <ProgressBar value={target} from={from} testID="onb-progress" />
-        <View style={styles.right}>{right}</View>
+        <View style={styles.right}>
+          {right ?? (count ? <Text variant="caption" style={{ fontSize: T.small }} testID="onb-count">{count}</Text> : null)}
+        </View>
       </View>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.scroll, { paddingBottom: sp(space.xxl) }]}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.scroll, { paddingBottom: sp(low ? space.lg : space.xxl) }, low && { flexGrow: 1, justifyContent: 'flex-end' }]}>
         <View style={styles.column}>
           <Text variant="h1" accessibilityRole="header" style={[styles.title, { marginTop: sp(space.md) }]}>
             {title}
@@ -70,17 +87,18 @@ export function OnbScreen({
           <View style={[styles.body, { gap: sp(space.lg), marginTop: sp(space.xl) }]}>{children}</View>
         </View>
       </ScrollView>
-      {footer ? (
-        <View style={[styles.footer, { paddingTop: sp(space.md), paddingBottom: Math.max(insets.bottom, sp(space.lg)) }]}>
-          <View style={styles.column}>{footer}</View>
+      {footer || kbOpen ? (
+        <View style={[styles.footer, { paddingTop: sp(space.md), paddingBottom: kbOpen ? space.sm : Math.max(insets.bottom, sp(space.lg)) }]}>
+          {/* Keyboard open: the Next button rides on the keyboard, with "⌄ Hide" beside it. */}
+          <View style={styles.column}>{kbOpen ? <KeyboardBar>{footer}</KeyboardBar> : footer}</View>
         </View>
       ) : null}
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
 /** A big tappable choice. Selecting gives a selection tick (haptic) and the press dips to 97 %. */
-export function ChoiceTile({ label, sub, icon, selected, onPress, testID, tall }: { label: string; sub?: string; icon?: IconName; selected?: boolean; onPress: () => void; testID?: string; tall?: boolean }) {
+export function ChoiceTile({ label, sub, icon, selected, onPress, testID, tall, compact }: { label: string; sub?: string; icon?: IconName; selected?: boolean; onPress: () => void; testID?: string; tall?: boolean; compact?: boolean }) {
   return (
     <PressableScale
       onPress={() => {
@@ -91,11 +109,11 @@ export function ChoiceTile({ label, sub, icon, selected, onPress, testID, tall }
       accessibilityState={{ selected: !!selected, checked: !!selected }}
       accessibilityLabel={label}
       testID={testID}
-      style={[styles.tile, tall && styles.tileTall, selected && styles.tileOn]}
+      style={[styles.tile, tall && styles.tileTall, compact && styles.tileCompact, selected && styles.tileOn]}
     >
       {icon ? <Icon name={icon} size={tall ? 28 : 22} color={colors.emerald} /> : null}
-      <View style={tall ? { alignItems: 'center' } : { flex: 1 }}>
-        <Text variant="bodyStrong" style={{ fontSize: T.body + 1 }} center={tall}>
+      <View style={tall || compact ? { alignItems: 'center', flex: compact ? 1 : undefined } : { flex: 1 }}>
+        <Text variant="bodyStrong" style={{ fontSize: T.body + 1 }} center={tall || compact}>
           {label}
         </Text>
         {sub ? (
@@ -104,7 +122,7 @@ export function ChoiceTile({ label, sub, icon, selected, onPress, testID, tall }
           </Text>
         ) : null}
       </View>
-      {!tall ? <View style={[styles.dot, selected && styles.dotOn]}>{selected ? <Icon name="check" size={14} color={colors.white} strokeWidth={2.6} /> : null}</View> : null}
+      {!tall && !compact ? <View style={[styles.dot, selected && styles.dotOn]}>{selected ? <Icon name="check" size={14} color={colors.white} strokeWidth={2.6} /> : null}</View> : null}
     </PressableScale>
   );
 }
@@ -396,6 +414,7 @@ const styles = StyleSheet.create({
   footer: { paddingTop: space.md, backgroundColor: colors.ivory },
   tile: { minHeight: 64, borderRadius: 18, backgroundColor: colors.white, borderWidth: 1.5, borderColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, paddingVertical: space.md },
   tileTall: { flexDirection: 'column', justifyContent: 'center', height: 104, paddingVertical: 0, gap: space.xs },
+  tileCompact: { minHeight: 56, paddingHorizontal: space.sm, justifyContent: 'center' },
   tileOn: { borderColor: colors.emerald, borderWidth: 2, backgroundColor: '#FBF0EE' },
   dot: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   dotOn: { borderColor: colors.emerald, backgroundColor: colors.emerald },

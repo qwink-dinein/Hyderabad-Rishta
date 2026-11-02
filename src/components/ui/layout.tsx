@@ -1,4 +1,5 @@
-import { memo, type ReactNode } from 'react';
+import type React from 'react';
+import { memo, useRef, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, type ScrollViewProps, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -6,6 +7,9 @@ import { colors, maxContentWidth, radius, shadow, space } from '@/theme/tokens';
 import { isRTL } from '@/i18n';
 import { useGoHome } from '@/hooks/useGoHome';
 import { useFit } from '@/hooks/useFit';
+import { useKeyboardOverlap } from '@/hooks/useKeyboard';
+import { FieldNavProvider } from './fieldNav';
+import { KeyboardBar } from './KeyboardBar';
 import { Icon } from './Icon';
 import { Text } from './Text';
 import { useUiLang, useUiT } from '@/i18n/uiLang';
@@ -32,9 +36,15 @@ export function Screen({
 }) {
   const insets = useSafeAreaInsets();
   const { sp } = useFit();
+  // The keyboard never hides the footer: the screen shrinks by what the keyboard covers, and a bar
+  // with Hide / ↑ ↓ sits on top of it (owner report 2026-11-02).
+  const rootRef = useRef<React.ComponentRef<typeof View>>(null);
+  const kbOverlap = useKeyboardOverlap(rootRef);
+  const kbOpen = kbOverlap > 0;
   const inner = <View style={[styles.column, padded && styles.padded, contentStyle]}>{children}</View>;
   return (
-    <View style={[styles.root, { paddingTop: edges.includes('top') ? insets.top : 0 }]}>
+    <FieldNavProvider>
+    <View ref={rootRef} style={[styles.root, { paddingTop: edges.includes('top') ? insets.top : 0, paddingBottom: kbOverlap }]}>
       {header}
       {scroll ? (
         <ScrollView
@@ -47,8 +57,14 @@ export function Screen({
       ) : (
         <View style={{ flex: 1 }}>{inner}</View>
       )}
-      {footer ? <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, space.md) }]}>{footer}</View> : null}
+      {kbOpen ? (
+        <View style={[styles.footer, { paddingBottom: footer ? 0 : space.sm }]}>
+          <KeyboardBar />
+        </View>
+      ) : null}
+      {footer ? <View style={[styles.footer, { paddingBottom: kbOpen ? space.sm : Math.max(insets.bottom, space.md) }]}>{footer}</View> : null}
     </View>
+    </FieldNavProvider>
   );
 }
 

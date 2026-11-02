@@ -42,7 +42,7 @@ export default function Matches() {
     } finally {
       setSaving(false);
     }
-    router.push('/start/about');
+    router.push('/start/q/name');
   };
   const band = partnerAgeRange(answers);
   const region = previewRegion(answers.region);
