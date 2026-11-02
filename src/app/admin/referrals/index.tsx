@@ -3,12 +3,12 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
-import { Banner, Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
+import { Loading, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { ChipGroup, TextField, ToggleRow } from '@/components/ui/forms';
 import { Card, Header, Row, Screen, Section } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { formatDate } from '@/domain/format';
-import type { AdminReferralFilter, AdminReferralRow, BoostMode, ReferralSettings } from '@/domain/referral';
+import type { AdminReferralFilter, BoostMode, ReferralSettings } from '@/domain/referral';
 import { FLAG_TEXT, STATUS_TEXT } from '@/components/referral/adminText';
 import { qk } from '@/hooks/queries';
 import { backend } from '@/services';
@@ -43,15 +43,10 @@ export default function AdminReferrals() {
           <View style={styles.tiles}>
             {(
               [
-                ['Referred', o.referred],
+                ['Families invited', o.referred],
+                ['Waiting for you', o.toCheck],
                 ['Approved', o.approved],
-                ['To approved', o.referred ? `${Math.round((100 * o.approved) / o.referred)}%` : '—'],
-                ['Free Boosts given / used', `${o.rewardsIssued} / ${o.rewardsUsed}`],
-                ['Paid Boosts', o.paidBoosts],
-                ['Link visits', o.visits],
-                ['To check', o.toCheck],
-                ['Flagged', o.flagged],
-                ['Rejected / revoked', `${o.rejected} · ${o.rewardsRevoked} revoked`],
+                ['Free Boosts given', o.rewardsIssued],
               ] as const
             ).map(([label, v]) => (
               <View key={label} style={styles.tile} testID={`admin-ref-${label}`}>
@@ -60,7 +55,6 @@ export default function AdminReferrals() {
               </View>
             ))}
           </View>
-          <Text variant="caption">A link visit or sign-up is never counted as a referral — only approved families earn Boosts.</Text>
         </Section>
       ) : null}
       <Section title="Referrals">
@@ -101,7 +95,8 @@ export default function AdminReferrals() {
   );
 }
 
-/** How members get a Boost + the referral rules. Switching never touches Boosts already bought, earned or running. */
+/** How members get a Boost (simplified 2026-11-02): pick Paid or Referral; Referral shows only its length and the check.
+ *  The programme switch and the invited family's Boost stay on (owner: "both get benefits"); they are not shown here. */
 function SettingsCard({ initial }: { initial: ReferralSettings }) {
   const qc = useQueryClient();
   const toast = useToast((s) => s.show);
@@ -112,7 +107,7 @@ function SettingsCard({ initial }: { initial: ReferralSettings }) {
   const save = async () => {
     setBusy(true);
     try {
-      await backend.adminUpdateReferralSettings(s);
+      await backend.adminUpdateReferralSettings({ ...s, enabled: true, inviteeReward: true });
       qc.invalidateQueries({ queryKey: ['admin'] });
       qc.invalidateQueries({ queryKey: qk.referralSettings });
       qc.invalidateQueries({ queryKey: qk.myReferral });
@@ -123,51 +118,62 @@ function SettingsCard({ initial }: { initial: ReferralSettings }) {
       setBusy(false);
     }
   };
+  const option = (mode: BoostMode, title: string, text: string) => {
+    const on = s.mode === mode;
+    return (
+      <Pressable
+        onPress={() => setS({ ...s, mode })}
+        accessibilityRole="radio"
+        accessibilityState={{ checked: on }}
+        aria-checked={on}
+        style={[styles.option, on && styles.optionOn]}
+        testID={`admin-ref-mode-${mode}`}
+      >
+        <View style={[styles.radio, on && styles.radioOn]}>{on ? <View style={styles.radioDot} /> : null}</View>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text variant="bodyStrong">{title}</Text>
+          <Text variant="caption">{text}</Text>
+        </View>
+      </Pressable>
+    );
+  };
   return (
     <Section title="How members get a Boost">
       <Card style={{ gap: space.md }}>
-        <ChipGroup
-          options={[
-            { value: 'paid', label: 'Paid Boost' },
-            { value: 'referral', label: 'Referral Boost' },
-          ]}
-          value={s.mode}
-          onChange={(v: BoostMode) => setS({ ...s, mode: v })}
-          accessibilityLabel="Boost acquisition mode"
-        />
-        <Text variant="caption">
-          {s.mode === 'paid'
-            ? 'Members see today’s paid Boost screen (plans and prices from Pricing & boosts).'
-            : 'Paid plans are hidden (free plans stay). Members are shown how to earn free Boosts by inviting families.'}
-        </Text>
-        <ToggleRow label="Referral programme" hint="Codes, links and rewards. Off = no new rewards; earned Boosts stay." value={s.enabled} onChange={(v) => setS({ ...s, enabled: v })} testID="admin-ref-enabled" />
-        <ToggleRow label="Welcome Boost for the invited family" hint="They also get a free Boost of the same length, at the same moment." value={s.inviteeReward} onChange={(v) => setS({ ...s, inviteeReward: v })} />
-        <ToggleRow label="Team checks each referral" hint="A free Boost is given only after a one-tap check here. Flagged ones always wait for a check." value={s.review} onChange={(v) => setS({ ...s, review: v })} testID="admin-ref-review" />
-        <Row style={{ justifyContent: 'space-between' }}>
-          <View style={{ flex: 1 }}>
-            <Text variant="bodyStrong">Free Boost length</Text>
-            <Text variant="caption">Per approved referral. Applies to new rewards only.</Text>
-          </View>
-          <Row gap={space.xs}>
-            <Button label="−" size="sm" kind="secondary" onPress={() => setS({ ...s, rewardDays: Math.max(1, s.rewardDays - 1) })} />
-            <Text variant="bodyStrong" style={{ minWidth: 64, textAlign: 'center' }} testID="admin-ref-days">
-              {s.rewardDays} days
-            </Text>
-            <Button label="+" size="sm" kind="secondary" onPress={() => setS({ ...s, rewardDays: Math.min(90, s.rewardDays + 1) })} />
-          </Row>
-        </Row>
-        {dirty && s.mode !== initial.mode ? (
-          <Banner icon="info">Switching never removes Boosts already running, bought or earned — members keep and can use them in either mode.</Banner>
+        {option('paid', 'Paid Boost', 'Members buy a Boost. Prices are in Pricing & boosts.')}
+        {option('referral', 'Referral Boost', 'Members invite a family. When that family’s biodata is complete, both families get a free Boost.')}
+        {s.mode === 'referral' ? (
+          <>
+            <Row style={{ justifyContent: 'space-between' }} gap={space.sm}>
+              <Text variant="bodyStrong" style={{ flex: 1 }}>
+                Free Boost lasts
+              </Text>
+              <Row gap={space.xs}>
+                <Button label="−" size="sm" kind="secondary" onPress={() => setS({ ...s, rewardDays: Math.max(1, s.rewardDays - 1) })} />
+                <Text variant="bodyStrong" style={{ minWidth: 64, textAlign: 'center' }} testID="admin-ref-days">
+                  {s.rewardDays} days
+                </Text>
+                <Button label="+" size="sm" kind="secondary" onPress={() => setS({ ...s, rewardDays: Math.min(90, s.rewardDays + 1) })} />
+              </Row>
+            </Row>
+            <ToggleRow label="I approve each one first" hint="New referrals wait in the list below until you tap Approve." value={s.review} onChange={(v) => setS({ ...s, review: v })} testID="admin-ref-review" />
+          </>
         ) : null}
         <Button label="Save" onPress={save} loading={busy} disabled={!dirty} full testID="admin-ref-save" />
+        <Text variant="caption">Boosts members already have are never taken away.</Text>
       </Card>
     </Section>
   );
 }
 
 const styles = StyleSheet.create({
+  option: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md, padding: space.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.white },
+  optionOn: { borderColor: colors.emerald, borderWidth: 2 },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+  radioOn: { borderColor: colors.emerald },
+  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.emerald },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  tile: { flexGrow: 1, flexBasis: 100, padding: space.md, gap: 2, borderRadius: radius.md, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
+  tile: { flexGrow: 1, flexBasis: 140, padding: space.md, gap: 2, borderRadius: radius.md, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border },
   row: { padding: space.md, gap: 4 },
   rowLine: { borderTopWidth: 1, borderTopColor: colors.sage },
   pill: { borderRadius: radius.pill, paddingHorizontal: space.sm, paddingVertical: 2 },

@@ -36,7 +36,7 @@ async function step(name, fn) {
   };
   const setMode = async (label) => {
     await page.goto(BASE + '/admin/referrals');
-    await page.getByText(label, { exact: true }).last().click();
+    await page.getByTestId(label === 'Paid Boost' ? 'admin-ref-mode-paid' : 'admin-ref-mode-referral').last().click();
     const save = page.getByTestId('admin-ref-save').last();
     if (await save.isEnabled()) await save.click();
     await page.getByText(`How members get a Boost`).first().waitFor();
