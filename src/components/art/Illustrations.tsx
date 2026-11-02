@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { Image } from 'expo-image';
 import Svg, { Circle, Defs, G, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { colors } from '@/theme/tokens';
 
@@ -13,18 +14,22 @@ const FOREST = colors.forest;
 const SKY_TOP = '#16493C';
 const SKY_GLOW = '#E9C98A';
 
-/** Brand medallion: 8-point star with an inner rosette. */
-export const BrandMark = memo(function BrandMark({ size = 40, color = GOLD }: { size?: number; color?: string }) {
+/**
+ * The brand logo (owner's logo, the same artwork as the app icon — owner request 2026-11-02), used
+ * wherever the brand appears inside the app. `color` is kept for older call sites and ignored.
+ */
+const LOGO = require('../../../assets/brand/logo.webp');
+export const BrandMark = memo(function BrandMark({ size = 40 }: { size?: number; color?: string }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 48 48" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <Rect x="11" y="11" width="26" height="26" rx="2" stroke={color} strokeWidth="1.6" fill="none" />
-      <Rect x="11" y="11" width="26" height="26" rx="2" stroke={color} strokeWidth="1.6" fill="none" transform="rotate(45 24 24)" />
-      <Circle cx="24" cy="24" r="7.5" stroke={color} strokeWidth="1.4" fill="none" />
-      {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => (
-        <Path key={a} d="M24 16.5c1.6 2.2 1.6 4.8 0 7.5c-1.6-2.7-1.6-5.3 0-7.5z" fill={color} transform={`rotate(${a} 24 24)`} opacity={0.9} />
-      ))}
-      <Circle cx="24" cy="24" r="1.8" fill={color} />
-    </Svg>
+    <Image
+      source={LOGO}
+      style={{ width: size, height: size, borderRadius: Math.round(size * 0.22) }}
+      contentFit="cover"
+      cachePolicy="memory"
+      accessible={false}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    />
   );
 });
 
