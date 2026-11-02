@@ -1,7 +1,7 @@
 import { buildSeed, DEMO_OTP } from '@/data/seed';
 import { profileCompletion } from '@/domain/completion';
 import { ageFromDob } from '@/domain/format';
-import { AGE_BANDS, applyAnswers, onboardingGap, computeMatchPreview, inRegion, lookingForFor, subjectOf } from '@/domain/onboarding';
+import { AGE_BANDS, applyAnswers, partnerAgeRange, previewRegion, onboardingGap, computeMatchPreview, inRegion, lookingForFor, subjectOf } from '@/domain/onboarding';
 import { NO_CONSENT, profileTypeOf, projectProfile } from '@/domain/privacy';
 import type { Biodata, User } from '@/domain/types';
 import { emptyBiodata, firstInvalidStep, stepErrors } from '@/domain/validation';
@@ -77,11 +77,11 @@ describe('match preview before sign-up', () => {
 });
 
 describe('answers before sign-up are kept, never asked twice', () => {
-  it('fills the partner age range and a likely home city, without overwriting saved answers', () => {
+  it('own age → a sensible partner range; living in Hyderabad fills the home, never overwriting saved answers', () => {
     const b = applyAnswers(emptyBiodata(), { createdFor: 'son', lookingFor: 'bride', ageBand: '23-27', region: 'hyd' });
     expect(b.basic.createdFor).toBe('son');
     expect(b.basic.lookingFor).toBe('bride');
-    expect([b.preferences.ageMin, b.preferences.ageMax]).toEqual([23, 27]);
+    expect([b.preferences.ageMin, b.preferences.ageMax]).toEqual([18, 27]); // he is 23–27 → bride 18–27
     expect([b.location.country, b.location.state, b.location.city]).toEqual(['India', 'Telangana', 'Hyderabad']);
     const kept = emptyBiodata();
     kept.location = { ...kept.location, country: 'India', state: 'Karnataka', city: 'Bengaluru' };
@@ -182,5 +182,26 @@ describe('finishing: the member is sent to the exact missing answer', () => {
   it('the pre-sign-up answers fill a saved draft that lacks them', () => {
     const saved = full(); saved.basic.createdFor = ''; saved.basic.lookingFor = '' as never;
     expect(onboardingGap(applyAnswers(saved, { createdFor: 'son', lookingFor: 'bride' }))).toBeNull();
+  });
+});
+
+describe('the second screen asks about the person, not the partner (owner request 2026-11-02)', () => {
+  it('bride: same age or up to 7 younger, never under 18', () => {
+    expect(partnerAgeRange({ lookingFor: 'bride', ageBand: '18-22' })).toEqual({ min: 18, max: 22 });
+    expect(partnerAgeRange({ lookingFor: 'bride', ageBand: '28-32' })).toEqual({ min: 21, max: 32 });
+    expect(partnerAgeRange({ lookingFor: 'bride', ageBand: '33+' })).toEqual({ min: 26, max: 60 });
+  });
+  it('groom: same age or up to 7 older, never under 21', () => {
+    expect(partnerAgeRange({ lookingFor: 'groom', ageBand: '18-22' })).toEqual({ min: 21, max: 29 });
+    expect(partnerAgeRange({ lookingFor: 'groom', ageBand: '23-27' })).toEqual({ min: 23, max: 34 });
+    expect(partnerAgeRange({ lookingFor: 'groom', ageBand: '33+' })).toEqual({ min: 33, max: 60 });
+  });
+  it('nothing guessed without both answers; families abroad see matches anywhere', () => {
+    expect(partnerAgeRange({ ageBand: '23-27' })).toBeUndefined();
+    expect(previewRegion('hyd')).toBe('hyd');
+    expect(previewRegion('abroad')).toBe('anywhere');
+    const b = applyAnswers(emptyBiodata(), { createdFor: 'daughter', lookingFor: 'groom', ageBand: '23-27', region: 'abroad' });
+    expect(b.location.city).toBeFalsy();
+    expect([b.preferences.ageMin, b.preferences.ageMax]).toEqual([23, 34]);
   });
 });

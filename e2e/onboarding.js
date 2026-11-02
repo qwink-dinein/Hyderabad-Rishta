@@ -30,7 +30,9 @@ const step = async (name, fn) => {
     await at(/\/start\/who/);
     await page.getByTestId('who-son').click();
     await at(/\/start\/wants/);
-    await page.getByText('What kind of bride are you looking for?').waitFor();
+    await page.getByText('First, a little about him').waitFor(); // asks about the son, not the partner
+    await page.getByText('His age').waitFor();
+    await page.getByText('Where does he live?').waitFor();
     if (await page.getByTestId('wants-side').count()) throw new Error('asked bride/groom although implied');
   });
   await step('wants: button waits for age + place, then shows real matches before any number', async () => {
@@ -108,7 +110,7 @@ const step = async (name, fn) => {
     const p = db.profiles.find((x) => x.userId === me.id);
     const b = p.biodata.basic;
     if (b.createdFor !== 'son' || b.lookingFor !== 'bride' || b.heightCm !== 198 || b.children !== 1 || b.childrenLiveWith !== 'yes') throw new Error('answers not saved: ' + JSON.stringify(b));
-    if (p.biodata.preferences.ageMin !== 23 || p.biodata.preferences.ageMax !== 27) throw new Error('partner age range not kept');
+    if (p.biodata.preferences.ageMin !== 18 || p.biodata.preferences.ageMax !== 27) throw new Error('partner age range (from his 23–27) not kept: ' + JSON.stringify(p.biodata.preferences));
     await shot('05-live');
     await page.getByTestId('live-see-matches').click();
     await at(/\/discover/);

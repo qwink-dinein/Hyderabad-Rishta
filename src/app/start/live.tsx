@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { FadeIn, PopIn, PressableScale } from '@/components/ui/motion';
 import { Text } from '@/components/ui/Text';
-import { ageBand, subjectOf } from '@/domain/onboarding';
+import { partnerAgeRange, previewRegion, subjectOf } from '@/domain/onboarding';
 import { useMyProfile } from '@/hooks/queries';
 import { backend } from '@/services';
 import { celebrate, haptic } from '@/services/feedback';
@@ -23,11 +23,12 @@ export default function Live() {
   const { status } = useLocalSearchParams<{ status?: string }>();
   const { data: profile } = useMyProfile();
   const [answers] = useState(() => useOnboarding.getState().answers);
-  const band = ageBand(answers.ageBand);
+  const band = partnerAgeRange(answers);
+  const region = previewRegion(answers.region);
   const side = profile?.biodata.basic.lookingFor ?? answers.lookingFor;
   const { data: preview } = useQuery({
-    queryKey: ['matchPreview', side, answers.ageBand, answers.region],
-    queryFn: () => backend.getMatchPreview({ show: side!, ageMin: band?.min, ageMax: band?.max, region: answers.region }),
+    queryKey: ['matchPreview', side, band?.min, band?.max, region],
+    queryFn: () => backend.getMatchPreview({ show: side!, ageMin: band?.min, ageMax: band?.max, region }),
     enabled: !!side,
   });
   useEffect(() => {

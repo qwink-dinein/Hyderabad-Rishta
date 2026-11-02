@@ -90,7 +90,12 @@ export function computeMatchPreview(profiles: Profile[], users: Map<string, User
   };
 }
 
-/** Answers collected before sign-up (kept on the phone until the account exists). */
+/**
+ * Answers collected before sign-up (kept on the phone until the account exists).
+ * `ageBand` and `region` describe the person the biodata is FOR (their own age and where they live) —
+ * owner request 2026-11-02: asking for the partner's age/place confused families. The partner range
+ * shown in the preview and saved as the preference is worked out from it (`partnerAgeRange`).
+ */
 export interface OnboardingAnswers {
   createdFor?: string;
   lookingFor?: LookingFor;
@@ -98,17 +103,35 @@ export interface OnboardingAnswers {
   region?: Region;
 }
 
+/**
+ * A sensible partner age range from the member's own age band: a bride is usually the same age or up to
+ * 7 years younger, a groom the same age or up to 7 years older. Never below the legal minimum (bride 18,
+ * groom 21); "33 and over" stays open-ended up to 60.
+ */
+export function partnerAgeRange(a: Pick<OnboardingAnswers, 'ageBand' | 'lookingFor'>): { min: number; max: number } | undefined {
+  const band = ageBand(a.ageBand);
+  if (!band || !a.lookingFor) return undefined;
+  if (a.lookingFor === 'bride') return { min: Math.max(18, band.min - 7), max: Math.max(18, band.max) };
+  return { min: Math.max(21, band.min), max: Math.min(60, band.max + 7) };
+}
+
+/** Where to look in the preview: near home for Hyderabad / India; anywhere for families abroad. */
+export function previewRegion(region?: Region): Region | undefined {
+  if (!region) return undefined;
+  return region === 'abroad' ? 'anywhere' : region;
+}
+
 /** Fold the pre-sign-up answers into a biodata (partner age range, and a likely home city for Hyderabad). */
 export function applyAnswers(b: Biodata, a: OnboardingAnswers): Biodata {
   const out: Biodata = JSON.parse(JSON.stringify(b));
   if (a.createdFor) out.basic.createdFor = a.createdFor;
   if (a.lookingFor) out.basic.lookingFor = a.lookingFor;
-  const band = ageBand(a.ageBand);
-  if (band && out.preferences.ageMin == null && out.preferences.ageMax == null) {
-    out.preferences.ageMin = band.min;
-    out.preferences.ageMax = band.max;
+  const range = partnerAgeRange({ ageBand: a.ageBand, lookingFor: a.lookingFor ?? out.basic.lookingFor });
+  if (range && out.preferences.ageMin == null && out.preferences.ageMax == null) {
+    out.preferences.ageMin = range.min;
+    out.preferences.ageMax = range.max;
   }
-  // A likely home for a Hyderabad search (only when no city was chosen yet; shown as "tap to change").
+  // They live in Hyderabad: pre-fill the home (only when no city was chosen yet; shown as "tap to change").
   if (a.region === 'hyd' && !out.location.city) {
     out.location.country = 'India';
     out.location.state = 'Telangana';

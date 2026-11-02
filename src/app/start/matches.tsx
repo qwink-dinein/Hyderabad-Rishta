@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { Stagger } from '@/components/ui/motion';
 import { Text } from '@/components/ui/Text';
-import { ageBand } from '@/domain/onboarding';
+import { partnerAgeRange, previewRegion } from '@/domain/onboarding';
 import { qk } from '@/hooks/queries';
 import { useOptions } from '@/hooks/useOptions';
 import { backend } from '@/services';
@@ -44,17 +44,18 @@ export default function Matches() {
     }
     router.push('/start/about');
   };
-  const band = ageBand(answers.ageBand);
+  const band = partnerAgeRange(answers);
+  const region = previewRegion(answers.region);
   const q = useQuery({
-    queryKey: ['matchPreview', side, answers.ageBand, answers.region],
-    queryFn: () => backend.getMatchPreview({ show: side!, ageMin: band?.min, ageMax: band?.max, region: answers.region }),
+    queryKey: ['matchPreview', side, band?.min, band?.max, region],
+    queryFn: () => backend.getMatchPreview({ show: side!, ageMin: band?.min, ageMax: band?.max, region }),
     enabled: !!side,
     staleTime: 60_000,
   });
   if (!side) return <Redirect href="/start/wants" />;
   const count = q.data?.count ?? 0;
-  const where = answers.region ? t(`onb.region.${answers.region}`) : '';
-  const ages = band ? (band.id === '33+' ? t('onb.wants.ageOver', { n: 33 }) : `\u2066${band.min}–${band.max}\u2069`) : '';
+  const where = region ? t(`onb.region.${region}`) : '';
+  const ages = band ? (band.max >= 60 ? t('onb.wants.ageOver', { n: band.min }) : `\u2066${band.min}–${band.max}\u2069`) : '';
   const title = q.isLoading ? t('onb.matches.finding', { context: side }) : count > 0 ? t('onb.matches.title', { count, context: side }) : t('onb.matches.none', { context: side });
   return (
     <OnbScreen
