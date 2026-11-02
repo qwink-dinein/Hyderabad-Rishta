@@ -185,6 +185,21 @@ export class SupabaseBackend implements Backend {
     return { ...n, e164: `${n.countryCode}${n.phone}` };
   }
 
+  async getAuthChannels(): Promise<{ whatsapp: boolean; sms: boolean }> {
+    try {
+      const r = await this.rpc<{ whatsapp?: boolean; sms?: boolean }>('auth_channels');
+      return { whatsapp: r?.whatsapp !== false, sms: r?.sms === true };
+    } catch {
+      return { whatsapp: true, sms: false };
+    }
+  }
+
+  /** Leaves a one-time "SMS please" note for this number, then asks for a new code as usual. */
+  async requestSmsCode(countryCode: string, phone: string): Promise<OtpRequestResult> {
+    await this.rpc<boolean>('request_sms_code', { p_country_code: countryCode, p_phone: phone }).catch(() => false);
+    return this.requestOtp(countryCode, phone);
+  }
+
   async requestOtp(countryCode: string, phone: string): Promise<OtpRequestResult> {
     const { e164 } = this.e164(countryCode, phone);
     const nowMs = this.now().getTime();

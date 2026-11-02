@@ -14,6 +14,7 @@ import { backend } from '@/services';
 import { AppError } from '@/services/backend';
 import { haptic } from '@/services/feedback';
 import { useOnboarding } from '@/state/onboarding';
+import { useAuthChannels } from '@/hooks/useAuthChannels';
 import { useSession } from '@/state/session';
 import { colors, space } from '@/theme/tokens';
 
@@ -79,13 +80,16 @@ export default function Code() {
     }
   };
 
-  const resend = async () => {
+  const channels = useAuthChannels();
+  const [bySms, setBySms] = useState(false);
+  const resend = async (sms = bySms) => {
     setError(null);
     try {
-      const r = await backend.requestOtp(cc, phone);
+      const r = sms ? await backend.requestSmsCode(cc, phone) : await backend.requestOtp(cc, phone);
+      setBySms(sms);
       setResendAt(new Date(r.resendAvailableAt).getTime());
       setLeft(r.resendsLeft ?? null);
-      toast(t('auth.otpSentBanner'), 'success');
+      toast(sms ? t('auth.otpSentSms') : t('auth.otpSentBanner'), 'success');
     } catch (e) {
       setError(errMsg(e));
     }
@@ -93,7 +97,7 @@ export default function Code() {
 
   const mmss = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
   return (
-    <OnbScreen step="code" title={t('onb.code.title')} subtitle={t('onb.code.sub', { number: `${cc} ${phone}` })} testID="onb-code">
+    <OnbScreen step="code" title={t('onb.code.title')} subtitle={t(bySms ? 'onb.code.subSms' : 'onb.code.sub', { number: `${cc} ${phone}` })} testID="onb-code">
       <CodeInput
         ref={ref}
         value={code}
@@ -127,9 +131,12 @@ export default function Code() {
             {t('onb.code.resendIn', { time: mmss })}
           </Text>
         ) : (
-          <Button label={t('auth.resend')} kind="ghost" size="sm" onPress={resend} disabled={left === 0} testID="onb-resend" />
+          <Button label={t('auth.resend')} kind="ghost" size="sm" onPress={() => resend()} disabled={left === 0} testID="onb-resend" />
         )}
       </View>
+      {secs === 0 && channels.sms && !bySms && left !== 0 ? (
+        <Button label={t('auth.sendBySms')} kind="secondary" onPress={() => resend(true)} full testID="onb-send-by-sms" />
+      ) : null}
       <View style={{ padding: space.md, borderRadius: 16, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border }}>
         <Text variant="body" style={{ fontSize: T.label + 1 }}>
           {t('onb.code.copyHint')}

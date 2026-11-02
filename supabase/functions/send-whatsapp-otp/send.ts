@@ -1,4 +1,7 @@
-// Core of the send-whatsapp-otp Edge Function (pure, testable in Jest). Supabase Auth's "Send SMS hook"
+// Core of the send-whatsapp-otp Edge Function (pure, testable in Jest).
+// SMS backup (owner request 2026-11-02): when WhatsApp cannot deliver (number not on WhatsApp, Waplify
+// down or not set up) the SAME code goes by SMS through MSG91 or Twilio, if one is configured; and a
+// member who tapped "Send by SMS instead" gets SMS first (WhatsApp as the backup). Supabase Auth's "Send SMS hook"
 // calls the function with the one-time code it generated; we deliver it on WhatsApp through Waplify
 // using a Meta-approved Authentication template. Supabase still creates, expires, rate-limits and
 // verifies the code — this function only delivers it. The code is never logged.
@@ -86,12 +89,69 @@ export function toWaplifyPhone(phone: unknown): string | null {
 
 const hookError = (http_code: number, message: string): HookResult => ({ status: http_code, body: { error: { http_code, message } } });
 
-/** Handles one verified hook call: validate, send through Waplify, map the outcome for Supabase Auth. */
-export async function sendOtp(cfg: WaplifyConfig, deps: SendDeps, payload: unknown): Promise<HookResult> {
+/** SMS provider for the backup channel. India needs a DLT-registered sender and template (MSG91 handles it). */
+export type SmsConfig =
+  | { provider: 'msg91'; authKey: string; templateId: string; baseUrl?: string }
+  | { provider: 'twilio'; accountSid: string; authToken: string; from: string; appName?: string; baseUrl?: string };
+
+export function smsConfigured(c?: SmsConfig | null): c is SmsConfig {
+  if (!c) return false;
+  return c.provider === 'msg91' ? !!(c.authKey && c.templateId) : !!(c.accountSid && c.authToken && c.from);
+}
+
+/** Sends the code by SMS. Never logs the code or the full number. */
+export async function sendSms(c: SmsConfig, deps: SendDeps, phone: string, otp: string): Promise<boolean> {
+  try {
+    if (c.provider === 'msg91') {
+      // MSG91 OTP API with our own code (the DLT template contains ##OTP##).
+      const q = new URLSearchParams({ template_id: c.templateId, mobile: phone, otp, realTimeResponse: '1' });
+      const res = await deps.fetch(`${c.baseUrl ?? 'https://control.msg91.com'}/api/v5/otp?${q}`, {
+        method: 'POST',
+        headers: { authkey: c.authKey, 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      const out = (await res.json().catch(() => ({}))) as { type?: string; message?: string };
+      const ok = res.status >= 200 && res.status < 300 && out.type !== 'error';
+      if (!ok) deps.log?.(`msg91 ${res.status} ${out.type ?? ''} to=…${phone.slice(-4)}`);
+      return ok;
+    }
+    const body = new URLSearchParams({ To: `+${phone}`, From: c.from, Body: `${otp} is your ${c.appName ?? 'Hyderabad Rishta'} login code. Do not share it with anyone.` }).toString();
+    const res = await deps.fetch(`${c.baseUrl ?? 'https://api.twilio.com'}/2010-04-01/Accounts/${c.accountSid}/Messages.json`, {
+      method: 'POST',
+      headers: { Authorization: `Basic ${btoa(`${c.accountSid}:${c.authToken}`)}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+    const ok = res.status >= 200 && res.status < 300;
+    if (!ok) deps.log?.(`twilio ${res.status} to=…${phone.slice(-4)}`);
+    return ok;
+  } catch {
+    deps.log?.('sms provider unreachable');
+    return false;
+  }
+}
+
+export interface SendOptions {
+  sms?: SmsConfig | null;
+  /** The member asked for SMS ("Send by SMS instead"): SMS first, WhatsApp as the backup. */
+  preferSms?: boolean;
+}
+
+/** Handles one verified hook call: WhatsApp (or SMS when asked), the other channel as backup. */
+export async function sendOtp(cfg: WaplifyConfig, deps: SendDeps, payload: unknown, opts: SendOptions = {}): Promise<HookResult> {
   const p = payload as { user?: { phone?: unknown }; sms?: { otp?: unknown } } | null;
   const phone = toWaplifyPhone(p?.user?.phone);
   const otp = p?.sms?.otp;
   if (!phone || typeof otp !== 'string' || !/^\d{4,10}$/.test(otp)) return hookError(400, 'Invalid phone number or code');
+  const sms = smsConfigured(opts.sms) ? opts.sms : null;
+  if (sms && opts.preferSms && (await sendSms(sms, deps, phone, otp))) return { status: 200, body: {} };
+  const wa = await sendWhatsApp(cfg, deps, phone, otp);
+  if (wa.status === 200) return wa;
+  // WhatsApp could not deliver (not on WhatsApp, Waplify down, not set up): the same code by SMS.
+  if (sms && !opts.preferSms && wa.status !== 429 && (await sendSms(sms, deps, phone, otp))) return { status: 200, body: {} };
+  return wa;
+}
+
+async function sendWhatsApp(cfg: WaplifyConfig, deps: SendDeps, phone: string, otp: string): Promise<HookResult> {
   if (!cfg.apiKey || !cfg.templateName || !cfg.codeKeys.length) return hookError(500, 'WhatsApp sending is not configured');
   const body_data: Record<string, string> = {};
   for (const k of cfg.codeKeys) body_data[k] = otp;

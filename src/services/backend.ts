@@ -264,6 +264,10 @@ export interface Backend {
 
   // auth
   requestOtp(countryCode: string, phone: string): Promise<OtpRequestResult>;
+  /** Which channels can carry a login code (SMS only once the team has set up an SMS provider). */
+  getAuthChannels(): Promise<{ whatsapp: boolean; sms: boolean }>;
+  /** "Send by SMS instead": the next code to this number goes by SMS (WhatsApp as the backup). */
+  requestSmsCode(countryCode: string, phone: string): Promise<OtpRequestResult>;
   /** OTP: registration, a new phone, Forgot PIN, or first PIN for an older account. Trusts this phone. */
   verifyOtp(countryCode: string, phone: string, code: string): Promise<{ user: User; isNew: boolean; needsPin: boolean }>;
   /** Returning login on a phone that verified this number before. Never sends an OTP. */

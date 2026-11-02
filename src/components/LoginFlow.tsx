@@ -19,6 +19,7 @@ import { otpSchema, phoneSchema } from '@/domain/validation';
 import { backend, backendInfo } from '@/services';
 import { AppError } from '@/services/backend';
 import { isMemberOnlyPath } from '@/hooks/useGoHome';
+import { useAuthChannels } from '@/hooks/useAuthChannels';
 import { takeReturnTo, useSession } from '@/state/session';
 import { useOnboarding } from '@/state/onboarding';
 import { colors, radius, space } from '@/theme/tokens';
@@ -71,12 +72,16 @@ export function LoginFlow() {
   const digits = phone.replace(/\D/g, '');
   const secondsLeft = Math.max(0, Math.ceil((resendAt - now) / 1000));
 
-  const sendOtp = async () => {
+  const channels = useAuthChannels();
+  const [sentBySms, setSentBySms] = useState(false);
+  /** Sends a code on WhatsApp (or by SMS when `sms`, if the team has switched SMS on). */
+  const sendOtp = async (sms = false) => {
     setError(null);
     if (!phoneSchema.safeParse(digits).success) return setError(t('v.phone'));
     setBusy(true);
     try {
-      const r = await backend.requestOtp(cc, digits);
+      const r = sms ? await backend.requestSmsCode(cc, digits) : await backend.requestOtp(cc, digits);
+      setSentBySms(sms);
       setResendAt(new Date(r.resendAvailableAt).getTime());
       setResendsLeft(r.resendsLeft);
       setStage('otp');
@@ -343,11 +348,11 @@ export function LoginFlow() {
                 setPhone(v);
                 setError(null);
               }}
-              onSubmit={sendOtp}
+              onSubmit={() => sendOtp()}
               error={error}
               editable={purpose !== 'setup'}
             />
-            <Button label={t('auth.sendOtp')} onPress={sendOtp} loading={busy} full arrow testID="send-otp" />
+            <Button label={t('auth.sendOtp')} onPress={() => sendOtp()} loading={busy} full arrow testID="send-otp" />
             <Row style={styles.reassure} gap={space.md}>
               <Icon name="lock" size={20} color={colors.goldMuted} />
               <Text variant="caption" style={{ flex: 1 }}>
@@ -384,7 +389,7 @@ export function LoginFlow() {
             <View style={{ marginBottom: space.lg }}>
               <Banner tone="success" icon="check">
                 <Text variant="caption" color={colors.success} testID="otp-sent">
-                  {t('auth.otpSentBanner')}
+                  {sentBySms ? t('auth.otpSentSms') : t('auth.otpSentBanner')}
                 </Text>
               </Banner>
             </View>
@@ -394,16 +399,19 @@ export function LoginFlow() {
             <Text variant="body" color={colors.muted} center style={{ marginBottom: space.lg }}>
               {secondsLeft > 0 ? t('auth.resendCountdown', { time: mmss }) : resendsLeft === 0 ? t('auth.noResends') : ' '}
             </Text>
-            {/* Codes go only on WhatsApp (no SMS): once Resend unlocks, remind people the number must use WhatsApp. */}
-            {secondsLeft === 0 ? (
+            {/* Once Resend unlocks: WhatsApp-only reminds people the number needs WhatsApp; with SMS on, offer it. */}
+            {secondsLeft === 0 && !channels.sms ? (
               <Text variant="caption" color={colors.muted} center style={{ marginBottom: space.md }} testID="whatsapp-hint">
                 {t('auth.whatsappHint')}
               </Text>
             ) : null}
+            {secondsLeft === 0 && channels.sms && resendsLeft !== 0 && !sentBySms ? (
+              <Button label={t('auth.sendBySms')} kind="secondary" size="sm" onPress={() => sendOtp(true)} style={{ alignSelf: 'center', marginBottom: space.md }} testID="send-by-sms" />
+            ) : null}
             <Button label={t('auth.verify')} onPress={verify} loading={busy} full arrow testID="verify-otp" />
             <Row style={{ justifyContent: 'space-between', marginTop: space.md }} wrap>
               <Button label={t('auth.changeNumber')} kind="ghost" size="sm" onPress={() => setStage('phone')} />
-              <Button label={t('auth.resend')} kind="ghost" size="sm" disabled={secondsLeft > 0 || resendsLeft === 0} onPress={sendOtp} />
+              <Button label={t('auth.resend')} kind="ghost" size="sm" disabled={secondsLeft > 0 || resendsLeft === 0} onPress={() => sendOtp(sentBySms)} />
             </Row>
             {resendsLeft != null ? (
               <Text variant="caption" center>

@@ -148,6 +148,8 @@ const ur: DeepPartial<Translation> = {
     goToSlide: 'سلائیڈ {{n}} پر جائیں',
   },
   auth: {
+    sendBySms: "اس کے بجائے SMS سے بھیجیں",
+    otpSentSms: "کوڈ SMS سے بھیجا گیا۔ یہ 10 منٹ تک درست ہے۔",
     loginTitle: 'السلام علیکم، براہِ کرم لاگ اِن کریں',
     loginSub: 'اپنا موبائل نمبر اور 4 ہندسوں کا پن',
     whatsappLogin: 'واٹس ایپ کوڈ سے لاگ اِن کریں',
@@ -1091,6 +1093,7 @@ const ur: DeepPartial<Translation> = {
       note: "تقریباً 2 منٹ اور۔ تصویریں اختیاری ہیں۔",
     },
     phone: {
+      whatsappOrSms: "ہم WhatsApp پر 6 ہندسوں کا کوڈ بھیجیں گے۔ اس نمبر پر WhatsApp نہیں؟ اگلی اسکرین پر SMS سے منگوا سکتے ہیں۔",
       title: "بایوڈیٹا محفوظ کریں",
       title_he: "اس کا بایوڈیٹا محفوظ کریں",
       title_she: "اس کا بایوڈیٹا محفوظ کریں",
@@ -1101,6 +1104,7 @@ const ur: DeepPartial<Translation> = {
       noPassword: "نہ پاس ورڈ، نہ ای میل۔",
     },
     code: {
+      subSms: "SMS سے {{number}} کو بھیجا گیا",
       title: "کوڈ درج کریں",
       sub: "WhatsApp پر {{number}} کو بھیجا گیا",
       checking: "جانچ ہو رہی ہے…",

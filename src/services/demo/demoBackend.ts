@@ -766,6 +766,14 @@ export class DemoBackend implements Backend {
   }
 
   // ---------- auth ----------
+  /** Demo: no messages are sent at all (code 123456), so both channels "work". */
+  async getAuthChannels() {
+    return { whatsapp: true, sms: true };
+  }
+  requestSmsCode(countryCode: string, phone: string) {
+    return this.requestOtp(countryCode, phone);
+  }
+
   requestOtp(countryCode: string, phone: string) {
     return this.run((db) => {
       ({ countryCode, phone } = this.normPhone(countryCode, phone));

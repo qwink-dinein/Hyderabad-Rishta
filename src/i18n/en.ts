@@ -158,6 +158,8 @@ const en = {
     goToSlide: 'Go to slide {{n}}',
   },
   auth: {
+    sendBySms: "Send by SMS instead",
+    otpSentSms: "Code sent by SMS. It is valid for 10 minutes.",
     loginTitle: 'Assalamu alaikum, please log in',
     loginSub: 'Your mobile number and 4-digit PIN',
     whatsappLogin: 'Log in with WhatsApp code',
@@ -1118,6 +1120,7 @@ const en = {
       note: "About 2 more minutes. Photos are optional.",
     },
     phone: {
+      whatsappOrSms: "We will send a 6-digit code on WhatsApp. No WhatsApp on this number? You can ask for it by SMS on the next screen.",
       title: "Save the biodata",
       title_he: "Save his biodata",
       title_she: "Save her biodata",
@@ -1128,6 +1131,7 @@ const en = {
       noPassword: "No password, no email.",
     },
     code: {
+      subSms: "Sent by SMS to {{number}}",
       title: "Enter the code",
       sub: "Sent on WhatsApp to {{number}}",
       checking: "Checking…",

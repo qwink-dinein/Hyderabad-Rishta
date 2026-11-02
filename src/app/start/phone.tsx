@@ -12,6 +12,7 @@ import { Text } from '@/components/ui/Text';
 import { phoneSchema } from '@/domain/validation';
 import { backend } from '@/services';
 import { useOnboarding } from '@/state/onboarding';
+import { useAuthChannels } from '@/hooks/useAuthChannels';
 import { colors, space } from '@/theme/tokens';
 
 /** Step 4: one field — the mobile number — asked only after the visitor has seen matches. */
@@ -20,6 +21,7 @@ export default function Phone() {
   const errMsg = useErrorMessage();
   const { reach } = useOnboarding();
   const { ctx } = useSubject();
+  const channels = useAuthChannels();
   const [cc, setCc] = useState('+91');
   const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +71,7 @@ export default function Phone() {
       <View style={{ flexDirection: 'row', gap: space.md, alignItems: 'flex-start' }}>
         <Icon name="message" size={22} color={colors.success} />
         <Text variant="body" color={colors.muted} style={{ flex: 1, fontSize: T.label + 1 }}>
-          {t('onb.phone.whatsapp')}
+          {channels.sms ? t('onb.phone.whatsappOrSms') : t('onb.phone.whatsapp')}
         </Text>
       </View>
     </OnbScreen>

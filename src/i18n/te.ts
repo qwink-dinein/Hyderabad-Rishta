@@ -148,6 +148,8 @@ const te: DeepPartial<Translation> = {
     goToSlide: 'స్లైడ్ {{n}}కి వెళ్ళండి',
   },
   auth: {
+    sendBySms: "బదులుగా SMS ద్వారా పంపండి",
+    otpSentSms: "కోడ్ SMS ద్వారా పంపాం. ఇది 10 నిమిషాలు చెల్లుతుంది.",
     loginTitle: 'అస్సలాము అలైకుమ్, దయచేసి లాగిన్ అవ్వండి',
     loginSub: 'మీ మొబైల్ నంబర్ మరియు 4 అంకెల పిన్',
     whatsappLogin: 'వాట్సాప్ కోడ్\u200cతో లాగిన్ అవ్వండి',
@@ -1091,6 +1093,7 @@ const te: DeepPartial<Translation> = {
       note: "ఇంకా సుమారు 2 నిమిషాలు. ఫోటోలు ఐచ్ఛికం.",
     },
     phone: {
+      whatsappOrSms: "WhatsApp లో 6 అంకెల కోడ్ పంపుతాం. ఈ నంబర్‌కు WhatsApp లేదా? తర్వాతి స్క్రీన్‌లో SMS ద్వారా అడగవచ్చు.",
       title: "బయోడేటా సేవ్ చేయండి",
       title_he: "అతని బయోడేటా సేవ్ చేయండి",
       title_she: "ఆమె బయోడేటా సేవ్ చేయండి",
@@ -1101,6 +1104,7 @@ const te: DeepPartial<Translation> = {
       noPassword: "పాస్‌వర్డ్ లేదు, ఈమెయిల్ లేదు.",
     },
     code: {
+      subSms: "{{number}} కు SMS ద్వారా పంపాం",
       title: "కోడ్ నమోదు చేయండి",
       sub: "{{number}} కు WhatsApp లో పంపాం",
       checking: "తనిఖీ చేస్తున్నాం…",
