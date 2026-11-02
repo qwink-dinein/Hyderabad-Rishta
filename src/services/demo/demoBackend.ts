@@ -1552,7 +1552,8 @@ export class DemoBackend implements Backend {
         this.track(db, 'request_declined', u.id, {}, `decline:${r.id}`);
       }
       const numberShared: Record<string, string> = decision === 'accepted' && withInterest ? { numberShared: '1' } : {};
-      this.notify(db, r.fromUserId, decision === 'accepted' ? 'request_accepted' : 'request_declined', { name: this.displayNameOf(db, u.id), ...numberShared }, '/requests');
+      // Accepted: open the person's profile (photos / number shared there); declined: the inbox.
+      this.notify(db, r.fromUserId, decision === 'accepted' ? 'request_accepted' : 'request_declined', { name: this.displayNameOf(db, u.id), ...numberShared }, decision === 'accepted' ? `/profile/${r.toProfileId}` : '/requests');
       return { ...r };
     }, true);
   }
@@ -1586,12 +1587,17 @@ export class DemoBackend implements Backend {
       const toUserId = r.fromUserId === u.id ? r.toUserId : r.fromUserId;
       const existing = db.phoneOffers.find((o) => o.requestId === r.id && o.fromUserId === u.id && (o.status === 'offered' || o.status === 'accepted'));
       if (existing) throw new AppError('duplicate');
-      const offer: PhoneOffer = { id: uid('po_'), requestId: r.id, fromUserId: u.id, toUserId, status: 'offered', withInterest: false, consentText: PHONE_CONSENT_TEXT, consentAt: this.iso(), createdAt: this.iso() };
+      // They already shared THEIR number with me on this connection: a swap, so mine is shown at once
+      // (owner report 2026-11-02: the second "accept" step was missed and the number never appeared).
+      const mutual = db.phoneOffers.some((o) => o.requestId === r.id && o.fromUserId === toUserId && o.toUserId === u.id && o.status === 'accepted');
+      const offer: PhoneOffer = { id: uid('po_'), requestId: r.id, fromUserId: u.id, toUserId, status: mutual ? 'accepted' : 'offered', withInterest: false, consentText: PHONE_CONSENT_TEXT, consentAt: this.iso(), createdAt: this.iso(), ...(mutual ? { respondedAt: this.iso() } : {}) };
       db.phoneOffers.push(offer);
       if (idempotencyKey) db.idem.push({ key: `offer:${idempotencyKey}`, userId: u.id, resultId: offer.id, at: this.iso() });
       this.audit(db, u.id, 'phone.offered', r.id, { withInterest: false });
+      if (mutual) this.audit(db, u.id, 'phone.revealed', r.id, { mutual: true });
       this.track(db, 'reciprocal_offer_sent', u.id, {}, `offer:${offer.id}`);
-      this.notify(db, toUserId, 'phone_offer_received', { name: this.displayNameOf(db, u.id) }, '/requests');
+      const myProfileId = r.fromUserId === u.id ? r.fromProfileId : r.toProfileId;
+      this.notify(db, toUserId, 'phone_offer_received', { name: this.displayNameOf(db, u.id), ...(mutual ? { shared: '1' } : {}) }, `/profile/${myProfileId}`);
       return { ...offer };
     }, true);
   }

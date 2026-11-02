@@ -14,7 +14,7 @@ import { ChipGroup, Field, TextField } from '@/components/ui/forms';
 import { Icon } from '@/components/ui/Icon';
 import { Card, Header, Row, Screen } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
-import { useMyProfile, useProfile, useRequestWith, useShortlistIds, useToggleShortlist } from '@/hooks/queries';
+import { useMyProfile, useProfile, useRequestWith, useRespondPhoneOffer, useShortlistIds, useToggleShortlist } from '@/hooks/queries';
 import { useOptions } from '@/hooks/useOptions';
 import { backend } from '@/services';
 import { haptic } from '@/services/feedback';
@@ -32,6 +32,7 @@ export default function ProfileScreen() {
   const { data: req, isLoading: reqLoading } = useRequestWith(id);
   const { data: shortIds } = useShortlistIds();
   const toggle = useToggleShortlist();
+  const respondOffer = useRespondPhoneOffer();
   const [reportOpen, setReportOpen] = useState(report === '1'); // deep link from the requests inbox
   const expressHandled = useRef(false);
 
@@ -84,7 +85,27 @@ export default function ProfileScreen() {
     );
   })();
 
-  const contact = profile.contact ? <ContactActions countryCode={profile.contact.countryCode} phone={profile.contact.phone} /> : <Banner icon="lock">{t('profile.contactLocked')}</Banner>;
+  // They offered their number (connected): one tap here shows it — no hunting in the Requests tab.
+  const pendingOffer = req?.request.status === 'accepted' && req.theirOffer?.status === 'offered' ? req.theirOffer : undefined;
+  const showNumber = async () => {
+    try {
+      await respondOffer.mutateAsync({ id: pendingOffer!.id, decision: 'accepted' });
+      await qc.invalidateQueries();
+      haptic('success');
+    } catch (e) {
+      toast(errMsg(e), 'danger');
+    }
+  };
+  const contact = profile.contact ? (
+    <ContactActions countryCode={profile.contact.countryCode} phone={profile.contact.phone} />
+  ) : pendingOffer ? (
+    <Card style={{ gap: space.sm, backgroundColor: colors.warningBg }} testID="profile-number-offer">
+      <Text variant="bodyStrong">{t('requests.theyOffered', { name: profile.displayName })}</Text>
+      <Button label={t('profile.showNumber')} icon={<Icon name="phone" size={16} color={colors.white} />} onPress={showNumber} loading={respondOffer.isPending} testID="profile-show-number" />
+    </Card>
+  ) : (
+    <Banner icon="lock">{t(status === 'accepted' ? 'profile.contactNotShared' : 'profile.contactLocked')}</Banner>
+  );
 
   // They said no recently: don't offer a re-send, explain instead (server enforces the same cool-down).
   const theyDeclined = !isOwn && !active && declinedRecently(profile.relation);

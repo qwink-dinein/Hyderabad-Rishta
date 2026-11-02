@@ -279,6 +279,20 @@ describe('9: expiry', () => {
 });
 
 describe('10–11: notifications, analytics, audit and admin visibility', () => {
+  it('number swap is instant; a one-sided offer waits for a tap; notices open the profile', async () => {
+    const b = make();
+    await as(b, GROOM);
+    const swap = await b.sendRequest(BRIDE_PROFILE, offer());
+    await as(b, BRIDE);
+    await b.respondToRequest(swap.id, 'accepted');
+    await b.offerPhone(swap.id, true, 'sw1');
+    await as(b, GROOM);
+    expect((await b.getProfile(BRIDE_PROFILE)).contact?.phone).toBe(BRIDE);
+    const notes = await b.getNotifications();
+    expect(notes.find((n) => n.type === 'request_accepted')?.deepLink).toBe(`/profile/${BRIDE_PROFILE}`);
+    expect(notes.find((n) => n.type === 'phone_offer_received')?.params.shared).toBe('1');
+  });
+
   it('no notification ever contains a phone number', async () => {
     const b = make();
     await as(b, GROOM);
@@ -286,8 +300,8 @@ describe('10–11: notifications, analytics, audit and admin visibility', () => 
     await as(b, BRIDE);
     await b.respondToRequest(r.id, 'accepted');
     const o = await b.offerPhone(r.id, true, 'n1');
+    expect(o.status).toBe('accepted'); // a swap (he shared his number with the interest): shown at once
     await as(b, GROOM);
-    await b.respondToPhoneOffer(o.id, 'accepted');
     const groomNotes = JSON.stringify(await b.getNotifications());
     await as(b, BRIDE);
     const brideNotes = JSON.stringify(await b.getNotifications());

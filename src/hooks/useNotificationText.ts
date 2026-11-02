@@ -54,6 +54,8 @@ export function useNotificationText() {
             ? 'notifications.t.request_received_offer'
             : n.type === 'request_accepted' && n.params.numberShared
               ? 'notifications.t.request_accepted_number'
+              : n.type === 'phone_offer_received' && n.params.shared
+                ? 'notifications.t.phone_offer_shared'
               : `notifications.t.${n.type}`;
       return { title: t(key, { ...n.params, note: n.params.note || '—' }), body: n.type === 'boost_started' && n.params.until ? formatDate(n.params.until) : undefined };
     },

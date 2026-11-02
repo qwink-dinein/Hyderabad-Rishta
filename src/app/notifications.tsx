@@ -36,7 +36,8 @@ export default function Notifications() {
         if (n.announcementId) await backend.recordNotificationClick(n.id).catch(() => undefined);
         router.push(safeDeepLink(n.deepLink) as Href);
       }
-      qc.invalidateQueries({ queryKey: qk.notifications });
+      // Something changed for this member (accepted, number shared…): refresh what the next screen shows.
+      qc.invalidateQueries();
     },
     [qc],
   );

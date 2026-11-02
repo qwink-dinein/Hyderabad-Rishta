@@ -43,16 +43,17 @@ select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000f1
 do $$ begin
   assert get_profile('20000000-0000-0000-0000-0000000000f2') -> 'contact' is null, 'reverse reveal';
 end $$;
--- G offers back, then withdraws before F accepts → F can never accept it.
+-- G offers back. F already shared his number with G, so this is a swap: shown to F at once (owner
+-- report 2026-11-02), and it can no longer be withdrawn. One-sided offers: 99_connect_clarity.test.sql.
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000f2', false);
 select id as o2 from offer_phone(:'r1', true, 'g-offer') \gset
-select withdraw_phone_offer(:'o2') is not null;
+do $$ begin
+  begin perform withdraw_phone_offer(current_setting('test.o2', true)::uuid); exception when others then null; end;
+end $$;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000f1', false);
 do $$ begin
-  begin perform respond_phone_offer((select id from phone_offers where from_user_id = '00000000-0000-0000-0000-0000000000f2' order by created_at desc limit 1), 'accepted');
-    assert false, 'withdrawn offer accepted';
-  exception when raise_exception then null; end;
-  assert get_profile('20000000-0000-0000-0000-0000000000f2') -> 'contact' is null, 'withdrawn offer revealed';
+  assert (select status from phone_offers where from_user_id = '00000000-0000-0000-0000-0000000000f2' order by created_at desc limit 1) = 'accepted', 'swap accepted at once';
+  assert get_profile('20000000-0000-0000-0000-0000000000f2') #>> '{contact,phone}' = '9100000002', 'swap revealed to F';
 end $$;
 -- G blocks F → request blocked, F's number no longer visible to G.
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000000f2', false);

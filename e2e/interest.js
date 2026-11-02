@@ -58,19 +58,22 @@ const step = async (name, fn) => {
     await page.getByRole('button', { name: 'Copy number' }).first().waitFor();
     await page.screenshot({ path: `${SHOTS}/44-revealed.png`, fullPage: true });
   });
-  await step('bride: Share My Number back (explicit confirmation)', async () => {
+  await step('bride: Share My Number back (explicit confirmation) — a swap, so shared at once', async () => {
     await page.getByRole('button', { name: 'Share My Number' }).first().click();
     await confirmDialog('Share My Number');
     await page.waitForTimeout(800);
     await page.screenshot({ path: `${SHOTS}/46-after-share.png`, fullPage: true });
-    await page.getByText('Offered', { exact: true }).first().waitFor({ timeout: 5000 });
+    await page.getByText('Shared', { exact: true }).first().waitFor({ timeout: 5000 });
   });
-  await step('groom: accepts the bride’s number offer → revealed', async () => {
+  await step('groom: the bell opens her profile with her number (no second accept to find)', async () => {
     await logout();
     await login('9000000001');
+    await page.goto(BASE + '/notifications');
+    await page.getByText(/shared their phone number with you/).first().click();
+    await page.waitForURL(/\/profile\//);
+    await page.getByText('9000000102').first().waitFor();
     await page.goto(BASE + '/requests');
     await page.getByRole('radio', { name: 'Sent' }).click();
-    await page.getByRole('button', { name: 'Accept & reveal number' }).first().click();
     await page.getByText('9000000102').first().waitFor();
   });
   await step('groom: poke the 3-day-old unanswered request once', async () => {
