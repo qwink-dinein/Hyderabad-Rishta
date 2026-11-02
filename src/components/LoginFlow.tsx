@@ -319,7 +319,7 @@ export function LoginFlow() {
             <Text variant="caption" center style={{ fontSize: 12 }}>
               {t('auth.terms')}
             </Text>
-            <Pressable onPress={() => router.push('/recover')} hitSlop={12} accessibilityRole="link">
+            <Pressable onPress={() => router.push('/recover')} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('auth.masterRecovery')}>
               <Text variant="caption" color={colors.emerald} center style={{ fontSize: 12 }}>
                 {t('auth.masterRecovery')}
               </Text>

@@ -233,6 +233,26 @@ export interface MemberDetail {
   orders: Order[];
 }
 
+/**
+ * A member who permanently deleted their own account: an admin-only copy kept for 30 days, then erased
+ * with the photos (owner decision 2026-11-02). The phone stays masked, as everywhere in the admin console.
+ */
+export interface DeletedAccount {
+  id: string;
+  code?: string;
+  fullName?: string;
+  phoneMasked: string;
+  joinedAt?: string;
+  deletedAt: string;
+  purgeAt: string;
+  profileStatus?: string;
+  profileType?: 'bride' | 'groom';
+  photoCount: number;
+}
+export interface DeletedAccountDetail extends DeletedAccount {
+  profile?: Profile;
+}
+
 export interface TrashItem {
   kind: 'user' | 'profile';
   id: string;
@@ -400,6 +420,10 @@ export interface Backend {
   adminDeleteAnnouncement(id: string): Promise<void>;
   adminCancelOrder(orderId: string): Promise<void>;
   adminListTrash(): Promise<TrashItem[]>;
+  /** Members who deleted their own account in the last 30 days (newest first). */
+  adminListDeletedAccounts(): Promise<DeletedAccount[]>;
+  /** One deleted account's full copy (viewing is written to the audit log). */
+  adminGetDeletedAccount(id: string): Promise<DeletedAccountDetail>;
 
   // master only
   masterRestore(kind: 'user' | 'profile', id: string): Promise<void>;

@@ -13,8 +13,14 @@ function fake(role = 'user') {
   return { deps, log };
 }
 
-it('removes photos, records the audit, then deletes the login (cascades to the account)', async () => {
+it('member: keeps photos for the 30-day admin copy, records the audit, then deletes the login', async () => {
   const f = fake();
+  expect((await deleteAccount(f.deps, 'good')).status).toBe(200);
+  expect(f.log).toEqual(['audit:u1:HR-1', 'delete:u1']); // photos are erased later with the copy
+});
+
+it('team account (no admin copy): photos are removed right away, never left behind', async () => {
+  const f = fake('admin');
   expect((await deleteAccount(f.deps, 'good')).status).toBe(200);
   expect(f.log).toEqual(['photos:u1/a.jpg,u1/b.jpg', 'audit:u1:HR-1', 'delete:u1']);
 });

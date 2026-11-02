@@ -1031,7 +1031,7 @@ const en = {
     deactivate: 'Deactivate account',
     deactivateConfirm: 'Your profile will be hidden until you log in again.',
     delete: 'Delete account permanently',
-    deleteConfirm: 'This permanently deletes your account, biodata, shortlist, requests and notifications. This cannot be undone.',
+    deleteConfirm: 'This permanently deletes your account, biodata, shortlist, requests and notifications. No member can see you again. For safety checks, a copy of your biodata and photos stays with our team only for 30 days, then it is erased. This cannot be undone.',
     about: 'About',
     demoReset: 'Reset demo data',
     demoResetDone: 'Demo data reset.',

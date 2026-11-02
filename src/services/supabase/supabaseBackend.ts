@@ -47,6 +47,8 @@ import {
   type RequestView,
   type SendInterestInput,
   type TrashItem,
+  type DeletedAccount,
+  type DeletedAccountDetail,
 } from '../backend';
 import type { KV } from '../storage';
 import { mapAdminRequest, mapAnnouncement, mapNotification, mapOffer, mapOrder, mapPricing, mapProfile, mapPublicProfile, mapReport, mapRequest, mapUser, toAppError } from './map';
@@ -813,6 +815,14 @@ export class SupabaseBackend implements Backend {
   }
   async adminListTrash() {
     return (await this.adminRows('admin_list_trash')) as unknown as TrashItem[];
+  }
+  async adminListDeletedAccounts() {
+    return (await this.adminRows('admin_deleted_accounts')) as unknown as DeletedAccount[];
+  }
+  async adminGetDeletedAccount(id: string): Promise<DeletedAccountDetail> {
+    const d = await this.rpc<Row>('admin_deleted_account', { p_id: id });
+    const { profile, ...rest } = d;
+    return { ...(rest as unknown as DeletedAccount), profile: profile ? mapProfile(profile as Row) : undefined };
   }
 
   // ---------- masters ----------

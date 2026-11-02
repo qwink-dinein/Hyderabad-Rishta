@@ -28,6 +28,7 @@ const NAV: NavItem[] = [
   { href: '/admin/pricing', icon: 'chart', label: 'Pricing & boosts', desc: 'Fees per bride/groom, boost duration, history' },
   { href: '/admin/orders', icon: 'star', label: 'Orders & payments', desc: 'View and cancel pending orders' },
   { href: '/admin/trash', icon: 'ban', label: 'Trash', desc: 'Deleted profiles & users (30-day recovery window)' },
+  { href: '/admin/deleted', icon: 'user', label: 'Deleted accounts', desc: 'Members who deleted their own account: who, and the full profile for 30 days' },
   { href: '/admin/team', icon: 'shield', label: 'Team & security', desc: 'Sub-admins, master transfer, lost-phone recovery' },
   { href: '/admin/audit', icon: 'eye', label: 'Audit log', desc: 'Every sensitive action, append-only' },
 ];

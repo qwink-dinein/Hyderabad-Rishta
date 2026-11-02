@@ -28,7 +28,7 @@ export function adminAlertText(n: Pick<AppNotification, 'params'>): { title: str
     case 'pending_profile':
       return { title: `${p.code} is waiting for approval`, icon: 'user', urgent: false };
     case 'account_deleted':
-      return { title: `${p.code} deleted their account`, icon: 'ban', urgent: false };
+      return { title: p.name ? `${p.name} (${p.code}) deleted their account` : `${p.code} deleted their account`, icon: 'ban', urgent: false };
     case 'security':
       return { title: SECURITY[p.event] ?? 'Security change in the admin team', icon: 'shield', urgent: p.event === 'recovery_started' || p.event === 'master_recovered' };
     default:

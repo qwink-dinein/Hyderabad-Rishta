@@ -47,7 +47,7 @@ import { isAdminRole } from '@/domain/types';
 import { firstInvalidStep, otpSchema, requestMessageSchema } from '@/domain/validation';
 import { REPORT_REASONS } from '@/domain/options';
 import { biodataProblem, normalizePhone, isHttpsUrl, isInternalLink, LANGS, MAX_IDEM_KEY, MAX_PUSH_TOKEN, MAX_REPORTS_PER_DAY, MAX_SEARCH_PAGE, stripUnsafe, unsafeText } from '@/domain/security';
-import { AppError, type AdminMemberDraft, type AdminPhoneCheck, type AdminRequestRow, type AdminStats, type Backend, type MemberDetail, type MemberRow, type ConnectionMetrics, type SendInterestInput, type NotificationView, type Page, type RecipientRow, type RequestView, type TrashItem } from '../backend';
+import { AppError, type AdminMemberDraft, type AdminPhoneCheck, type AdminRequestRow, type AdminStats, type Backend, type MemberDetail, type MemberRow, type ConnectionMetrics, type SendInterestInput, type NotificationView, type Page, type RecipientRow, type RequestView, type TrashItem, type DeletedAccount, type DeletedAccountDetail } from '../backend';
 import { memoryKV, type KV } from '../storage';
 
 /** JSON deep clone — responses never share references with the "server" state. */
@@ -136,6 +136,8 @@ export interface DemoDb {
   pushOutbox: PushOutboxItem[];
   /** Featured impressions, one per viewer per profile per day. */
   boostImpressions: BoostImpression[];
+  /** 30-day admin-only copies of accounts members deleted themselves (optional: older saved demo data). */
+  deletedAccounts?: (Omit<DeletedAccountDetail, 'profile'> & { profile?: Profile })[];
   /** `${shortlisterId}:${profileId}` pairs already notified (re-toggling never re-notifies). */
   shortlistNotified: string[];
   /** Discover rotation: what each member has really seen (impressions, opened, shortlist/interest). */
@@ -694,6 +696,7 @@ export class DemoBackend implements Backend {
     // Trash auto-purge after the retention window.
     for (const p of [...db.profiles]) if (p.deletedAt && now - new Date(p.deletedAt).getTime() > TRASH_RETENTION_MS) this.purgeProfile(db, p.id);
     for (const u of [...db.users]) if (u.deletedAt && now - new Date(u.deletedAt).getTime() > TRASH_RETENTION_MS) this.purgeUser(db, u.id);
+    if (db.deletedAccounts?.length) db.deletedAccounts = db.deletedAccounts.filter((d) => new Date(d.purgeAt).getTime() > now);
   }
 
   /**
@@ -943,9 +946,19 @@ export class DemoBackend implements Backend {
     return this.run((db) => {
       const u = this.me(db);
       if (u.role === 'master') throw new AppError('forbidden', 'Transfer the master role before deleting this account');
-      const code = this.myProfile(db, u.id)?.code;
-      this.purgeUser(db, u.id); // user-initiated deletion is immediate and permanent (privacy right)
-      this.alertAdmins(db, 'account_deleted', { code: code ?? '—' }, '/admin/audit');
+      const mine = this.myProfile(db, u.id);
+      const code = mine?.code;
+      // Admin-only copy for 30 days (owner decision 2026-11-02), like the database trigger.
+      const snapId = uid('del_');
+      const name = mine?.biodata.basic.fullName?.trim() || undefined;
+      (db.deletedAccounts ??= []).unshift({
+        id: snapId, code, fullName: name, phoneMasked: `${u.countryCode} ${maskPhone(u.phone)}`, joinedAt: u.createdAt,
+        deletedAt: this.iso(), purgeAt: new Date(this.now().getTime() + TRASH_RETENTION_MS).toISOString(),
+        profileStatus: mine?.status, profileType: mine ? profileTypeOf(mine) : undefined, photoCount: mine?.biodata.photos.length ?? 0,
+        profile: mine ? clone(mine) : undefined,
+      });
+      this.purgeUser(db, u.id); // the account itself is gone at once (privacy right)
+      this.alertAdmins(db, 'account_deleted', { code: code ?? '—', name: name ?? '' }, `/admin/deleted/${snapId}`);
       this.audit(db, u.id, 'account.deleted', u.id);
       this.local.token = undefined;
       this.local.last = undefined;
@@ -2219,6 +2232,24 @@ export class DemoBackend implements Backend {
         .map((p) => ({ kind: 'profile', id: p.id, label: `${p.code} · ${p.biodata.basic.fullName}`, deletedAt: p.deletedAt!, deletedBy: p.deletedBy, reason: p.deleteReason, purgeAt: new Date(new Date(p.deletedAt!).getTime() + TRASH_RETENTION_MS).toISOString() }));
       return [...users, ...profiles].sort((x, y) => y.deletedAt.localeCompare(x.deletedAt));
     });
+  }
+
+  adminListDeletedAccounts() {
+    return this.run((db): DeletedAccount[] => {
+      this.admin(db);
+      const now = this.now().getTime();
+      return (db.deletedAccounts ?? []).filter((d) => new Date(d.purgeAt).getTime() > now).map(({ profile: _p, ...d }) => clone(d));
+    });
+  }
+
+  adminGetDeletedAccount(id: string) {
+    return this.run((db): DeletedAccountDetail => {
+      const a = this.admin(db);
+      const d = (db.deletedAccounts ?? []).find((x) => x.id === id && new Date(x.purgeAt).getTime() > this.now().getTime());
+      if (!d) throw new AppError('not_found');
+      this.audit(db, a.id, 'deleted_account.viewed', id);
+      return clone(d);
+    }, true);
   }
 
   masterRestore(kind: 'user' | 'profile', id: string) {

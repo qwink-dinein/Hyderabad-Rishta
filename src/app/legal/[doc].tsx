@@ -15,7 +15,7 @@ const PRIVACY = [
   ['What we do not do', 'We never show your mobile number on your profile. We do not sell personal data. We do not compute compatibility scores from religious practice.'],
   ['Who can see your data', 'Published biodata is visible to logged-in members according to your privacy settings. Photos, income and family details can be limited to people you explicitly consent to. Contact details are shared only after you accept a request AND separately consent.'],
   ['Your choices', 'You can edit or pause your profile, change visibility, block or report members, deactivate your account, or permanently delete it and its data from Settings.'],
-  ['Retention', 'Deleted accounts are removed from the live database immediately; backups expire within 30 days. Consent and audit records may be kept as long as legally required.'],
+  ['Retention', 'When you delete your account it disappears from the app immediately and no member can see it again. For safety, fraud and complaint checks, a copy of your biodata and photos is kept for 30 days where only the Hyderabad Rishta team can see it, then erased automatically. Backups expire within 30 days. Consent, payment and audit records may be kept as long as legally required.'],
   ['Contact', 'For privacy questions or to request your data, email mukarramjahm@gmail.com.'],
 ];
 const TERMS = [
