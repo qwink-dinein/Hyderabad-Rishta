@@ -22,6 +22,8 @@ export const qk = {
   admin: (k: string, ...rest: unknown[]) => ['admin', k, ...rest] as const,
   featured: ['featured'] as const,
   pushSettings: ['pushSettings'] as const,
+  referralSettings: ['referralSettings'] as const,
+  myReferral: ['myReferral'] as const,
 };
 
 const useAuthed = () => !!useSession((s) => s.user);
@@ -35,6 +37,13 @@ export function useDashboard() {
 }
 export function usePricing() {
   return useQuery({ queryKey: qk.pricing, queryFn: () => backend.getPricing(), staleTime: 60_000 });
+}
+/** Referral free Boosts: which Boost experience to show (public) and my Refer & Earn view. */
+export function useReferralSettings() {
+  return useQuery({ queryKey: qk.referralSettings, queryFn: () => backend.getReferralSettings(), staleTime: 60_000 });
+}
+export function useMyReferral() {
+  return useQuery({ queryKey: qk.myReferral, queryFn: () => backend.getMyReferral(), enabled: useAuthed(), staleTime: 15_000 });
 }
 
 export function useSearch(filters: SearchFilters) {
@@ -195,6 +204,7 @@ export function useInvalidateProfileState() {
     qc.invalidateQueries({ queryKey: qk.notifications });
     qc.invalidateQueries({ queryKey: ['search'] });
     qc.invalidateQueries({ queryKey: qk.featured });
+    qc.invalidateQueries({ queryKey: qk.myReferral });
   };
 }
 

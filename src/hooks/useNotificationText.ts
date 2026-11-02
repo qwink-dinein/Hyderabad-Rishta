@@ -33,6 +33,10 @@ export const NOTIFICATION_ICONS: Record<string, IconName> = {
   boost_ended: 'star',
   boost_reminder: 'star',
   team_created: 'sparkle',
+  referral_joined: 'users',
+  referral_completed: 'clock',
+  referral_reward: 'star',
+  referral_welcome: 'sparkle',
 };
 
 /** Never throws on missing text (a notification must never take the whole screen down). */

@@ -274,6 +274,12 @@ begin
   return found;
 end $$;
 
+-- Is this a real code? (the sign-up field shows "Valid" before the number is verified). Not a visit.
+create or replace function check_referral_code(p_code text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from referral_codes where code = upper(trim(coalesce(p_code, ''))));
+$$;
+
 -- The new account attaches the code it signed up with. Once, and only for a genuinely new account.
 create or replace function claim_referral(p_code text) returns jsonb
 language plpgsql volatile security definer set search_path = public as $$
@@ -499,10 +505,10 @@ end $$;
 revoke all on function referral_phone_hash(text, text), referral_new_code(), referral_code_of(uuid), referral_profile_full(jsonb),
   referral_flags(referrals), referral_issue(uuid, uuid), referral_evaluate(uuid), trg_referral_new_user(), trg_referral_profile()
   from public, anon, authenticated;
-revoke all on function get_referral_settings(), record_referral_visit(text), claim_referral(text), get_my_referral(), use_referral_boost(),
+revoke all on function get_referral_settings(), record_referral_visit(text), check_referral_code(text), claim_referral(text), get_my_referral(), use_referral_boost(),
   admin_referral_settings_update(text, boolean, int, boolean, boolean), admin_referral_overview(), admin_list_referrals(text, text),
   admin_decide_referral(uuid, boolean, text), admin_revoke_referral_reward(uuid, text) from public;
-grant execute on function get_referral_settings(), record_referral_visit(text) to anon, authenticated;
+grant execute on function get_referral_settings(), record_referral_visit(text), check_referral_code(text) to anon, authenticated;
 grant execute on function claim_referral(text), get_my_referral(), use_referral_boost(),
   admin_referral_settings_update(text, boolean, int, boolean, boolean), admin_referral_overview(), admin_list_referrals(text, text),
   admin_decide_referral(uuid, boolean, text), admin_revoke_referral_reward(uuid, text) to authenticated;

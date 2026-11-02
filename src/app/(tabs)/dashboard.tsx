@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import { ProfileReferralCard } from '@/components/referral/ReferralCards';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { PricingNotice } from '@/components/Checkout';
@@ -143,6 +144,7 @@ export default function Dashboard() {
 
       <View style={{ marginTop: space.lg, gap: space.md }}>
         <MenuRow icon="crown" title={boostLabel} hint={boostHint} onPress={() => router.push('/boost')} gold testID="open-boost" />
+        <ProfileReferralCard />
         <View style={styles.group}>
           <MenuRow icon="edit" title={t('dashboard.editBiodata')} hint={t('me.editHint')} onPress={step(0)} testID="me-edit" />
           <MenuRow icon="image" title={t('me.photos')} hint={t('me.photosHint')} onPress={step(0)} testID="me-photos" />

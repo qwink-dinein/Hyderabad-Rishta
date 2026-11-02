@@ -13,6 +13,7 @@ import { isAdminRole } from '@/domain/types';
 import { backend } from '@/services';
 import { AppError } from '@/services/backend';
 import { haptic } from '@/services/feedback';
+import { claimPendingReferral } from '@/services/referralCapture';
 import { useOnboarding } from '@/state/onboarding';
 import { useAuthChannels } from '@/hooks/useAuthChannels';
 import { useSession } from '@/state/session';
@@ -52,9 +53,14 @@ export default function Code() {
     setError(null);
     setBusy(true);
     try {
-      const { user, needsPin } = await backend.verifyOtp(cc, phone, value);
+      const { user, isNew, needsPin } = await backend.verifyOtp(cc, phone, value);
       haptic('success');
       await enterSession(user, lang, qc);
+      // Invitation code from a link or the sign-up field: attached once, by the server, to a brand-new account.
+      if (!isAdminRole(user.role)) {
+        const refused = await claimPendingReferral(backend, isNew);
+        if (refused && refused !== 'network') toast(t(`err.${refused}`), 'info');
+      }
       if (isAdminRole(user.role)) {
         finish();
         return router.replace('/admin');

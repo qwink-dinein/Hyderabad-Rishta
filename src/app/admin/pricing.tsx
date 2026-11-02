@@ -10,7 +10,8 @@ import { Text } from '@/components/ui/Text';
 import { formatDate } from '@/domain/format';
 import { boostPlansFor, feeLabel, MAX_BOOST_PLANS, MAX_PROMO_LABEL, pricingCopy, validatePricing } from '@/domain/pricing';
 import type { BoostPlan, Fee, PricingConfig, ProfileType } from '@/domain/types';
-import { qk, usePricing } from '@/hooks/queries';
+import { qk, usePricing, useReferralSettings } from '@/hooks/queries';
+import { router } from 'expo-router';
 import { backend } from '@/services';
 import { space } from '@/theme/tokens';
 
@@ -84,6 +85,7 @@ export default function AdminPricing() {
     <Screen header={<Header title="Pricing & boosts" />} footer={<Button label="Save pricing" onPress={save} loading={busy} disabled={errors.length > 0} full />}>
       <View style={{ paddingTop: space.lg }}>
         <Banner icon="shield">Existing orders keep their original price and terms. There is never automatic renewal.</Banner>
+        <BoostModeLink />
       </View>
       <Section title="Publication fee">
         <Card>
@@ -230,5 +232,18 @@ export default function AdminPricing() {
         </Card>
       </Section>
     </Screen>
+  );
+}
+
+/** Which Boost experience members see (set in Referrals & free Boosts; this screen's prices apply to Paid mode). */
+function BoostModeLink() {
+  const { data } = useReferralSettings();
+  if (!data) return null;
+  return (
+    <Card style={{ gap: space.xs, marginTop: space.md }}>
+      <Text variant="bodyStrong">How members get a Boost: {data.mode === 'referral' ? 'Referral Boost' : 'Paid Boost'}</Text>
+      <Text variant="caption">{data.mode === 'referral' ? 'Paid plans below are hidden from members until you switch back (free plans stay).' : 'Members see the plans and prices below.'}</Text>
+      <Button label="Change in Referrals & free Boosts" size="sm" kind="secondary" onPress={() => router.push('/admin/referrals')} style={{ alignSelf: 'flex-start' }} />
+    </Card>
   );
 }

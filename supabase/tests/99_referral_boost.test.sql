@@ -216,7 +216,8 @@ end $$;
 -- Admin overview counts paid and referral Boosts separately; public settings readable signed-out.
 set role anon;
 do $$ begin assert get_referral_settings() ->> 'mode' = 'referral', 'public mode'; end $$;
-do $$ begin assert record_referral_visit(current_setting('my.acode')), 'visit counted'; assert not record_referral_visit('nope'), 'bad code'; end $$;
+do $$ begin assert record_referral_visit(current_setting('my.acode')), 'visit counted'; assert not record_referral_visit('nope'), 'bad code';
+  assert check_referral_code(lower(current_setting('my.acode'))) and not check_referral_code('HRZZZZ'), 'code check'; end $$;
 set role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-0000000ef008', false);
 do $$ declare o jsonb := admin_referral_overview(); begin

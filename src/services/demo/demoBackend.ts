@@ -1930,6 +1930,13 @@ export class DemoBackend implements Backend {
     }, true);
   }
 
+  checkReferralCode(code: string) {
+    return this.run((db) => {
+      const c = normalizeReferralCode(code);
+      return !!c && this.refData(db).codes.some((x) => x.code === c);
+    });
+  }
+
   claimReferral(code: string) {
     return this.run((db) => {
       const u = this.me(db);

@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { T } from '@/components/onboarding/kit';
+import { InviteAfterLive } from '@/components/referral/ReferralCards';
 import { Button } from '@/components/ui/Button';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { FadeIn, PopIn, PressableScale } from '@/components/ui/motion';
@@ -86,6 +87,7 @@ export default function Live() {
             </PressableScale>
           ))}
         </FadeIn>
+        {published ? <InviteAfterLive /> : null}
       </View>
       <View style={[styles.column, { marginTop: 'auto' }]}>
         <Button

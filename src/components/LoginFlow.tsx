@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { claimPendingReferral } from '@/services/referralCapture';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -121,6 +122,8 @@ export function LoginFlow() {
     setBusy(true);
     try {
       const { user, isNew, needsPin } = await backend.verifyOtp(cc, digits, code);
+      // A pending invitation code is attached only to a brand-new account (server-checked); never blocks login.
+      if (!isAdminRole(user.role)) await claimPendingReferral(backend, isNew).catch(() => null);
       const dest = await enter(user, isNew);
       if (purpose === 'setup') router.replace({ pathname: '/pin', params: { mode: 'create', next: '/settings' } });
       else if (purpose === 'reset' && !needsPin) router.replace({ pathname: '/pin', params: { mode: 'reset', next: dest } });

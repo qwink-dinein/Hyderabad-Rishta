@@ -5,6 +5,7 @@ import { Redirect, router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { BrandMark } from '@/components/art/Illustrations';
 import { CheckoutSheet } from '@/components/Checkout';
+import { LeftoverFreeBoosts, ReferralBoostPanel, useReferralMode } from '@/components/referral/ReferralCards';
 import { Button } from '@/components/ui/Button';
 import { Banner, Loading, showSuccess, useErrorMessage, useToast } from '@/components/ui/feedback';
 import { Icon, type IconName } from '@/components/ui/Icon';
@@ -35,10 +36,14 @@ export default function BoostScreen() {
   const [picked, setPicked] = useState<string | null>(null);
   const [order, setOrder] = useState<Order | null>(null);
   const [busy, setBusy] = useState(false);
+  // Referral Boost mode (admin): the paid options are not offered; free options (e.g. brides' 7 days) stay.
+  // Paid mode: exactly as before.
+  const referral = useReferralMode().on;
   if (!user) return <Redirect href="/login" />;
 
   const active = s.nudge === 'active';
-  const plan = s.plans.find((p) => p.id === picked) ?? s.plans[0];
+  const plans = referral ? s.plans.filter((p) => p.fee.mode === 'free') : s.plans;
+  const plan = plans.find((p) => p.id === picked) ?? plans[0];
   const canBuy = s.nudge === 'ready' && !!plan && !s.needsPhoto;
 
   const start = async () => {
@@ -107,7 +112,8 @@ export default function BoostScreen() {
         </Card>
       ) : (
         <View style={{ gap: space.lg, paddingTop: space.lg }}>
-          {active || s.expired ? <BoostStatusCard m={m} active={active} fetchedAt={dataUpdatedAt} /> : <Hero />}
+          {active || s.expired ? <BoostStatusCard m={m} active={active} fetchedAt={dataUpdatedAt} /> : referral ? null : <Hero />}
+          {referral ? <ReferralBoostPanel boostActiveUntil={active ? m?.boostUntil : undefined} /> : null}
           {s.nudge === 'not_published' ? (
             s.status === 'paused' ? (
               <Card style={styles.notice}>
@@ -146,13 +152,13 @@ export default function BoostScreen() {
               </Text>
             </View>
           ) : null}
-          {s.plans.length && !active && s.nudge !== 'disabled' ? (
+          {plans.length && !active && s.nudge !== 'disabled' ? (
             <View style={{ gap: space.md }}>
               <Text variant="h3" accessibilityRole="header">
                 {s.expired ? t('myBoost.boostAgain') : t('myBoost.choose')}
               </Text>
               <View role="radiogroup" style={{ gap: space.md }}>
-                {s.plans.map((p) => {
+                {plans.map((p) => {
                   const on = p.id === plan?.id;
                   const price = p.fee.mode === 'free' ? t('myBoost.free') : p.label;
                   return (
@@ -204,6 +210,7 @@ export default function BoostScreen() {
               <Text variant="caption">{t('myBoost.honest')}</Text>
             </View>
           ) : null}
+          {!referral ? <LeftoverFreeBoosts /> : null}
         </View>
       )}
       <CheckoutSheet

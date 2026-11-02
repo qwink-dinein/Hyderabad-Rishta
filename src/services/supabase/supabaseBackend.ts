@@ -654,6 +654,11 @@ export class SupabaseBackend implements Backend {
     return c ? !!(await this.rpc<boolean>('record_referral_visit', { p_code: c })) : false;
   }
 
+  async checkReferralCode(code: string) {
+    const c = normalizeReferralCode(code);
+    return c ? !!(await this.rpc<boolean>('check_referral_code', { p_code: c })) : false;
+  }
+
   async claimReferral(code: string) {
     const c = normalizeReferralCode(code);
     if (!c) throw new AppError('referral_invalid');

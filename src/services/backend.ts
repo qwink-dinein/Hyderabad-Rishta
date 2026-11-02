@@ -390,6 +390,8 @@ export interface Backend {
   getReferralSettings(): Promise<ReferralSettings>;
   /** Public: a referral link was opened. Counts a visit only; true if the code exists. */
   recordReferralVisit(code: string): Promise<boolean>;
+  /** Public: is this a real code? (no visit counted) */
+  checkReferralCode(code: string): Promise<boolean>;
   /** The signed-in, brand-new account attaches the code it signed up with (once; never changed later). */
   claimReferral(code: string): Promise<void>;
   getMyReferral(): Promise<MyReferral>;

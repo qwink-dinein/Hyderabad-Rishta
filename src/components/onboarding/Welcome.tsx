@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BrandMark } from '@/components/art/Illustrations';
 import { Charminar } from '@/components/art/Charminar';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { InvitedBanner } from '@/components/referral/ReferralCards';
 import { Button } from '@/components/ui/Button';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { FadeIn, Stagger } from '@/components/ui/motion';
@@ -49,6 +50,9 @@ export function Welcome() {
               {t('common.appName')}
             </Text>
             <LanguageSwitcher tone="dark" compact />
+          </View>
+          <View style={{ marginTop: space.md }}>
+            <InvitedBanner />
           </View>
           <Stagger delay={80} step={70} style={{ marginTop: sp(space.xxl) }}>
             <Text variant="display" color={colors.ivory} accessibilityRole="header" style={[styles.hello, short && { fontSize: tiny ? 30 : 34 }]}>

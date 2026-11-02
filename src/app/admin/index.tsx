@@ -26,6 +26,7 @@ const NAV: NavItem[] = [
   { href: '/admin/reports', icon: 'flag', label: 'Reports & safety', desc: 'Resolve, pause reported profiles, delete reports' },
   { href: '/admin/announcements', icon: 'bell', label: 'Announcements', desc: 'Compose, schedule, publish, delete, readership' },
   { href: '/admin/pricing', icon: 'chart', label: 'Pricing & boosts', desc: 'Fees per bride/groom, boost duration, history' },
+  { href: '/admin/referrals', icon: 'users', label: 'Referrals & free Boosts', desc: 'Paid or Referral Boost mode, referral checks, rewards, revoke' },
   { href: '/admin/orders', icon: 'star', label: 'Orders & payments', desc: 'View and cancel pending orders' },
   { href: '/admin/trash', icon: 'ban', label: 'Trash', desc: 'Deleted profiles & users (30-day recovery window)' },
   { href: '/admin/deleted', icon: 'user', label: 'Deleted accounts', desc: 'Members who deleted their own account: who, and the full profile for 30 days' },

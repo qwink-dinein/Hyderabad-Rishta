@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { PhoneField } from '@/components/LoginFlow';
+import { ReferralCodeField } from '@/components/referral/ReferralCards';
 import { OnbScreen, T } from '@/components/onboarding/kit';
 import { useSubject } from '@/components/onboarding/useSubject';
 import { Button } from '@/components/ui/Button';
@@ -68,6 +69,7 @@ export default function Phone() {
         onSubmit={send}
         error={error}
       />
+      <ReferralCodeField />
       <View style={{ flexDirection: 'row', gap: space.md, alignItems: 'flex-start' }}>
         <Icon name="message" size={22} color={colors.success} />
         <Text variant="body" color={colors.muted} style={{ flex: 1, fontSize: T.label + 1 }}>

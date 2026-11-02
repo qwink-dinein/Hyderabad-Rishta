@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { BrandMark, HeroScene } from '@/components/art/Illustrations';
 import { HeroCarousel } from '@/components/HeroCarousel';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { InvitedBanner } from '@/components/referral/ReferralCards';
 import { Button } from '@/components/ui/Button';
 import { Banner } from '@/components/ui/feedback';
 import { Icon, type IconName } from '@/components/ui/Icon';
@@ -76,6 +77,7 @@ export default function Welcome() {
             </Row>
             <LanguageSwitcher tone="dark" compact />
           </Row>
+          <InvitedBanner />
           <HeroCarousel />
         </View>
       </LinearGradient>

@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { BrandMark } from '@/components/art/Illustrations';
 import { ProfileRail } from '@/components/ProfileRail';
 import { ActivityStats, BoostPromoCard, CompletionCard, TeamCreatedNote } from '@/components/HomeCards';
+import { HomeReferralBanner, WelcomeGiftCard } from '@/components/referral/ReferralCards';
 import { PushPrompt } from '@/components/PushSettings';
 import { TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
@@ -172,9 +173,11 @@ export default function Home() {
         <View style={styles.column}>
           {/* Owner PRD 2026-10-29: completion, then real activity, then Boost (when it applies). */}
           <TeamCreatedNote />
+          <WelcomeGiftCard />
           <CompletionCard />
           <ActivityStats />
           <BoostPromoCard />
+          <HomeReferralBanner />
           <PushPrompt />
         </View>
 
