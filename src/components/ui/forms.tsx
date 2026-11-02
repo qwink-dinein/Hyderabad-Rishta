@@ -258,6 +258,21 @@ export function Select({ options, value, onChange, placeholder, multiple, allowC
   }, [q, options]);
   const customCandidate = allowCustom && q.trim() && !options.some((o) => o.label.toLowerCase() === q.trim().toLowerCase()) ? q.trim() : null;
 
+  // Visible "type it yourself" box under the field (owner request 2026-11-02): typing inside the
+  // picker's search box was easy to miss.
+  const [typing, setTyping] = useState(false);
+  const [typed, setTyped] = useState('');
+  const useTyped = () => {
+    const v = typed.trim().replace(/\s+/g, ' ');
+    if (!v) return;
+    const known = options.find((o) => o.label.toLowerCase() === v.toLowerCase() || o.value.toLowerCase() === v.toLowerCase());
+    const val = known ? known.value : v;
+    if (multiple) onChange(values.includes(val) ? values : [...values, val]);
+    else onChange(val);
+    setTyped('');
+    setTyping(false);
+  };
+
   const pick = (v: string) => {
     if (multiple) {
       onChange(values.includes(v) ? values.filter((x) => x !== v) : [...values, v]);
@@ -282,6 +297,31 @@ export function Select({ options, value, onChange, placeholder, multiple, allowC
         </Text>
         <Icon name="chevronDown" size={18} color={colors.muted} />
       </Pressable>
+      {allowCustom && !disabled ? (
+        typing ? (
+          <View style={{ flexDirection: 'row', gap: space.sm, alignItems: 'center', marginTop: space.sm }}>
+            <View style={{ flex: 1 }}>
+              <TextField
+                value={typed}
+                onChangeText={setTyped}
+                placeholder={t('common.typeOwnPlaceholder')}
+                accessibilityLabel={`${label}: ${t('common.typeOwnPlaceholder')}`}
+                maxLength={60}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={useTyped}
+              />
+            </View>
+            <Button label={multiple ? t('common.addTyped') : t('common.useTyped')} size="sm" disabled={!typed.trim()} onPress={useTyped} />
+          </View>
+        ) : (
+          <Pressable onPress={() => setTyping(true)} accessibilityRole="button" hitSlop={8} style={{ marginTop: space.xs, alignSelf: 'flex-start', paddingVertical: space.xs }}>
+            <Text variant="caption" color={colors.emerald} style={{ textDecorationLine: 'underline' }}>
+              {t('common.typeOwn')}
+            </Text>
+          </Pressable>
+        )
+      ) : null}
       <Modal visible={open} animationType="slide" transparent onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)} accessibilityLabel={t('common.close')} />
         <View style={[styles.sheet, { paddingBottom: insets.bottom + space.md }]}>

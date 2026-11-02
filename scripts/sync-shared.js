@@ -9,6 +9,7 @@ const FILES = [
   ['src/domain/phone.ts', 'supabase/functions/_shared/phone.ts'],
   // Discover rotation engine and what it needs (copied as modules; Deno needs explicit .ts imports).
   ['src/domain/types.ts', 'supabase/functions/_shared/types.ts', 'module'],
+  ['src/domain/places.ts', 'supabase/functions/_shared/places.ts', 'module'],
   ['src/domain/options.ts', 'supabase/functions/_shared/options.ts', 'module'],
   ['src/domain/search.ts', 'supabase/functions/_shared/search.ts', 'module'],
   ['src/domain/feed.ts', 'supabase/functions/_shared/feed.ts', 'module'],

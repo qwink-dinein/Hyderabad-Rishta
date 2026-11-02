@@ -6,6 +6,8 @@
  * because custom values are stored verbatim in `*Other` fields.
  */
 
+import { ABROAD, INDIA, type Place } from './places.ts';
+
 export const CREATED_FOR = ['self', 'son', 'daughter', 'brother', 'sister', 'relative', 'other'] as const;
 export const MARITAL_STATUS = ['never_married', 'divorced', 'widowed', 'separated', 'annulled'] as const;
 export const MOTHER_TONGUES = [
@@ -42,45 +44,8 @@ export const REPORT_REASONS = ['fake', 'inappropriate', 'harassment', 'scam', 'a
 
 export const VISIBILITY = ['public', 'onConsent', 'hidden'] as const;
 
-/** Structured locations: countries → states → districts/cities. Manual entry is always allowed. */
-export const LOCATIONS: Record<string, Record<string, { districts: string[]; cities: string[] }>> = {
-  India: {
-    Telangana: {
-      districts: ['Hyderabad', 'Rangareddy', 'Medchal–Malkajgiri', 'Sangareddy', 'Warangal', 'Karimnagar', 'Nizamabad', 'Nalgonda', 'Mahabubnagar', 'Khammam', 'Adilabad'],
-      cities: ['Hyderabad', 'Secunderabad', 'Warangal', 'Karimnagar', 'Nizamabad', 'Nalgonda', 'Mahabubnagar', 'Khammam', 'Adilabad', 'Zaheerabad', 'Sangareddy'],
-    },
-    'Andhra Pradesh': {
-      districts: ['Kurnool', 'Guntur', 'Krishna', 'Anantapur', 'Kadapa', 'Nellore', 'Visakhapatnam'],
-      cities: ['Vijayawada', 'Guntur', 'Kurnool', 'Kadapa', 'Nellore', 'Visakhapatnam', 'Anantapur', 'Tirupati'],
-    },
-    Karnataka: { districts: ['Bengaluru Urban', 'Kalaburagi', 'Bidar', 'Mysuru'], cities: ['Bengaluru', 'Kalaburagi', 'Bidar', 'Mysuru', 'Mangaluru'] },
-    Maharashtra: { districts: ['Mumbai', 'Pune', 'Aurangabad', 'Nanded'], cities: ['Mumbai', 'Pune', 'Aurangabad', 'Nanded', 'Nagpur'] },
-    'Tamil Nadu': { districts: ['Chennai', 'Vellore'], cities: ['Chennai', 'Vellore', 'Coimbatore'] },
-    Delhi: { districts: ['New Delhi'], cities: ['New Delhi'] },
-  },
-  'United Arab Emirates': {
-    Dubai: { districts: [], cities: ['Dubai'] },
-    'Abu Dhabi': { districts: [], cities: ['Abu Dhabi', 'Al Ain'] },
-    Sharjah: { districts: [], cities: ['Sharjah'] },
-  },
-  'Saudi Arabia': {
-    Riyadh: { districts: [], cities: ['Riyadh'] },
-    Makkah: { districts: [], cities: ['Jeddah', 'Makkah'] },
-    'Eastern Province': { districts: [], cities: ['Dammam', 'Al Khobar'] },
-  },
-  Qatar: { Doha: { districts: [], cities: ['Doha'] } },
-  Kuwait: { 'Al Asimah': { districts: [], cities: ['Kuwait City'] } },
-  Oman: { Muscat: { districts: [], cities: ['Muscat'] } },
-  'United States': {
-    Texas: { districts: [], cities: ['Dallas', 'Houston', 'Austin'] },
-    California: { districts: [], cities: ['San Jose', 'Los Angeles'] },
-    'New Jersey': { districts: [], cities: ['Jersey City', 'Edison'] },
-    Illinois: { districts: [], cities: ['Chicago'] },
-  },
-  'United Kingdom': { England: { districts: [], cities: ['London', 'Birmingham', 'Manchester', 'Leicester'] } },
-  Canada: { Ontario: { districts: [], cities: ['Toronto', 'Mississauga'] } },
-  Australia: { 'New South Wales': { districts: [], cities: ['Sydney'] }, Victoria: { districts: [], cities: ['Melbourne'] } },
-};
+/** Structured locations: countries → states → districts/cities (full list in ./places). Manual entry is always allowed. */
+export const LOCATIONS: Record<string, Record<string, Place>> = { India: INDIA, ...ABROAD };
 
 export const COUNTRIES = Object.keys(LOCATIONS);
 export const statesOf = (country?: string) => (country && LOCATIONS[country] ? Object.keys(LOCATIONS[country]) : []);

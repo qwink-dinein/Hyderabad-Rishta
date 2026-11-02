@@ -115,7 +115,18 @@ const step = async (name, fn) => {
     await L('q-tongue-urdu').click();
     await at(/\/start\/q\/city/);
     await L('q-place').waitFor(); // Hyderabad pre-filled from the earlier answer
-    await page.getByText("Yes, that's right").last().click();
+    // A town that is not in the list can be typed in the visible box under the City field.
+    await L('q-place-change').click();
+    const typeOwn = page.getByText('Not in the list? Type it here');
+    if ((await typeOwn.count()) < 3) throw new Error('type-it-here link missing under country/state/city');
+    await shot('05-city-type-own-link');
+    await typeOwn.nth(2).click();
+    await page.getByPlaceholder('Type it here').last().fill('Kosgi');
+    await shot('06-city-typing');
+    await page.getByRole('button', { name: 'Use this' }).last().click();
+    await page.getByText('Kosgi').last().waitFor();
+    await shot('07-city-typed');
+    await L('q-next').click();
     await at(/\/start\/q\/education/);
   });
   await step('education one tap; profession "Other" asks to write it; Finish publishes; win screen; on to Discover', async () => {

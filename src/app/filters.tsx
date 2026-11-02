@@ -84,13 +84,13 @@ export default function Filters() {
 
       <Section title={t('filters.location')}>
         <Field label={t('f.country')} optional>
-          <Select multiple label={t('f.country')} options={plain(COUNTRIES)} value={f.countries} onChange={(v: string[]) => patch({ countries: v, states: [], districts: [], cities: [] })} />
+          <Select multiple allowCustom label={t('f.country')} options={plain(COUNTRIES)} value={f.countries} onChange={(v: string[]) => patch({ countries: v, states: [], districts: [], cities: [] })} />
         </Field>
         <Field label={t('f.state')} optional>
-          <Select multiple label={t('f.state')} options={plain(stateOpts)} value={f.states} onChange={(v: string[]) => patch({ states: v, districts: [], cities: [] })} />
+          <Select multiple allowCustom label={t('f.state')} options={plain(stateOpts)} value={f.states} onChange={(v: string[]) => patch({ states: v, districts: [], cities: [] })} />
         </Field>
         <Field label={t('f.district')} optional>
-          <Select multiple label={t('f.district')} options={plain(districtOpts)} value={f.districts} onChange={(v: string[]) => patch({ districts: v })} />
+          <Select multiple allowCustom label={t('f.district')} options={plain(districtOpts)} value={f.districts} onChange={(v: string[]) => patch({ districts: v })} />
         </Field>
         <Field label={t('f.city')} optional>
           <Select multiple allowCustom label={t('f.city')} options={plain(cityOpts)} value={f.cities} onChange={(v: string[]) => patch({ cities: v })} />
