@@ -67,7 +67,10 @@
     "test": "jest",
     "test:ci": "jest --ci --coverage",
     "export:web": "expo export --platform web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "site:build": "node website/build.mjs",
+    "site:check": "node website/build.mjs && node website/check.mjs",
+    "store:check": "node store/check.mjs"
   },
   "private": true,
   "jest": {

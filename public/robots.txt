@@ -1,0 +1,4 @@
+# Hyderabad Rishta web app: private member area. Not for search engines or AI crawlers.
+# The public website (with its own robots.txt and sitemap) is served from the main domain.
+User-agent: *
+Disallow: /
