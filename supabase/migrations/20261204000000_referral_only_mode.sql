@@ -13,8 +13,7 @@ begin
   return new;
 end $$;
 revoke all on function orders_referral_mode_guard() from public, anon, authenticated;
-drop trigger if exists orders_referral_mode on orders;
-create trigger orders_referral_mode before insert on orders for each row execute function orders_referral_mode_guard();
+create or replace trigger orders_referral_mode before insert on orders for each row execute function orders_referral_mode_guard();
 
 create or replace function use_referral_boost() returns jsonb
 language plpgsql volatile security definer set search_path = public as $$
