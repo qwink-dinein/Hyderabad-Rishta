@@ -5,6 +5,7 @@ import { profileCompletion } from '@/domain/completion';
 import { formatDate } from '@/domain/format';
 import { useDashboard, useMyProfile } from '@/hooks/queries';
 import { useBoostStatus } from '@/hooks/useBoostStatus';
+import { useReferralMode } from './referral/ReferralCards';
 import { colors, radius, shadow, space } from '@/theme/tokens';
 import { ProgressRing } from './ProgressRing';
 import { Button } from './ui/Button';
@@ -113,9 +114,11 @@ export function BoostPromoCard() {
   const { t } = useTranslation();
   const { data: me } = useMyProfile();
   const s = useBoostStatus();
+  const referral = useReferralMode().on;
   if (!s.nudge || s.nudge === 'no_profile' || s.nudge === 'disabled') return null;
 
   if (s.nudge === 'active') {
+    if (referral) return null; // the Boost card at the top of Home shows it (and sells the next one)
     return (
       <Pressable onPress={() => router.push('/boost')} accessibilityRole="button" style={[styles.boost, styles.row]} testID="boost-active-card">
         <View style={styles.crown}>

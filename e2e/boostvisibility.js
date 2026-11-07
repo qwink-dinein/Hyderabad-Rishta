@@ -1,7 +1,7 @@
 // Owner Mini PRD 2026-10-31 — Boost visibility, Featured profiles & Discover sections, in the real app (web
 // build), with several viewers and boosted profiles on one device: Home and Discover sections without
 // repeats, Featured following the filters, admin switches taking effect at once, the Boost purchase screen
-// (promotional label, exact price, activation/expiry, Activate Free Boost / Boost Now) and My Boost.
+// (promotional label, exact price, activation/expiry, Boost Now) and My Boost. Boosts are never free outside referrals.
 const { chromium } = require('playwright');
 const { loginWithOtp } = require('./auth');
 const SHOTS = require('path').join(__dirname, 'screenshots');
@@ -70,6 +70,13 @@ const BASE = 'http://localhost:8081';
 
   await step('admin: promotional label, Featured off — effective immediately, no redeploy', async () => {
     await login('9000000000');
+    // This suite covers the Paid Boost screen; Referral mode is the default since 2026-11-07.
+    await page.evaluate(() => {
+      const d = JSON.parse(localStorage.getItem('hr.demo.db'));
+      d.referralSettings = Object.assign({}, d.referralSettings, { mode: 'paid' });
+      localStorage.setItem('hr.demo.db', JSON.stringify(d));
+    });
+    await page.reload();
     await page.goto(BASE + '/admin/pricing');
     await page.getByTestId('plan-label-1').fill('Best value');
     await page.getByTestId('pricing-featuredEnabled').click();
@@ -98,11 +105,12 @@ const BASE = 'http://localhost:8081';
     await logout();
   });
 
-  await step('a bride activates a free boost → My Boost: days remaining, dates, real counts', async () => {
+  await step('a bride buys a 7-day boost → My Boost: days remaining, dates, real counts', async () => {
     await login('9000000104');
     await page.goto(BASE + '/boost');
-    await page.getByTestId('boost-cta').getByText('Activate Free Boost').waitFor({ timeout: 10000 });
+    await page.getByTestId('boost-cta').getByText(/Boost Now · \W*₹100/).waitFor({ timeout: 10000 });
     await page.getByTestId('boost-cta').click();
+    await page.getByRole('button', { name: 'Simulate successful payment' }).click();
     await page.getByTestId('boost-days-left').getByText('7 days remaining').waitFor({ timeout: 10000 });
     await page.getByTestId('boost-stats').waitFor();
     await page.getByTestId('boost-stat-views').waitFor();

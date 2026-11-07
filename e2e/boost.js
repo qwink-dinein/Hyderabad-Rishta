@@ -194,6 +194,14 @@ const setDb = (page, fn) => page.evaluate((src) => {
     await page.waitForURL((u) => u.pathname === '/refer', { waitUntil: 'commit' });
   });
 
+  await step('a Boost is running: Home keeps the Boost card and sells the next one (refer)', '9000000102', async (page) => {
+    await page.goto(BASE + '/home');
+    await page.getByTestId('boost-sell-hero').getByText('Your Boost is live').waitFor();
+    if (await page.getByTestId('boost-sell-tile').count()) throw new Error('"your profile could be here" while boosted');
+    await page.getByTestId('boost-sell-cta').click();
+    await page.waitForURL((u) => u.pathname === '/refer', { waitUntil: 'commit' });
+  });
+
   await step('unpublished member: Boost asks to publish first; activity explains why it is empty', '9000000131', async (page) => {
     await page.goto(BASE + '/home');
     await page.getByTestId('boost-publish-card').waitFor();

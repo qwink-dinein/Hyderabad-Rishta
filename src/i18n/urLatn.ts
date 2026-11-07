@@ -628,6 +628,8 @@ const urLatn: DeepPartial<Translation> = {
     summaryNone: "Boost nahi hai. Boost wali profiles dhoondne wale members ko sab se pehle dikhti hain.",
   },
   sell: {
+    liveTitle: 'Aap ka Boost chal raha hai',
+    liveBody: '{{date}} tak. Abhi ek khandan ko bulaiye taake yeh khatam hote hi aap ka agla muft Boost tayyar ho.',
     badge: 'Boost',
     heroTitle: 'Boost paiye. Sab se pehle nazar aaiye.',
     heroBody: 'Boost wali profiles aap jaisa rishta dhoondne wale khandanon ko sab se upar, Featured mein dikhayi jaati hain.',

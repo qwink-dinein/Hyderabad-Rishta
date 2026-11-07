@@ -623,6 +623,8 @@ const en = {
     summaryNone: "Not boosted. Boosted profiles appear first for members looking for you.",
   },
   sell: {
+    liveTitle: 'Your Boost is live',
+    liveBody: 'Valid till {{date}}. Refer a family now so your next free Boost is ready when this one ends.',
     badge: 'Boost',
     heroTitle: 'Get Boosted. Be seen first.',
     heroBody: 'Boosted profiles appear at the top, in Featured, for families looking for someone like you.',

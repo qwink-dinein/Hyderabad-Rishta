@@ -8,6 +8,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Row } from '@/components/ui/layout';
 import { Text } from '@/components/ui/Text';
 import { profileCompletion } from '@/domain/completion';
+import { formatDate } from '@/domain/format';
 import { useMyProfile, useMyReferral } from '@/hooks/queries';
 import { useBoostStatus } from '@/hooks/useBoostStatus';
 import { colors, radius, space } from '@/theme/tokens';
@@ -17,9 +18,10 @@ import { colors, radius, space } from '@/theme/tokens';
  * them to Boost, then tell them to refer and complete 100% if not". A free Boost comes only from a referral,
  * so the call to action is always the member's NEXT real step:
  *   complete → profile under 100% (needed to use a free Boost) · refer → 100%, no free Boost yet
- *   use      → a free Boost is ready · buy → Paid mode with plans · hidden → nothing to sell right now.
+ *   use      → a free Boost is ready · buy → Paid mode with plans · live → a Boost is running: refer now so the
+ *   next free one is ready when it ends · hidden → nothing to sell right now.
  */
-export type BoostSellState = 'hidden' | 'complete' | 'refer' | 'use' | 'buy';
+export type BoostSellState = 'hidden' | 'complete' | 'refer' | 'use' | 'buy' | 'live';
 
 export function useBoostSell() {
   const { data: profile } = useMyProfile();
@@ -37,16 +39,16 @@ export function useBoostSell() {
   if (profile && c && (s.nudge === 'ready' || s.nudge === 'disabled')) {
     if (s.nudge === 'ready' && rm.settings?.mode !== 'referral' && s.plans.length) state = 'buy';
     else if (rm.on || available > 0) state = available > 0 ? (percent === 100 ? 'use' : 'complete') : percent === 100 ? 'refer' : 'complete';
-  }
+  } else if (profile && s.nudge === 'active' && rm.on) state = 'live'; // keep selling: the next Boost comes from referring
   const openNext = () =>
     router.push({ pathname: '/biodata', params: { step: String(c?.next?.step ?? 0), ...(c?.next?.field ? { focus: c.next.field } : {}) } });
   const go = () => {
     if (state === 'complete') openNext();
-    else if (state === 'refer') router.push('/refer');
+    else if (state === 'refer' || state === 'live') router.push('/refer');
     else if (state === 'use') router.push('/refer/use');
     else router.push('/boost');
   };
-  return { state, percent, available, pending, days, go, openNext };
+  return { state, percent, available, pending, days, until: s.until, go, openNext };
 }
 
 /** Home: the big Boost card — the promise first, then the two steps to a free Boost and the next action. */
@@ -57,12 +59,12 @@ export function BoostSellHero() {
   const cta =
     b.state === 'complete'
       ? t('sell.ctaComplete', { percent: b.percent })
-      : b.state === 'refer'
+      : b.state === 'refer' || b.state === 'live'
         ? t('sell.ctaRefer')
         : b.state === 'use'
           ? t('sell.ctaUse')
           : t('sell.ctaBuy');
-  const steps = b.state === 'buy' || b.state === 'use' ? null : (
+  const steps = b.state === 'buy' || b.state === 'use' || b.state === 'live' ? null : (
     <View style={{ gap: space.sm, marginTop: space.xs }}>
       <Text variant="label" color={colors.gold}>
         {b.available > 0 ? t('sell.waitingBody', { percent: b.percent }) : t('sell.freeLine', { days: b.days })}
@@ -85,10 +87,10 @@ export function BoostSellHero() {
         </View>
       </Row>
       <Text variant="h2" color={colors.ivory} accessibilityRole="header">
-        {b.state === 'use' ? t('sell.readyTitle') : b.available > 0 ? t('sell.waitingTitle') : t('sell.heroTitle')}
+        {b.state === 'live' ? t('sell.liveTitle') : b.state === 'use' ? t('sell.readyTitle') : b.available > 0 ? t('sell.waitingTitle') : t('sell.heroTitle')}
       </Text>
       <Text variant="body" color={colors.sage}>
-        {t('sell.heroBody')}
+        {b.state === 'live' ? t('sell.liveBody', { date: formatDate(b.until) }) : t('sell.heroBody')}
       </Text>
       {steps}
       <Button label={cta} kind="gold" full arrow onPress={b.go} style={{ marginTop: space.sm }} testID="boost-sell-cta" />
@@ -124,13 +126,15 @@ export function BoostSellBanner({ testID = 'boost-sell-banner' }: { testID?: str
   const { t } = useTranslation();
   const b = useBoostSell();
   if (b.state === 'hidden') return null;
-  const title = b.state === 'use' ? t('sell.readyTitle') : b.state === 'buy' ? t('myBoost.titleGet') : b.available > 0 ? t('sell.waitingTitle') : t('sell.compactTitle');
+  const title = b.state === 'live' ? t('sell.liveTitle') : b.state === 'use' ? t('sell.readyTitle') : b.state === 'buy' ? t('myBoost.titleGet') : b.available > 0 ? t('sell.waitingTitle') : t('sell.compactTitle');
   const body =
     b.state === 'complete'
       ? b.available > 0
         ? t('sell.waitingBody', { percent: b.percent })
         : t('sell.compactComplete', { percent: b.percent })
-      : b.state === 'refer'
+      : b.state === 'live'
+        ? t('sell.liveBody', { date: formatDate(b.until) })
+        : b.state === 'refer'
         ? t('sell.compactRefer')
         : b.state === 'use'
           ? t('sell.compactUse')
@@ -157,7 +161,7 @@ export function BoostSellBanner({ testID = 'boost-sell-banner' }: { testID?: str
 export function BoostSellTile({ width }: { width: number }) {
   const { t } = useTranslation();
   const b = useBoostSell();
-  if (b.state === 'hidden') return null;
+  if (b.state === 'hidden' || b.state === 'live') return null; // already in Featured while boosted
   return (
     <Pressable onPress={b.go} accessibilityRole="button" style={[styles.tile, { width }]} testID="boost-sell-tile">
       <View style={styles.tileCrown}>
