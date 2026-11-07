@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { PublicProfile } from '@/domain/types';
 import { colors, space } from '@/theme/tokens';
@@ -24,6 +24,7 @@ export const ProfileRail = memo(function ProfileRail({
   onToggleShortlist,
   onOpen,
   inset = space.lg,
+  trailing,
   testID,
 }: {
   title: string;
@@ -37,6 +38,8 @@ export const ProfileRail = memo(function ProfileRail({
   onOpen: (id: string) => void;
   /** Horizontal padding, so the first card lines up with the screen's column. */
   inset?: number;
+  /** A last card after the profiles (same width), e.g. the Boost tile on Featured. */
+  trailing?: (width: number) => ReactNode;
   testID: string;
 }) {
   if (!loading && !items.length) return null;
@@ -79,6 +82,7 @@ export const ProfileRail = memo(function ProfileRail({
                 <ProfileCard profile={p} variant="featured" shortlisted={shortlisted.has(p.id)} onToggleShortlist={onToggleShortlist} onOpen={onOpen} />
               </View>
             ))}
+        {!loading || items.length ? trailing?.(CARD) : null}
       </ScrollView>
       {note ? (
         <Text variant="caption" style={{ paddingHorizontal: inset }}>

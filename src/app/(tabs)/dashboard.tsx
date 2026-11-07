@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import { BoostSellBanner } from '@/components/BoostSell';
 import { ProfileReferralCard } from '@/components/referral/ReferralCards';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -143,6 +144,7 @@ export default function Dashboard() {
       </Card>
 
       <View style={{ marginTop: space.lg, gap: space.md }}>
+        <BoostSellBanner testID="profile-boost-sell" />
         <MenuRow icon="crown" title={boostLabel} hint={boostHint} onPress={() => router.push('/boost')} gold testID="open-boost" />
         <ProfileReferralCard />
         <View style={styles.group}>

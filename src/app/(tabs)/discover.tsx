@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { BoostSellBanner } from '@/components/BoostSell';
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -306,6 +307,7 @@ export default function Discover() {
           </Pressable>
         </Row>
       ) : null}
+      <BoostSellBanner testID="discover-boost-sell" />
     </View>
   );
 

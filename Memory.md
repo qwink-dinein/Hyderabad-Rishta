@@ -143,6 +143,7 @@ Reset everything: Settings → “Reset demo data”.
 | 2026-10-28 | QA rounds 1–2 (crawler + click-through) and security round 2 (OTP cap, spoofing chars, CSP headers, permissions) | Owner: "become a tester … test every button … try to break the security and fix it". |
 | 2026-10-28 | npm audit findings left as-is (build-time Expo CLI/jest only); never `npm audit fix --force` (downgrades to SDK 51) | Not shipped in the app bundle. |
 | 2026-11-07 | A free Boost comes ONLY from a successful referral. Boost plans are never free (app hides them, admin can't pick Free, DB refuses free boost orders in any mode); Referral mode is the default and live is set to it | Owner: "this boost must not be given for free to any new user … bound only by the referral program … sell them to refer". Migration 20261205. |
+| 2026-11-07 | Sell the Boost everywhere (`src/components/BoostSell.tsx`): Home top card + "Your profile could be here" tile at the end of Featured; a banner on Discover, Requests, Shortlist, Profile, Activity, Notifications. CTA = the member's next real step: complete to 100% (opens the missing field) → refer a family → use the free Boost | Owner: "show boost wherever possible and sell it … lure them to boost, then tell them to refer and complete 100%". |
 
 ## Gotchas
 - Demo backend hot paths: never call `this.me(db)` / `currentSession()` inside a `.filter`/`.find` callback (each call hashes the token) and never do a per-profile table scan in lists — build lookups once (`viewerContext()`). `__tests__/scale.test.ts` (2,000 members) guards this.

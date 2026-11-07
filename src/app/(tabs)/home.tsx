@@ -7,7 +7,8 @@ import { useTranslation } from 'react-i18next';
 import { BrandMark } from '@/components/art/Illustrations';
 import { ProfileRail } from '@/components/ProfileRail';
 import { ActivityStats, BoostPromoCard, CompletionCard, TeamCreatedNote } from '@/components/HomeCards';
-import { HomeReferralBanner, WelcomeGiftCard } from '@/components/referral/ReferralCards';
+import { BoostSellHero, BoostSellTile } from '@/components/BoostSell';
+import { WelcomeGiftCard } from '@/components/referral/ReferralCards';
 import { PushPrompt } from '@/components/PushSettings';
 import { TabHeader } from '@/components/TabHeader';
 import { Button } from '@/components/ui/Button';
@@ -145,6 +146,8 @@ export default function Home() {
             </Pressable>
           ) : null}
 
+          {/* Owner 2026-11-07: sell the Boost first thing on Home — then the next step (100% profile, refer). */}
+          <BoostSellHero />
         </View>
 
         {loading ? (
@@ -166,6 +169,7 @@ export default function Home() {
             items={sec?.featured ?? []}
             loading={loading}
             testID="home-featured"
+            trailing={(w) => <BoostSellTile width={w} />}
             {...rail}
           />
         </View>
@@ -177,7 +181,6 @@ export default function Home() {
           <CompletionCard />
           <ActivityStats />
           <BoostPromoCard />
-          <HomeReferralBanner />
           <PushPrompt />
         </View>
 

@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { BoostSellBanner } from '@/components/BoostSell';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { Redirect, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -41,6 +42,7 @@ export default function ShortlistScreen() {
           data={data}
           keyExtractor={(p) => p.id}
           contentContainerStyle={[styles.column, { paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.xxxl + insets.bottom, gap: space.lg }]}
+          ListHeaderComponent={<BoostSellBanner testID="shortlist-boost-sell" />}
           renderItem={({ item }: { item: PublicProfile }) => <ProfileCard profile={item} shortlisted onToggleShortlist={onToggle} onOpen={onOpen} />}
           onRefresh={refetch}
           refreshing={isRefetching}

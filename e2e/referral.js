@@ -70,7 +70,7 @@ async function step(name, fn) {
     await page.getByTestId('referral-balance').waitFor();
     await shot('03-referral-boost');
     await page.goto(BASE + '/home');
-    await page.getByTestId('home-referral-banner').waitFor({ timeout: 10000 });
+    await page.getByTestId('boost-sell-hero').waitFor({ timeout: 10000 });
     await page.goto(BASE + '/dashboard');
     await page.getByTestId('profile-referral-card').waitFor({ timeout: 10000 });
   });

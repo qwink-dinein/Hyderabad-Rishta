@@ -1,4 +1,5 @@
 import { StyleSheet, View } from 'react-native';
+import { BoostSellBanner } from '@/components/BoostSell';
 import { Redirect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Badge, ErrorView, Loading } from '@/components/ui/feedback';
@@ -43,6 +44,7 @@ export default function Activity() {
           </Card>
         ) : (
           <>
+            <BoostSellBanner testID="activity-boost-sell" />
             <View style={styles.grid} testID="activity-metrics">
               {metric('eye', t('dashboard.views'), m.views)}
               {metric('users', t('dashboard.uniqueViewers'), m.uniqueViewers)}

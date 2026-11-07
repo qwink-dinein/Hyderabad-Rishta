@@ -176,6 +176,24 @@ const setDb = (page, fn) => page.evaluate((src) => {
     await page.getByTestId('open-boost').getByText('Boost again').waitFor();
   }, { paid: true });
 
+  await step('Boost is sold on Home (top card + Featured tile) and on every main screen; the CTA is the next real step', '9000000104', async (page) => {
+    await page.goto(BASE + '/home');
+    await page.getByTestId('boost-sell-hero').getByText('Get Boosted. Be seen first.').waitFor();
+    await page.getByTestId('boost-sell-hero').getByText('Complete your profile to 100%').waitFor();
+    await page.getByTestId('boost-sell-tile').waitFor();
+    for (const [path, id] of [['/discover', 'discover-boost-sell'], ['/requests', 'requests-boost-sell'], ['/shortlist', 'shortlist-boost-sell'], ['/dashboard', 'profile-boost-sell'], ['/activity', 'activity-boost-sell'], ['/notifications', 'notifications-boost-sell']]) {
+      await page.goto(BASE + path);
+      await page.getByTestId(id).first().waitFor();
+    }
+    // Under 100%: the CTA opens the first missing field; the secondary link opens Refer & Earn.
+    await page.goto(BASE + '/home');
+    await page.getByTestId('boost-sell-cta').click();
+    await page.waitForURL((u) => u.pathname === '/biodata', { waitUntil: 'commit' });
+    await page.goto(BASE + '/home');
+    await page.getByTestId('boost-sell-refer').click();
+    await page.waitForURL((u) => u.pathname === '/refer', { waitUntil: 'commit' });
+  });
+
   await step('unpublished member: Boost asks to publish first; activity explains why it is empty', '9000000131', async (page) => {
     await page.goto(BASE + '/home');
     await page.getByTestId('boost-publish-card').waitFor();

@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { BoostSellBanner } from '@/components/BoostSell';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { Redirect, router, type Href } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -76,6 +77,7 @@ export default function Notifications() {
           onRefresh={refetch}
           refreshing={isRefetching}
           contentContainerStyle={[styles.column, { paddingHorizontal: space.lg, paddingBottom: space.xxxl, gap: space.sm }]}
+          ListHeaderComponent={<BoostSellBanner testID="notifications-boost-sell" />}
           ListEmptyComponent={<EmptyState icon="bell" title={t('notifications.empty')} />}
           renderItem={({ item }) => {
             const { title, body } = text(item);

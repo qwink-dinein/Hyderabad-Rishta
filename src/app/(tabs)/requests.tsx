@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { BoostSellBanner } from '@/components/BoostSell';
 import { Animated, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -61,6 +62,7 @@ export default function Requests() {
           data={list}
           keyExtractor={(r) => r.request.id}
           contentContainerStyle={[styles.column, { paddingHorizontal: space.lg, paddingBottom: space.xxxl, gap: space.md }]}
+          ListHeaderComponent={<BoostSellBanner testID="requests-boost-sell" />}
           renderItem={({ item }) => <RequestCard view={item} />}
           onRefresh={refetch}
           refreshing={isRefetching}
