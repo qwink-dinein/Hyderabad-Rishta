@@ -158,17 +158,18 @@ describe('dynamic pricing (PRD §8)', () => {
     boostPlans: [{ id: 'd7', days: 7, fee: { bride: { mode: boost, amount: 199 }, groom: { mode: boost, amount: 199 } }, enabled: true, popular: false }],
   });
   it('picks the right copy for every combination', () => {
-    expect(pricingCopy(cfg('free', 'free'), 'bride').key).toBe('pricing.copy.bothFree');
+    // A Boost plan is never free (owner rule 2026-11-07): a 'free' plan is not offered, so it reads as "no Boost".
+    expect(pricingCopy(cfg('free', 'free'), 'bride').key).toBe('pricing.copy.pubFreeBoostOff');
     expect(pricingCopy(cfg('free', 'paid'), 'bride').key).toBe('pricing.copy.pubFreeBoostPaid');
-    expect(pricingCopy(cfg('paid', 'free'), 'bride').key).toBe('pricing.copy.pubPaidBoostFree');
+    expect(pricingCopy(cfg('paid', 'free'), 'bride').key).not.toBe('pricing.copy.pubPaidBoostFree');
     expect(pricingCopy(cfg('paid', 'paid'), 'groom').key).toBe('pricing.copy.bothPaid');
     expect(pricingCopy(cfg('free', 'disabled'), 'groom').key).toBe('pricing.copy.pubFreeBoostOff');
   });
   it('resolves per profile type from the same config', () => {
-    expect(resolvePricing(DEFAULT_PRICING, 'bride').boost.mode).toBe('free');
+    expect(resolvePricing(DEFAULT_PRICING, 'bride').boost.mode).toBe('paid');
     expect(resolvePricing(DEFAULT_PRICING, 'groom').boostLabel).toBe('₹100');
     expect(resolvePricing(DEFAULT_PRICING, 'groom').plans.map((p) => [p.days, p.label])).toEqual([[7, '₹100'], [14, '₹200'], [30, '₹350']]);
-    expect(resolvePricing(DEFAULT_PRICING, 'bride').plans[0].fee.mode).toBe('free');
+    expect(resolvePricing(DEFAULT_PRICING, 'bride').plans.every((p) => p.fee.mode === 'paid')).toBe(true);
     expect(pricingCopy(DEFAULT_PRICING, 'groom').params.days).toBe('7');
   });
   it('validates admin input', () => {

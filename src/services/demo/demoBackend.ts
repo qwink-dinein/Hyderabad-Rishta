@@ -1103,6 +1103,7 @@ export class DemoBackend implements Backend {
       const plan = planId ? pricing.plans.find((x) => x.id === planId) : pricing.plans[0];
       if (!plan) throw new AppError('fee_disabled'); // that option was switched off or changed
       const paid = plan.fee.mode === 'paid';
+      if (!paid) throw new AppError('boost_referral_only'); // free Boosts only through referrals (2026-11-07)
       // A boost already waiting for payment is reused — repeat taps or retries never create a second
       // order. Choosing a different option replaces it (still only one open order).
       const open = db.orders.find((o) => o.profileId === p.id && o.kind === 'boost' && o.status === 'pending');

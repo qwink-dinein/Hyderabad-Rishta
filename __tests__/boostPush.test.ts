@@ -1,4 +1,4 @@
-import { withSinglePlan } from '@/domain/pricing';
+import { buyBoost, singlePaidPlan } from './support/boost';
 import fs from 'fs';
 import path from 'path';
 import { DEMO_ADMIN_PHONE, DEMO_OTP, DEMO_USER_PHONE } from '@/data/seed';
@@ -33,13 +33,12 @@ async function code(p: Promise<unknown>, c: string) {
   await expect(p).rejects.toBeInstanceOf(AppError);
   await p.catch((e: AppError) => expect(e.code).toBe(c));
 }
-/** Free boost for the signed-in member (admin sets boost price to free first). */
+/** A paid Boost for `phone` (admin: Paid Boost mode, one plan) — Boosts are never free outside referrals. */
 async function freeBoost(b: DemoBackend, phone: string, days = 7) {
   await as(b, DEMO_ADMIN_PHONE);
-  const cfg = await b.getPricing();
-  await b.adminUpdatePricing(withSinglePlan(cfg, days, { bride: { mode: 'free', amount: 0 }, groom: { mode: 'free', amount: 0 } }));
+  await singlePaidPlan(b, days);
   await as(b, phone);
-  await b.startBoost();
+  await buyBoost(b);
 }
 const outbox = (b: DemoBackend) => (b as unknown as { db: { pushOutbox: { userId: string; status: string; reason?: string; body: string; category: string; token?: string }[] } }).db.pushOutbox;
 

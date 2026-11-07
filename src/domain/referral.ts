@@ -26,7 +26,7 @@ export interface ReferralSettings {
   updatedAt?: string;
 }
 
-export const DEFAULT_REFERRAL_SETTINGS: ReferralSettings = { mode: 'paid', enabled: true, rewardDays: 7, inviteeReward: true, review: true };
+export const DEFAULT_REFERRAL_SETTINGS: ReferralSettings = { mode: 'referral', enabled: true, rewardDays: 7, inviteeReward: true, review: true };
 
 /** Stored lifecycle of a referral. */
 export type ReferralStatus = 'registered' | 'review' | 'rewarded' | 'rejected' | 'revoked';

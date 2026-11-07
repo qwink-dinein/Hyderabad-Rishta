@@ -1,4 +1,5 @@
-import { DEMO_OTP, DEMO_USER_PHONE } from '@/data/seed';
+import { DEMO_ADMIN_PHONE, DEMO_OTP, DEMO_USER_PHONE } from '@/data/seed';
+import { paidBoostMode } from './support/boost';
 import { pendingReceivedCount } from '@/domain/connections';
 import { AppError } from '@/services/backend';
 import { DemoBackend, RESEND_COOLDOWN_MS } from '@/services/demo/demoBackend';
@@ -54,6 +55,8 @@ describe('notifications say what happened', () => {
   });
   it('a paid boost produces both "payment confirmed" and "boost active"', async () => {
     const b = make();
+    await as(b, DEMO_ADMIN_PHONE);
+    await paidBoostMode(b);
     await as(b, DEMO_USER_PHONE);
     const { order } = await b.startBoost('d7');
     await b.completePayment(order.id, 'success');

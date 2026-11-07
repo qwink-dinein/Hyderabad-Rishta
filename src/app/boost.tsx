@@ -38,11 +38,15 @@ export default function BoostScreen() {
   const [busy, setBusy] = useState(false);
   // Referral Boost mode (admin, owner 2026-11-02): no plans at all — paid or free. A Boost is earned only by
   // inviting a family (server refuses start_boost in this mode). Paid mode: exactly as before.
-  const referral = useReferralMode().on;
+  // Owner rule 2026-11-07: a free Boost comes ONLY from a successful referral. Plans set to Free are never
+  // offered (boostPlansFor), and whenever the programme is open and nothing can be bought, we sell referring.
+  const rm = useReferralMode();
+  const referralMode = rm.settings?.mode === 'referral';
   if (!user) return <Redirect href="/login" />;
 
   const active = s.nudge === 'active';
-  const plans = referral ? [] : s.plans;
+  const plans = referralMode ? [] : s.plans;
+  const referral = rm.on && (referralMode || s.plans.length === 0);
   const plan = plans.find((p) => p.id === picked) ?? plans[0];
   const canBuy = s.nudge === 'ready' && !!plan && !s.needsPhoto;
 
@@ -114,6 +118,7 @@ export default function BoostScreen() {
         <View style={{ gap: space.lg, paddingTop: space.lg }}>
           {active || s.expired ? <BoostStatusCard m={m} active={active} fetchedAt={dataUpdatedAt} /> : referral ? null : <Hero />}
           {referral ? <ReferralBoostPanel boostActiveUntil={active ? m?.boostUntil : undefined} /> : null}
+          {referralMode && !rm.on ? <Banner icon="info">{t('referral.closed')}</Banner> : null}
           {s.nudge === 'not_published' ? (
             s.status === 'paused' ? (
               <Card style={styles.notice}>
@@ -136,7 +141,7 @@ export default function BoostScreen() {
               </Card>
             )
           ) : null}
-          {s.nudge === 'disabled' ? <Banner icon="info">{t('boost.disabled')}</Banner> : null}
+          {s.nudge === 'disabled' && !referral && !referralMode ? <Banner icon="info">{t('boost.disabled')}</Banner> : null}
           {s.nudge === 'ready' && s.needsPhoto ? (
             <Card style={styles.notice} testID="boost-needs-photo">
               <Text variant="h3">{t('myBoost.photoTitle')}</Text>

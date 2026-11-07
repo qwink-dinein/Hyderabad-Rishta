@@ -1,4 +1,5 @@
 import { withSinglePlan } from '@/domain/pricing';
+import { buyBoost, paidBoostMode, singlePaidPlan } from './support/boost';
 import { buildSeed, DEMO_ADMIN_PHONE, DEMO_OTP, DEMO_USER_PHONE } from '@/data/seed';
 import { EMPTY_FILTERS } from '@/domain/search';
 import type { Biodata } from '@/domain/types';
@@ -267,15 +268,22 @@ describe('pricing & payments (PRD §8)', () => {
     expect(paid.profile.status).toBe('published');
   });
 
-  it('boost uses the configured duration and free boosts bypass payment', async () => {
+  it('boost uses the configured duration; a plan set to Free is never offered (free Boosts come only from referrals)', async () => {
     const b = makeBackend();
     await login(b, DEMO_ADMIN_PHONE);
+    await paidBoostMode(b);
     const cfg = await b.getPricing();
     await b.adminUpdatePricing(withSinglePlan(cfg, 3, { bride: { mode: 'free', amount: 0 }, groom: { mode: 'free', amount: 0 } }));
     await b.logout();
     await login(b, DEMO_USER_PHONE);
-    const { order, profile } = await b.startBoost();
-    expect(order.status).toBe('free');
+    await expectCode(b.startBoost(), 'fee_disabled'); // no free plan is offered
+    await b.logout();
+    await login(b, DEMO_ADMIN_PHONE);
+    await singlePaidPlan(b, 3);
+    await b.logout();
+    await login(b, DEMO_USER_PHONE);
+    const { order, profile } = await buyBoost(b);
+    expect(order.status).toBe('paid');
     expect(new Date(profile.boostUntil!).getTime() - clock).toBe(3 * 86400000);
   });
 

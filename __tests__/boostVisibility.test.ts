@@ -1,4 +1,5 @@
 import { DEMO_ADMIN_PHONE, DEMO_OTP, DEMO_USER_PHONE } from '@/data/seed';
+import { buyBoost, paidBoostMode } from './support/boost';
 import { dayKey, pickFeatured, rotateFeatured } from '@/domain/featured';
 import { buildSections, DEFAULT_FEED_CONFIG, type FeedContext } from '@/domain/feed';
 import { boostPlansFor, DEFAULT_PRICING, validatePricing, withPricingDefaults } from '@/domain/pricing';
@@ -127,11 +128,12 @@ describe('journey: several boosted profiles, several viewers (demo backend)', ()
   }
   async function admin(patch: (c: PricingConfig) => PricingConfig) {
     const a = await as(DEMO_ADMIN_PHONE);
+    await paidBoostMode(a); // Boosts are bought (never free outside referrals); Referral mode allows no plan
     await a.adminUpdatePricing(patch(await a.getPricing()));
   }
-  const free = (c: PricingConfig): PricingConfig => ({
+  const paid = (c: PricingConfig): PricingConfig => ({
     ...c,
-    boostPlans: c.boostPlans.map((p) => ({ ...p, fee: { bride: { mode: 'free', amount: 0 }, groom: { mode: 'free', amount: 0 } } })),
+    boostPlans: c.boostPlans.map((p) => ({ ...p, fee: { bride: { mode: 'paid', amount: 100 }, groom: { mode: 'paid', amount: 100 } } })),
   });
   const code = async (p: Promise<unknown>, c: string) => {
     await expect(p).rejects.toBeInstanceOf(AppError);
@@ -143,12 +145,12 @@ describe('journey: several boosted profiles, several viewers (demo backend)', ()
   beforeEach(async () => {
     storage = memoryKV();
     clock = new Date('2026-10-01T09:00:00Z').getTime();
-    await admin(free);
+    await admin(paid);
     boosted = [];
     for (const phone of BRIDES) {
       const b = await as(phone);
       // Some seed profiles are already boosted; either way this bride is boosted now.
-      await b.startBoost('d7').catch((e: AppError) => expect(e.code).toBe('boost_active'));
+      await buyBoost(b, 'd7').catch((e: AppError) => expect(e.code).toBe('boost_active'));
       boosted.push((await b.getMyProfile())!.id);
     }
     // Every active bride boost a groom may see (ours plus any in the seed).

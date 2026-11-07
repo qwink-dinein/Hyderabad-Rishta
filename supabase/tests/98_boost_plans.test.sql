@@ -1,6 +1,7 @@
 \set ON_ERROR_STOP on
 -- Owner PRD 2026-10-29: admin-configured 7/14/30-day boost options; the server sets every boost price.
 reset role;
+update referral_settings set mode = 'paid'; -- these tests buy Boosts; the default is Referral mode (no plans)
 insert into auth.users values ('00000000-0000-0000-0000-000000000dd1'), ('00000000-0000-0000-0000-000000000dd2');
 insert into app_users (id, country_code, phone) values
  ('00000000-0000-0000-0000-000000000dd1', '+91', '9666300001'),

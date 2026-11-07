@@ -1,4 +1,4 @@
-import { withSinglePlan } from '@/domain/pricing';
+import { buyBoost, singlePaidPlan } from './support/boost';
 import { DEMO_ADMIN_PHONE, DEMO_OTP, DEMO_USER_PHONE } from '@/data/seed';
 import { BOOST_REMINDER_EVERY_MS, boostNudge, boostReminderDue } from '@/domain/featured';
 import { CATEGORY } from '@/domain/push';
@@ -63,12 +63,11 @@ describe('demo backend reminders', () => {
     expect(await reminders(b)).toHaveLength(1);
     clock += 5 * DAY;
     expect(await reminders(b)).toHaveLength(2);
-    // Boost (free for this test) → no more reminders while boosted, nor the week after it ends.
+    // Boost (bought; Boosts are never free outside referrals) → no more reminders while boosted, nor the week after it ends.
     await login(b, DEMO_ADMIN_PHONE);
-    const cfg = await b.getPricing();
-    await b.adminUpdatePricing(withSinglePlan(cfg, 7, { bride: { mode: 'free', amount: 0 }, groom: { mode: 'free', amount: 0 } }));
+    await singlePaidPlan(b, 7);
     await login(b, DEMO_USER_PHONE);
-    await b.startBoost();
+    await buyBoost(b);
     clock += 10 * DAY; // boost ended 3 days ago
     r = await reminders(b);
     expect(r).toHaveLength(2);
@@ -92,17 +91,16 @@ describe('one boost at a time (owner rule 2026-10-28)', () => {
     expect((e as AppError).code).toBe(c);
     return e as AppError;
   }
-  async function setBoost(b: DemoBackend, mode: 'free' | 'paid') {
+  async function setBoost(b: DemoBackend) {
     await login(b, DEMO_ADMIN_PHONE);
-    const cfg = await b.getPricing();
-    await b.adminUpdatePricing(withSinglePlan(cfg, 7, { bride: { mode, amount: mode === 'paid' ? 499 : 0 }, groom: { mode, amount: mode === 'paid' ? 499 : 0 } }));
+    await singlePaidPlan(b, 7, 499);
     await login(b, DEMO_USER_PHONE);
   }
 
-  it('free boost: a second boost while the first runs is refused, until it ends', async () => {
+  it('a second boost while the first runs is refused, until it ends', async () => {
     const b = new DemoBackend({ storage: memoryKV(), now });
-    await setBoost(b, 'free');
-    const first = await b.startBoost();
+    await setBoost(b);
+    const first = await buyBoost(b);
     const until = first.profile.boostUntil;
     const e = await code(b.startBoost(), 'boost_active');
     expect(e.details?.until).toBe(until);
@@ -110,13 +108,13 @@ describe('one boost at a time (owner rule 2026-10-28)', () => {
     await code(b.startBoost(), 'boost_active');
     expect((await b.getMyProfile())!.boostUntil).toBe(until); // never extended
     clock += 5 * DAY; // ended
-    const again = await b.startBoost();
+    const again = await buyBoost(b);
     expect(new Date(again.profile.boostUntil!).getTime()).toBeGreaterThan(new Date(until!).getTime());
   });
 
   it('paid boost: repeat taps reuse ONE pending order; after paying, no new order', async () => {
     const b = new DemoBackend({ storage: memoryKV(), now });
-    await setBoost(b, 'paid');
+    await setBoost(b);
     const a = await b.startBoost();
     const c = await b.startBoost();
     expect(c.order.id).toBe(a.order.id);
@@ -129,7 +127,7 @@ describe('one boost at a time (owner rule 2026-10-28)', () => {
   it('two phones: paying the same order twice is refused; a stray unpaid order is cancelled, never charged', async () => {
     const storage = memoryKV();
     const b = new DemoBackend({ storage, now });
-    await setBoost(b, 'paid');
+    await setBoost(b);
     const a = await b.startBoost();
     await b.completePayment(a.order.id, 'success');
     await code(b.completePayment(a.order.id, 'success'), 'invalid_state'); // second phone, same order

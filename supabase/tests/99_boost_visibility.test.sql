@@ -2,6 +2,7 @@
 -- Boost visibility (owner Mini PRD 2026-10-31): Featured frequency cap, filter narrowing (p_only), on/off,
 -- size, validation of the new admin settings, Boost master switch and the photo eligibility rule.
 reset role;
+update referral_settings set mode = 'paid'; -- these tests buy Boosts; the default is Referral mode (no plans)
 insert into auth.users (id, phone) values
  ('00000000-0000-0000-0000-00000000bf01', '919755500001'), ('00000000-0000-0000-0000-00000000bf02', '919755500002'),
  ('00000000-0000-0000-0000-00000000bf03', '919755500003'), ('00000000-0000-0000-0000-00000000bf04', '919755500004'),

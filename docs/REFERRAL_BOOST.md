@@ -32,7 +32,11 @@ Server decides everything (completion, approval, eligibility); rewards are idemp
 ## 9. Tests
 SQL: `99_referral_boost.test.sql` (codes, privacy, every refusal, incomplete vs complete, team check, double approval, review off, no cap, mode switches, use, one-at-a-time, revoke, overview) + all 28 suites. Unit: 10 referral tests + all 394. E2E: `e2e/referral.js` (both modes in the real screens, link → sign-up → referrer view → admin), Boost, onboarding, languages, crawl of every screen × role × 4 languages.
 
+## 9b. Free Boosts are referral-only (owner 2026-11-07)
+- A Boost plan is never free: `boostPlansFor` offers only paid plans, Admin → Pricing offers Paid / Disabled for Boost options, the demo refuses free orders, and `orders_referral_mode_guard` refuses any `boost` order with status `free` in any mode (`20261205000000_free_boost_referral_only.sql`).
+- Referral mode is the default (`referral_settings.mode` default and `DEFAULT_REFERRAL_SETTINGS`); the live setting was switched to it on 7 Nov. Boosts already running were left alone.
+- When the programme is open and nothing can be bought, the Boost screen shows the Refer & Earn panel instead of plans.
+
 ## 10. Known limits
 - Domain: https://hyderabadrishta.com (see `DOMAIN_SETUP.md`); links are `/r/<CODE>`. Until the website is hosted there, the link shows but opens nothing — members can still share the code. Android "install from link" attribution (Play Install Referrer) needs the Play listing; the code covers it meanwhile.
-- Live database: migration not applied yet (needs the owner's go-ahead).
 - Payments are not live, so "Paid Boost" mode still ends at "payment not open yet" exactly as before.

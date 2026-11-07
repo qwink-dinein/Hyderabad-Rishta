@@ -1,6 +1,7 @@
 \set ON_ERROR_STOP on
 -- One boost at a time: no second boost order while one runs, one pending order max, no stacking.
 reset role;
+update referral_settings set mode = 'paid'; -- these tests buy Boosts; the default is Referral mode (no plans)
 -- Fixtures below use arbitrary boost prices/lengths to test other rules; 98_boost_plans tests the price guard.
 alter table orders disable trigger orders_boost_terms;
 insert into auth.users values ('00000000-0000-0000-0000-000000000bb1');
@@ -19,7 +20,7 @@ do $$ declare until1 timestamptz; begin
   until1 := apply_boost('b2000000-0000-0000-0000-000000000bb1');
   begin
     insert into orders (user_id, profile_id, kind, amount, currency, status, terms) values
-      ('00000000-0000-0000-0000-000000000bb1', 'b1000000-0000-0000-0000-000000000bb1', 'boost', 0, 'INR', 'free', '{"boostDays":7}');
+      ('00000000-0000-0000-0000-000000000bb1', 'b1000000-0000-0000-0000-000000000bb1', 'boost', 499, 'INR', 'paid', '{"boostDays":7}');
     assert false, 'new boost order allowed while a boost runs';
   exception when raise_exception then null; end;
   assert apply_boost('b2000000-0000-0000-0000-000000000bb1') = until1, 'apply_boost still idempotent per order';
@@ -38,7 +39,7 @@ end $$;
 -- After it ends, boosting again works.
 update profiles set boost_until = now() - interval '1 minute' where id = 'b1000000-0000-0000-0000-000000000bb1';
 insert into orders (id, user_id, profile_id, kind, amount, currency, status, terms) values
- ('b2000000-0000-0000-0000-000000000bb3', '00000000-0000-0000-0000-000000000bb1', 'b1000000-0000-0000-0000-000000000bb1', 'boost', 0, 'INR', 'free', '{"boostDays":3}');
+ ('b2000000-0000-0000-0000-000000000bb3', '00000000-0000-0000-0000-000000000bb1', 'b1000000-0000-0000-0000-000000000bb1', 'boost', 499, 'INR', 'paid', '{"boostDays":3}');
 do $$ begin
   assert apply_boost('b2000000-0000-0000-0000-000000000bb3') > now() + interval '2 days', 'boost again after the previous one ended';
 end $$;

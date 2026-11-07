@@ -20,6 +20,8 @@ const MODES = [
   { value: 'paid', label: 'Paid' },
   { value: 'disabled', label: 'Disabled' },
 ];
+/** Boost plans are never free: a free Boost is earned only by a successful referral (owner rule 2026-11-07). */
+const BOOST_MODES = MODES.filter((m) => m.value !== 'free');
 
 /** "7d ₹100 · 14d ₹200" for one type — used in the change history. */
 const planSummary = (c: PricingConfig, type: ProfileType) =>
@@ -69,10 +71,10 @@ export default function AdminPricing() {
     }
   };
 
-  const feeBox = (label: string, fee: Fee, onChange: (patch: Partial<Fee>) => void, a11y: string) => (
+  const feeBox = (label: string, fee: Fee, onChange: (patch: Partial<Fee>) => void, a11y: string, modes = MODES) => (
     <View style={{ flex: 1, minWidth: 220, gap: space.sm }}>
       <Text variant="label">{label}</Text>
-      <ChipGroup options={MODES} value={fee.mode} onChange={(v) => v && onChange({ mode: v })} />
+      <ChipGroup options={modes} value={fee.mode} onChange={(v) => v && onChange({ mode: v })} />
       {fee.mode === 'paid' ? (
         <TextField value={String(fee.amount || '')} onChangeText={(v) => onChange({ amount: Number(v.replace(/\D/g, '')) || 0 })} keyboardType="number-pad" placeholder="Amount (INR)" accessibilityLabel={a11y} />
       ) : null}
@@ -132,7 +134,7 @@ export default function AdminPricing() {
       </Section>
       <Section title="Boost options">
         <View style={{ gap: space.md }}>
-          <Text variant="caption">Members choose one of these on the Boost screen; the shortest available option is pre-selected. Free options skip payment. Set a type to Disabled to hide that option from brides or grooms.</Text>
+          <Text variant="caption">Members choose one of these on the Boost screen; the shortest available option is pre-selected. Boost options are always paid: a free Boost is earned only by referring a family (Referrals & free Boosts). An option still set to Free is hidden from members. Set a type to Disabled to hide that option from brides or grooms.</Text>
           {cfg.boostPlans.map((p, i) => (
             <Card key={p.id} style={{ gap: space.md }}>
               <Row style={{ justifyContent: 'space-between' }} wrap gap={space.sm}>
@@ -143,8 +145,8 @@ export default function AdminPricing() {
                 <TextField value={String(p.days || '')} onChangeText={(v) => setPlan(i, { days: Number(v.replace(/\D/g, '')) || 0 })} keyboardType="number-pad" accessibilityLabel={`Option ${i + 1} duration in days`} testID={`plan-days-${i}`} />
               </Field>
               <Row gap={space.lg} wrap style={{ alignItems: 'flex-start' }}>
-                {feeBox('Brides', p.fee.bride, (patch) => setPlanFee(i, 'bride', patch), `Option ${i + 1} bride price`)}
-                {feeBox('Grooms', p.fee.groom, (patch) => setPlanFee(i, 'groom', patch), `Option ${i + 1} groom price`)}
+                {feeBox('Brides', p.fee.bride, (patch) => setPlanFee(i, 'bride', patch), `Option ${i + 1} bride price`, BOOST_MODES)}
+                {feeBox('Grooms', p.fee.groom, (patch) => setPlanFee(i, 'groom', patch), `Option ${i + 1} groom price`, BOOST_MODES)}
               </Row>
               <ToggleRow label="Offered to members" value={p.enabled} onChange={(v) => setPlan(i, { enabled: v })} hint="Off: hidden from the Boost screen. Existing orders are unaffected." />
               <ToggleRow

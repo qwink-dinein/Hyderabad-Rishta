@@ -1,6 +1,7 @@
 \set ON_ERROR_STOP on
 -- Runs after 10_rls_privacy (same DB). Users: a (member), b (member), c (master after upgrade), d (sub-admin).
 reset role;
+update referral_settings set mode = 'paid'; -- these tests buy Boosts; the default is Referral mode (no plans)
 -- Fixtures below use arbitrary boost prices/lengths to test other rules; 98_boost_plans tests the price guard.
 alter table orders disable trigger orders_boost_terms;
 update app_users set role = 'master' where id = '00000000-0000-0000-0000-00000000000c';
@@ -59,7 +60,7 @@ do $$ begin
   begin delete from audit_events; assert false, 'owner deleted audit'; exception when insufficient_privilege then null; end;
   begin update audit_events set action = 'x'; assert false, 'owner edited audit'; exception when insufficient_privilege then null; end;
   insert into orders (user_id, profile_id, kind, amount, currency, status, terms)
-    values ('00000000-0000-0000-0000-00000000000a', '10000000-0000-0000-0000-00000000000a', 'boost', 0, 'INR', 'free', '{}');
+    values ('00000000-0000-0000-0000-00000000000a', '10000000-0000-0000-0000-00000000000a', 'publication', 0, 'INR', 'free', '{}');
   begin delete from orders; assert false, 'order deleted'; exception when insufficient_privilege then null; end;
 end $$;
 set role authenticated;

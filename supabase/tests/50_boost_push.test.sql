@@ -2,6 +2,7 @@
 -- Boost guarantees + push pipeline. Members: g1 (groom, boosted), g2 (groom, boosted then paused),
 -- b1/b2 (brides, viewers), x1 (bride who blocks g1). Admin-free: everything here is member-facing.
 reset role;
+update referral_settings set mode = 'paid'; -- these tests buy Boosts; the default is Referral mode (no plans)
 -- Fixtures below use arbitrary boost prices/lengths to test other rules; 98_boost_plans tests the price guard.
 alter table orders disable trigger orders_boost_terms;
 insert into auth.users values
@@ -26,7 +27,7 @@ insert into profiles (id, user_id, biodata, status, published_at) values
   '{"basic":{"lookingFor":"groom","fullName":"Xenia Blocker","dob":"1995-01-01","heightCm":162,"maritalStatus":"never_married","motherTongue":"urdu"},"photos":[],"location":{"country":"India","state":"Telangana","city":"Hyderabad"},"career":{},"religion":{},"family":{},"preferences":{},"privacy":{"displayName":"first","photoVisibility":"onConsent","incomeVisibility":"hidden","familyVisibility":"public","acceptContactRequests":true}}', 'published', now());
 insert into orders (id, user_id, profile_id, kind, amount, currency, status, terms) values
  ('50000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000000000c1', '40000000-0000-0000-0000-0000000000c1', 'boost', 199, 'INR', 'paid', '{"boostDays":7}'),
- ('50000000-0000-0000-0000-0000000000c2', '00000000-0000-0000-0000-0000000000c2', '40000000-0000-0000-0000-0000000000c2', 'boost', 0, 'INR', 'free', '{"boostDays":3}'),
+ ('50000000-0000-0000-0000-0000000000c2', '00000000-0000-0000-0000-0000000000c2', '40000000-0000-0000-0000-0000000000c2', 'boost', 99, 'INR', 'paid', '{"boostDays":3}'),
  ('50000000-0000-0000-0000-0000000000c3', '00000000-0000-0000-0000-0000000000c1', '40000000-0000-0000-0000-0000000000c1', 'boost', 199, 'INR', 'pending', '{"boostDays":7}');
 insert into blocks (user_id, blocked_profile_id) values ('00000000-0000-0000-0000-0000000000d3', '40000000-0000-0000-0000-0000000000c1');
 

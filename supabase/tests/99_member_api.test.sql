@@ -1,6 +1,7 @@
 \set ON_ERROR_STOP on
 -- Member-side API (Phase 2 adapter): publish, pause, boost, activity, requests view, shortlist, blocks, deactivation.
 reset role;
+update referral_settings set mode = 'paid'; -- these tests buy Boosts; the default is Referral mode (no plans)
 insert into auth.users (id, phone) values
  ('00000000-0000-0000-0000-00000000cc01', '919711100001'),   -- bride (looking for a groom)
  ('00000000-0000-0000-0000-00000000cc02', '919711100002'),   -- groom
@@ -15,7 +16,7 @@ insert into app_users (id, country_code, phone) values
 insert into profiles (user_id, biodata, last_step) values
  ('00000000-0000-0000-0000-00000000cc01', jsonb_set(:'full'::jsonb, '{location,city}', '""'), 7),            -- no city: incomplete
  ('00000000-0000-0000-0000-00000000cc02', jsonb_set(jsonb_set(:'full'::jsonb, '{basic,lookingFor}', '"bride"'), '{basic,fullName}', '"Imran Member"'), 7);
--- Known pricing: publication free; boost d7 free for brides / ₹100 for grooms, d14 ₹200; approval off.
+-- Known pricing: publication free; boost d7 set to Free for brides (refused: Boosts are never free) / ₹100 for grooms, d14 ₹200; approval off.
 update pricing_config set require_approval = false, config = jsonb_build_object(
   'publication', jsonb_build_object('bride', jsonb_build_object('mode', 'free', 'amount', 0), 'groom', jsonb_build_object('mode', 'free', 'amount', 0)),
   'boost', jsonb_build_object('bride', jsonb_build_object('mode', 'free', 'amount', 0), 'groom', jsonb_build_object('mode', 'paid', 'amount', 100)),
@@ -46,11 +47,10 @@ do $$ declare r jsonb; begin
   assert (set_paused(true)).status = 'paused', 'paused';
   begin perform set_paused(true); assert false, 'paused twice'; exception when raise_exception then null; end;
   assert (set_paused(false)).status = 'published', 'resumed';
-  -- 3. Boost: brides' 7 days are free and start at once; a second boost is refused while it runs.
-  r := start_boost(null);
-  assert r #>> '{order,status}' = 'free' and r #>> '{order,terms,planId}' = 'd7', 'default = shortest option, free: ' || r;
-  assert (r #>> '{profile,boost_until}')::timestamptz > now() + interval '6 days', 'boost running';
-  begin perform start_boost('d14'); assert false, 'stacked a boost'; exception when raise_exception then assert sqlerrm = 'boost_active', sqlerrm; end;
+  -- 3. Boost: a plan priced Free is refused — free Boosts come only from referrals (owner rule 2026-11-07).
+  begin perform start_boost(null); assert false, 'free plan started'; exception when raise_exception then assert sqlerrm = 'boost_referral_only', sqlerrm; end;
+  assert (select boost_until from profiles where user_id = auth.uid()) is null, 'no free boost';
+  assert (select count(*) from orders where user_id = auth.uid() and kind = 'boost') = 0, 'no boost order';
   begin perform start_boost('nope'); assert false, 'unknown plan'; exception when raise_exception then null; end;
 end $$;
 

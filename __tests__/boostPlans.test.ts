@@ -5,6 +5,7 @@ import type { Profile, ViewEvent } from '@/domain/types';
 import { AppError } from '@/services/backend';
 import { DemoBackend, RESEND_COOLDOWN_MS } from '@/services/demo/demoBackend';
 import { memoryKV } from '@/services/storage';
+import { buyBoost, paidBoostMode } from './support/boost';
 
 /** Owner PRD 2026-10-29: 7 / 14 / 30-day Boost options, every price set by the admin. */
 let clock = new Date('2026-10-01T09:00:00Z').getTime();
@@ -18,6 +19,13 @@ async function as(b: DemoBackend, phone: string) {
   await b.requestOtp('+91', phone);
   await b.verifyOtp('+91', phone, DEMO_OTP);
 }
+/** A fresh demo in Paid Boost mode (the default is Referral mode, where no plan can be bought). */
+async function paidDemo(storage = memoryKV()) {
+  const b = make(storage);
+  await as(b, DEMO_ADMIN_PHONE);
+  await paidBoostMode(b);
+  return b;
+}
 async function code(p: Promise<unknown>, c: string) {
   const e = await p.then(() => null, (x: unknown) => x);
   expect(e).toBeInstanceOf(AppError);
@@ -27,11 +35,11 @@ async function code(p: Promise<unknown>, c: string) {
 describe('boost options from the admin config', () => {
   it('members see the enabled options for their type, shortest first, with real prices', () => {
     expect(resolvePricing(DEFAULT_PRICING, 'groom').plans.map((p) => `${p.days}:${p.label}:${p.popular}`)).toEqual(['7:₹100:true', '14:₹200:false', '30:₹350:false']);
-    expect(resolvePricing(DEFAULT_PRICING, 'bride').plans.map((p) => `${p.days}:${p.label}`)).toEqual(['7:free', '14:₹200', '30:₹350']);
+    expect(resolvePricing(DEFAULT_PRICING, 'bride').plans.map((p) => `${p.days}:${p.label}`)).toEqual(['7:₹100', '14:₹200', '30:₹350']);
   });
 
   it('a chosen paid option creates an order with that price and length; paying applies exactly that', async () => {
-    const b = make();
+    const b = await paidDemo();
     await as(b, DEMO_USER_PHONE);
     const { order } = await b.startBoost('d14');
     expect(order).toMatchObject({ status: 'pending', amount: 200, terms: { boostDays: 14, planId: 'd14', autoRenew: false } });
@@ -40,7 +48,7 @@ describe('boost options from the admin config', () => {
   });
 
   it('repeat taps reuse one order; switching option replaces it (never two open orders)', async () => {
-    const b = make();
+    const b = await paidDemo();
     await as(b, DEMO_USER_PHONE);
     const a = await b.startBoost('d30');
     expect((await b.startBoost('d30')).order.id).toBe(a.order.id);
@@ -51,16 +59,24 @@ describe('boost options from the admin config', () => {
     await code(b.completePayment(a.order.id, 'success'), 'invalid_state'); // the replaced one can't be paid
   });
 
-  it('a free option bypasses payment entirely', async () => {
+  it('a plan set to Free is never offered: free Boosts come only from referrals (owner rule 2026-11-07)', async () => {
+    const b = await paidDemo();
+    const cfg = await b.getPricing();
+    await b.adminUpdatePricing({ ...cfg, boostPlans: cfg.boostPlans.map((p) => (p.id === 'd7' ? { ...p, fee: { bride: { mode: 'free', amount: 0 }, groom: { mode: 'free', amount: 0 } } } : p)) });
+    await as(b, BRIDE);
+    expect(resolvePricing(await b.getPricing(), 'bride').plans.map((p) => p.id)).toEqual(['d14', 'd30']);
+    await code(b.startBoost('d7'), 'fee_disabled');
+    expect((await b.getMyProfile())!.boostUntil).toBeFalsy();
+  });
+
+  it('Referral mode (the default) allows no plan at all, paid or free', async () => {
     const b = make();
     await as(b, BRIDE);
-    const { order, profile } = await b.startBoost('d7');
-    expect(order.status).toBe('free');
-    expect(new Date(profile.boostUntil!).getTime() - clock).toBe(7 * DAY);
+    await code(b.startBoost('d14'), 'boost_referral_only');
   });
 
   it('price changes never alter an existing order; unknown or switched-off options are refused', async () => {
-    const b = make();
+    const b = await paidDemo();
     await as(b, DEMO_USER_PHONE);
     const { order } = await b.startBoost('d14');
     await as(b, DEMO_ADMIN_PHONE);
@@ -75,9 +91,9 @@ describe('boost options from the admin config', () => {
   });
 
   it('boosts never renew by themselves', async () => {
-    const b = make();
+    const b = await paidDemo();
     await as(b, BRIDE);
-    await b.startBoost('d7');
+    await buyBoost(b, 'd7');
     clock += 8 * DAY;
     await b.getNotifications();
     const orders = (await b.getMyOrders()).filter((o) => o.kind === 'boost');
@@ -89,7 +105,7 @@ describe('boost options from the admin config', () => {
     const b = make();
     await as(b, DEMO_ADMIN_PHONE);
     const cfg = await b.getPricing();
-    const saved = await b.adminUpdatePricing({ ...cfg, boostPlans: [{ id: 'd10', days: 10, fee: { bride: { mode: 'free', amount: 0 }, groom: { mode: 'paid', amount: 150 } }, enabled: true, popular: false }] });
+    const saved = await b.adminUpdatePricing({ ...cfg, boostPlans: [{ id: 'd10', days: 10, fee: { bride: { mode: 'paid', amount: 150 }, groom: { mode: 'paid', amount: 150 } }, enabled: true, popular: false }] });
     expect(saved.boostDays).toBe(10);
     expect(saved.boost.groom).toEqual({ mode: 'paid', amount: 150 });
     await code(b.adminUpdatePricing({ ...cfg, boostPlans: [{ ...cfg.boostPlans[0], fee: { ...cfg.boostPlans[0].fee, groom: { mode: 'paid', amount: -5 } } }] }), 'validation');

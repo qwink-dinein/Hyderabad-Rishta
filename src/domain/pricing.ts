@@ -3,11 +3,11 @@ import type { BoostPlan, Fee, PricingConfig, ProfileType } from './types';
 
 /**
  * Initial Boost options (owner PRD 2026-10-29: 7 / 14 / 30 days at ₹100 / ₹200 / ₹350). These are only
- * starting values — the admin changes every duration and price in Admin → Pricing. Brides keep the
- * earlier owner rule of a free 7-day boost; longer bride boosts use the same prices as grooms.
+ * starting values — the admin changes every duration and price in Admin → Pricing. A Boost is never free:
+ * a free Boost is earned only by a successful referral (owner rule 2026-11-07).
  */
 export const DEFAULT_BOOST_PLANS: BoostPlan[] = [
-  { id: 'd7', days: 7, fee: { bride: { mode: 'free', amount: 0 }, groom: { mode: 'paid', amount: 100 } }, enabled: true, popular: true },
+  { id: 'd7', days: 7, fee: { bride: { mode: 'paid', amount: 100 }, groom: { mode: 'paid', amount: 100 } }, enabled: true, popular: true },
   { id: 'd14', days: 14, fee: { bride: { mode: 'paid', amount: 200 }, groom: { mode: 'paid', amount: 200 } }, enabled: true, popular: false },
   { id: 'd30', days: 30, fee: { bride: { mode: 'paid', amount: 350 }, groom: { mode: 'paid', amount: 350 } }, enabled: true, popular: false },
 ];
@@ -19,7 +19,7 @@ export const DEFAULT_PRICING: PricingConfig = {
   currency: 'INR',
   publication: { bride: { mode: 'free', amount: 0 }, groom: { mode: 'free', amount: 0 } },
   boostPlans: DEFAULT_BOOST_PLANS,
-  boost: { bride: { mode: 'free', amount: 0 }, groom: { mode: 'paid', amount: 100 } },
+  boost: { bride: { mode: 'paid', amount: 100 }, groom: { mode: 'paid', amount: 100 } },
   boostDays: 7,
   requireApproval: true,
   requestExpiryDays: 14,
@@ -83,7 +83,8 @@ export function boostPlansFor(cfg: PricingConfig, type: ProfileType): ResolvedPl
   // Boost switched off by the admin: no option can be started (running boosts are unaffected).
   if (cfg.boostEnabled === false) return [];
   return (cfg.boostPlans ?? [])
-    .filter((p) => p.enabled && p.fee[type].mode !== 'disabled')
+    // Free Boosts come ONLY from a successful referral (owner rule 2026-11-07): a plan set to 'free' is never offered.
+    .filter((p) => p.enabled && p.fee[type].mode === 'paid')
     .map((p) => ({
       id: p.id, days: p.days, fee: p.fee[type], label: feeLabel(p.fee[type], cfg.currency), popular: p.popular,
       promoLabel: p.promoLabel?.trim() || undefined,
