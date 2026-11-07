@@ -95,7 +95,7 @@ No analytics event may contain names, numbers, biodata fields or free text (exis
 
 1. **Buy/choose the domain** and point `www` to a static host serving `website/dist`; `app.` to the web app; 301 apex → www; HTTPS.
 2. Build with `SITE_URL` and `APP_URL` set (and `PLAY_URL` once live).
-3. **Confirm the contact email**: the app and site show `mukarramjahm@gmail.com`; your account email is `mukarramjahmm@gmail.com`. Set `CONTACT_EMAIL` and fix the app copy if it is a typo.
+3. ~~**Confirm the contact email**~~ (done: owner confirmed `mukarramjahmm@gmail.com`, now used everywhere): the app and site show `mukarramjahm@gmail.com`; your account email is `mukarramjahmm@gmail.com`. Set `CONTACT_EMAIL` and fix the app copy if it is a typo.
 4. Verify Search Console + Bing; submit the sitemap; request indexing of the homepage and 5 key pages.
 5. Decide the AI training crawler policy (default allowed; `AI_TRAINING=0` to opt out).
 6. Legal review of the privacy policy (DPDP Act 2023) — the page says so.

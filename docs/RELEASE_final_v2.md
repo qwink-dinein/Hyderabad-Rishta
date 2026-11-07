@@ -24,7 +24,7 @@ pointing at this version. (`final_v1` is kept the same way; see `docs/RELEASE_fi
 - **App icon:** the brand's gold emblem on the dark green (replaces Expo's placeholder), Android adaptive +
   themed (monochrome) icons, the emblem on the ivory opening screen, matching web favicon. Name under the icon:
   "Hyderabad Rishta" (iPhone shortens it on the home screen). Preview: `docs/mockups/app-icon.png`.
-- **Support / privacy contact:** mukarramjahm@gmail.com on Help & support, the privacy policy, and the
+- **Support / privacy contact:** mukarramjahmm@gmail.com on Help & support, the privacy policy, and the
   "contact support" messages (account removed / suspended, biodata removed, safety review). EN/UR/TE.
 - **Not in final_v2 (planned next):** paid checkout (payment provider), phone push sending (FCM/APNs keys),
   store listing and lawyer-reviewed legal documents.

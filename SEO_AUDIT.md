@@ -23,7 +23,7 @@
 | 5 | No answer-oriented content (biodata format, finding a rishta, privacy) | Misses informational and AI-answer queries | **Fixed**: 9 core pages + 11 guides (1 more in review) |
 | 6 | No crawler policy for AI search vs training bots | Owner has no control over AI usage | **Implemented** configurable policy (see GEO_STRATEGY.md) |
 | 7 | Store metadata not prepared; planned title "Hyderabad Rishta – Muslim Matrimony" is 35 chars (Play/App Store title limit is 30) | Listing would be rejected/truncated | **Fixed**: validated listings in `store/` |
-| 8 | Contact email in app copy is `mukarramjahm@gmail.com`; the owner's account email is `mukarramjahmm@gmail.com` | Possible typo → lost support/privacy emails | **Owner to confirm** (single setting: `CONTACT_EMAIL`) |
+| 8 | Contact email in app copy is `mukarramjahm@gmail.com`; the owner's account email is `mukarramjahmm@gmail.com` | Possible typo → lost support/privacy emails | **Fixed**: owner confirmed `mukarramjahmm@gmail.com`; app, site and tests updated |
 | 9 | Privacy policy is a draft pending legal review (DPDP Act 2023) | Compliance risk | Flagged on the page; legal review needed |
 
 ## 3. Privacy review (matrimonial data)

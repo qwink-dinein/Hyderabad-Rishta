@@ -11,7 +11,7 @@
  * Change this file when the product changes — never let the policy promise more than the code does.
  */
 export const LEGAL_UPDATED = '2 November 2026';
-export const CONTACT_EMAIL = 'mukarramjahm@gmail.com';
+export const CONTACT_EMAIL = 'mukarramjahmm@gmail.com';
 
 export type LegalSection = readonly [heading: string, body: string];
 

@@ -1,0 +1,5 @@
+# Code-only map: app, backend, website and tests. Skip agent tooling and docs.
+.claude/
+docs/
+store/
+*.md

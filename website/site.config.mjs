@@ -36,7 +36,7 @@ export const BRAND = {
   languages: ['English', 'Urdu', 'Telugu'],
   area: 'Hyderabad, Telangana, India',
   // Same address the app's privacy policy and help page publish (src/app/legal/[doc].tsx).
-  email: env('CONTACT_EMAIL') || 'mukarramjahm@gmail.com',
+  email: env('CONTACT_EMAIL') || 'mukarramjahmm@gmail.com',
   // Official social profiles, once they exist (used in Organization.sameAs). Never list unofficial pages.
   sameAs: (process.env.SAME_AS || '').split(',').map((s) => s.trim()).filter(Boolean),
 };

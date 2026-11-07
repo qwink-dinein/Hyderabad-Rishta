@@ -20,6 +20,6 @@ describe('privacy policy and terms', () => {
   });
 
   it('publishes one contact address', () => {
-    expect(CONTACT_EMAIL).toBe('mukarramjahm@gmail.com');
+    expect(CONTACT_EMAIL).toBe('mukarramjahmm@gmail.com');
   });
 });
