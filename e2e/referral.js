@@ -44,17 +44,13 @@ async function step(name, fn) {
   };
   let code = '';
 
-  await step('Paid mode (default): Boost screen is today’s paid screen — plans and prices, no referral promotion', async () => {
+  await step('Referral mode is the default (owner 2026-11-07): no plans, the referral promotion instead', async () => {
     await page.goto(BASE + '/');
     await loginWithOtp(page, BASE, '9000000001');
     await page.goto(BASE + '/boost');
-    await page.getByTestId('plan-d7').waitFor({ timeout: 10000 });
-    if (await page.getByTestId('referral-boost-panel').count()) throw new Error('referral panel in Paid mode');
-    if (!(await page.getByText('₹100').count())) throw new Error('paid price missing');
-    await page.goto(BASE + '/home');
-    await page.waitForTimeout(800);
-    if (await page.getByTestId('home-referral-banner').count()) throw new Error('referral banner in Paid mode');
-    await shot('01-paid-boost');
+    await page.getByTestId('referral-boost-panel').waitFor({ timeout: 10000 });
+    if (await page.getByTestId('plan-d7').count()) throw new Error('plans shown in Referral mode');
+    await shot('01-default-referral');
   });
 
   await step('admin switches to Referral Boost (settings card, saved)', async () => {

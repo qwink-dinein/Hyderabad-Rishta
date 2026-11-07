@@ -8,7 +8,7 @@ require('fs').mkdirSync(SHOTS, { recursive: true });
 const BASE = 'http://localhost:8081';
 const errors = [];
 let browser;
-async function step(name, phone, fn) {
+async function step(name, phone, fn, opts = {}) {
   const ctx = await browser.newContext({ viewport: { width: 400, height: 860 } });
   const page = await ctx.newPage();
   const local = [];
@@ -16,6 +16,12 @@ async function step(name, phone, fn) {
   page.on('console', (m) => { if (m.type() === 'error' && !/favicon|Failed to load resource/.test(m.text())) local.push('console: ' + m.text().slice(0, 200)); });
   try {
     if (phone) await loginWithOtp(page, BASE, phone);
+    if (opts.paid) {
+      // Referral mode is the default (owner 2026-11-07); these steps cover the Paid Boost screen.
+      await setDb(page, "d.referralSettings = Object.assign({}, d.referralSettings, { mode: 'paid' });");
+      await page.reload();
+      await page.waitForTimeout(800);
+    }
     await fn(page);
     if (local.length) throw new Error(local.join(' | '));
     console.log('✓', name);
@@ -85,7 +91,7 @@ const setDb = (page, fn) => page.evaluate((src) => {
     await page.getByText('Popular').waitFor();
     await page.getByRole('button', { name: /^Boost Now · \W*₹100\W*$/ }).waitFor();
     await page.screenshot({ path: `${SHOTS}/p2-boost-options.png`, fullPage: true });
-  });
+  }, { paid: true });
 
   await step('choose 14 days → checkout shows ₹200 → pay → My Boost (14 days remaining, no re-buy); Home + Profile follow', '9000000001', async (page) => {
     await page.goto(BASE + '/boost');
@@ -107,7 +113,7 @@ const setDb = (page, fn) => page.evaluate((src) => {
     if (await page.getByTestId('boost-reminder').count()) throw new Error('still promoting a purchase');
     await page.goto(BASE + '/dashboard');
     await page.getByTestId('open-boost').getByText('My active boost').waitFor();
-  });
+  }, { paid: true });
 
   await step('Profile tab: portrait/photo, ID, completion, and every row opens its screen', '9000000001', async (page) => {
     await page.goto(BASE + '/dashboard');
@@ -140,15 +146,25 @@ const setDb = (page, fn) => page.evaluate((src) => {
     if ((await db(page)).pricing.boostPlans[0].fee.groom.amount !== 150) throw new Error('not saved');
   });
 
-  await step('a free option skips payment: bride activates the free 7-day boost', '9000000104', async (page) => {
+  await step('no free Boost without a referral: default Referral mode sells referring, no plans', '9000000104', async (page) => {
     await page.goto(BASE + '/boost');
-    await page.getByTestId('plan-price-d7').getByText('FREE').waitFor();
-    await page.getByRole('button', { name: 'Activate Free Boost' }).click();
-    await page.getByTestId('boost-status').waitFor({ timeout: 8000 });
-    await page.getByTestId('boost-days-left').getByText('7 days remaining').waitFor();
-    const o = (await db(page)).orders.find((x) => x.kind === 'boost' && x.profileId === 'p_4');
-    if (!o || o.status !== 'free' || o.amount !== 0) throw new Error(JSON.stringify(o));
+    await page.getByTestId('referral-boost-panel').waitFor();
+    await page.getByTestId('referral-cta').waitFor();
+    if (await page.getByTestId('plan-d7').count()) throw new Error('plans shown in Referral mode');
+    if (await page.getByRole('button', { name: 'Activate Free Boost' }).count()) throw new Error('free Boost offered');
+    await page.screenshot({ path: `${SHOTS}/p6-referral-only.png`, fullPage: true });
   });
+
+  await step('Paid mode: a plan set to Free is never offered', '9000000104', async (page) => {
+    await setDb(page, "d.pricing.boostPlans[0].fee.bride = { mode: 'free', amount: 0 };");
+    await page.reload();
+    await page.goto(BASE + '/boost');
+    await page.getByTestId('plan-d14').waitFor();
+    if (await page.getByTestId('plan-d7').count()) throw new Error('free plan offered');
+    if (await page.getByText('FREE').count()) throw new Error('FREE price shown');
+    const o = (await db(page)).orders.find((x) => x.kind === 'boost' && x.profileId === 'p_4');
+    if (o) throw new Error('unexpected boost order ' + JSON.stringify(o));
+  }, { paid: true });
 
   await step('ended boost: honest "ended" status, views, and Boost again with the options', '9000000001', async (page) => {
     await setDb(page, "const p = d.profiles.find((x) => x.id === 'p_1'); const n = Date.now(); p.boostStartedAt = new Date(n - 10 * 864e5).toISOString(); p.boostUntil = new Date(n - 3 * 864e5).toISOString();");
@@ -158,7 +174,7 @@ const setDb = (page, fn) => page.evaluate((src) => {
     await page.getByTestId('boost-cta').waitFor();
     await page.goto(BASE + '/dashboard');
     await page.getByTestId('open-boost').getByText('Boost again').waitFor();
-  });
+  }, { paid: true });
 
   await step('unpublished member: Boost asks to publish first; activity explains why it is empty', '9000000131', async (page) => {
     await page.goto(BASE + '/home');
