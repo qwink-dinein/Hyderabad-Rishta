@@ -79,7 +79,7 @@ function md(src) {
     if (!l.trim()) { i++; continue; }
     if (l.startsWith('<')) { // raw HTML block until a blank line
       const block = [];
-      while (i < lines.length && lines[i].trim()) block.push(lines[i++].replace(/\{\{STORES:([\w-]+)\}\}/g, (_, from) => storeBadges(from)).replace(/\{\{CREATE\}\}/g, esc(CREATE)).replace(/\{\{LOGIN\}\}/g, esc(LOGIN)));
+      while (i < lines.length && lines[i].trim()) block.push(lines[i++].replace(/\{\{SOCIAL:([\w-]+)\}\}/g, (_, from) => socialLinks(from)).replace(/\{\{STORES:([\w-]+)\}\}/g, (_, from) => storeBadges(from)).replace(/\{\{CREATE\}\}/g, esc(CREATE)).replace(/\{\{LOGIN\}\}/g, esc(LOGIN)));
       out.push(block.join('\n'));
       continue;
     }
@@ -195,6 +195,13 @@ const PLAY_ICON = '<svg class="store-icon" viewBox="0 0 24 26" aria-hidden="true
 const APPLE_ICON = '<svg class="store-icon" viewBox="0 0 24 28" aria-hidden="true"><path fill="#fff" d="M19.7 14.9c0-3.2 2.6-4.7 2.7-4.8a5.9 5.9 0 0 0-4.6-2.5c-2-.2-3.8 1.1-4.8 1.1-1 0-2.5-1.1-4.1-1.1A6.1 6.1 0 0 0 3.8 10.8c-2.2 3.8-.6 9.4 1.6 12.5 1 1.5 2.3 3.2 3.9 3.1 1.6-.1 2.2-1 4.1-1s2.4 1 4.1 1 2.7-1.5 3.7-3a13 13 0 0 0 1.7-3.5 5.3 5.3 0 0 1-3.2-5zM16.5 5.6A5.4 5.4 0 0 0 17.8 1.6a5.5 5.5 0 0 0-3.6 1.9 5.1 5.1 0 0 0-1.3 3.8 4.6 4.6 0 0 0 3.6-1.7z"/></svg>';
 // Android robot (Google, CC BY 3.0) in the brand's gold-green.
 const ANDROID_ICON = '<svg class="store-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="#3ddc84" d="M17.6 9.48l1.84-3.18a.38.38 0 0 0-.66-.38l-1.86 3.22a11.4 11.4 0 0 0-9.84 0L5.22 5.92a.38.38 0 0 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z"/></svg>';
+// Official Instagram + WhatsApp channel (owner 2026-11-08): logo buttons that open the profile/channel directly.
+const IG_ICON = '<svg class="soc-ico" viewBox="0 0 24 24" aria-hidden="true"><defs><radialGradient id="igG" cx="30%" cy="107%" r="150%"><stop offset="0" stop-color="#fdf497"/><stop offset=".05" stop-color="#fdf497"/><stop offset=".45" stop-color="#fd5949"/><stop offset=".6" stop-color="#d6249f"/><stop offset=".9" stop-color="#285AEB"/></radialGradient></defs><rect width="24" height="24" rx="6" fill="url(#igG)"/><rect x="5.5" y="5.5" width="13" height="13" rx="3.8" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="12" r="3.2" fill="none" stroke="#fff" stroke-width="1.8"/><circle cx="16.3" cy="7.7" r="1" fill="#fff"/></svg>';
+const WA_ICON = '<svg class="soc-ico" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#25d366"/><path fill="#fff" d="M12 4.6a7.3 7.3 0 0 0-6.3 11l-1 3.8 3.9-1a7.3 7.3 0 1 0 3.4-13.8zm0 13.3a6 6 0 0 1-3.1-.8l-.2-.1-2.3.6.6-2.2-.2-.2a6 6 0 1 1 5.2 2.7zm3.3-4.5c-.2-.1-1.1-.5-1.2-.6-.2 0-.3-.1-.4.1l-.6.7c-.1.1-.2.1-.4 0a4.9 4.9 0 0 1-2.4-2.1c-.2-.3.2-.3.5-1 .1-.1 0-.2 0-.3l-.6-1.3c-.1-.3-.3-.3-.4-.3h-.3a.6.6 0 0 0-.4.2 1.8 1.8 0 0 0-.6 1.3 3.1 3.1 0 0 0 .7 1.7 7 7 0 0 0 2.7 2.4c1 .4 1.4.5 1.9.4a1.6 1.6 0 0 0 1.1-.8 1.3 1.3 0 0 0 .1-.8c-.1-.1-.2-.1-.4-.2z"/></svg>';
+function socialLinks(from) {
+  const link = (url, icon, small, big, kind) => `<a class="soc soc-${kind}" href="${esc(url)}" target="_blank" rel="noopener me" data-cta="social" data-social="${kind}" data-from="${esc(from)}">${icon}<span><small>${small}</small><strong>${big}</strong></span></a>`;
+  return `<div class="socials">${link(BRAND.instagram, IG_ICON, 'Follow on Instagram', '@hyderabadrishta.official', 'instagram')}${link(BRAND.whatsapp, WA_ICON, 'Join on WhatsApp', 'Hyderabad Rishta channel', 'whatsapp')}</div>`;
+}
 function storeBadges(from, { size = '' } = {}) {
   const badge = (url, store, icon, small, big) => {
     const inner = `${icon}<span class="store-text"><small>${small}</small><strong>${big}</strong></span>`;
@@ -286,7 +293,7 @@ ${layout === 'home'
     <p class="about">${esc(BRAND.description)}</p>
     <div class="cols">${FOOTER.map(([h, links]) => `<div><h2>${h}</h2><ul>${links.map(([u, n]) => `<li><a href="${u}">${n}</a></li>`).join('')}</ul></div>`).join('')}</div>
     <p class="small">© ${new Date().getFullYear()} Hyderabad Rishta · In English, Urdu, Roman Urdu and Telugu · <a href="/contact/">Contact support</a></p>
-    <p class="social"><a href="${esc(BRAND.instagram)}" rel="noopener me"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg><span>Follow us on Instagram · @hyderabadrishta.official</span></a></p>
+    ${socialLinks('footer')}
   </div>
 </footer>
 ${CF_ANALYTICS_TOKEN ? `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='${JSON.stringify({ token: CF_ANALYTICS_TOKEN })}'></script>` : ''}

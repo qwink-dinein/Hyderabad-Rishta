@@ -14,9 +14,10 @@ updated: 2026-11-02
 <p id="email-out" class="email-out" hidden></p>
 <script src="/contact.js" defer></script>
 
-## Instagram
+## Follow us
 
-Follow [@hyderabadrishta.official](https://www.instagram.com/hyderabadrishta.official/) for news and tips. Please never share your phone number or private details in comments or messages.
+<p>News, tips and updates on Instagram and on our WhatsApp channel. A channel is one-way: other followers never see your number. Please never share your phone number or private details in comments or messages.</p>
+{{SOCIAL:contact}}
 
 ## Inside the app
 

@@ -44,7 +44,10 @@ export const BRAND = {
   // Official social profiles, once they exist (used in Organization.sameAs). Never list unofficial pages.
   // Official profiles (owner 2026-11-08). SAME_AS (comma-separated) adds more.
   instagram: 'https://www.instagram.com/hyderabadrishta.official/',
-  sameAs: ['https://www.instagram.com/hyderabadrishta.official/', ...(process.env.SAME_AS || '').split(',').map((s) => s.trim()).filter(Boolean)],
+  // A WhatsApp CHANNEL (one-way; followers' numbers stay hidden) — never a group invite, where members see each
+  // other's numbers.
+  whatsapp: 'https://whatsapp.com/channel/0029Vb8z9deIt5s0VKAKDZ0t',
+  sameAs: ['https://www.instagram.com/hyderabadrishta.official/', 'https://whatsapp.com/channel/0029Vb8z9deIt5s0VKAKDZ0t', ...(process.env.SAME_AS || '').split(',').map((s) => s.trim()).filter(Boolean)],
 };
 
 // Facts the copy may state. Keep in sync with the product; the content never claims more than this.

@@ -139,8 +139,17 @@ button.btn { cursor: pointer; }
 .site-footer .about { max-width: 70ch; color: var(--beige); font-size: 15px; }
 .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin: 26px 0; }
 .small { font-size: 13.5px; color: #b9a585; }
-.social a { display: inline-flex; align-items: center; gap: 8px; color: var(--champagne); text-decoration: none; font: 500 14.5px var(--ui); }
-.social a:hover { color: var(--gold); }
+.socials { display: flex; flex-wrap: wrap; gap: 12px; margin: 14px 0 0; }
+.soc { display: inline-flex; align-items: center; gap: 11px; min-height: 52px; padding: 8px 18px 8px 9px; border-radius: 999px; text-decoration: none; background: var(--card); border: 1px solid var(--line); color: var(--ink); transition: transform .18s var(--ease), border-color .18s ease, box-shadow .18s ease; }
+.soc:hover { transform: translateY(-2px); border-color: var(--gold); color: var(--ink); box-shadow: 0 14px 28px -18px rgba(58, 0, 18, .55); }
+.soc-ico { width: 34px; height: 34px; flex: none; border-radius: 10px; }
+.soc span { display: flex; flex-direction: column; line-height: 1.15; }
+.soc small { font: 500 11.5px var(--ui); color: var(--muted); }
+.soc strong { font: 600 14.5px var(--ui); }
+.dark .soc, .site-footer .soc { background: rgba(249, 246, 239, .06); border-color: rgba(143, 113, 59, .6); color: var(--cream); }
+.dark .soc small, .site-footer .soc small { color: var(--beige); }
+.dark .soc:hover, .site-footer .soc:hover { color: var(--champagne); border-color: var(--gold); }
+.follow-label { margin: 26px 0 0; font: 600 13px var(--ui); letter-spacing: .1em; text-transform: uppercase; color: var(--gold) !important; }
 .invite-code { font: 600 38px var(--serif); letter-spacing: 6px; margin: 8px 0 16px; color: var(--burgundy); }
 
 /* ───────────── Home ───────────── */
