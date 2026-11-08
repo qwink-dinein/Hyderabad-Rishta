@@ -1,0 +1,14 @@
+// Cloudflare Workers (static assets) deploy for hyderabadrishta.com — the public website only.
+// Cloudflare build settings: Build command `node website/build.mjs` (variable SITE_URL=https://hyderabadrishta.com),
+// Deploy command `npx wrangler deploy`. The site's own _headers (security headers) and _redirects (/r/* invitations)
+// in website/dist are applied by Workers static assets.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hyderabad-rishta",
+  "compatibility_date": "2026-11-04",
+  "assets": {
+    "directory": "website/dist",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash"
+  }
+}

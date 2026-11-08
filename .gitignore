@@ -45,3 +45,6 @@ e2e/screenshots/
 dist-single/
 .taste-skill/
 graphify-out/
+
+# Cloudflare Wrangler local state
+.wrangler/

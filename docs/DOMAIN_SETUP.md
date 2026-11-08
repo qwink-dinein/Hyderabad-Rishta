@@ -17,10 +17,12 @@ The address everything uses is **https://hyderabadrishta.com** (`www.` should re
   - Privacy, Terms, Safety and the SEO pages (indexable once built with `SITE_URL`).
 
 ## Owner steps (accounts and DNS — only the owner can do these)
-1. **Host the website on Cloudflare Pages (free).** Cloudflare dashboard → Workers & Pages → Create → Pages →
+1. **Host the website on Cloudflare (free).** The repo has `wrangler.jsonc` for the newer **Workers (static assets)** setup:
+   connect the repo under Workers & Pages → Create → Import a repository, Build command `node website/build.mjs`,
+   Deploy command `npx wrangler deploy`, build variable `SITE_URL` = `https://hyderabadrishta.com`. (Older **Pages** setup also works: Cloudflare dashboard → Workers & Pages → Create → Pages →
    connect the GitHub repo `qwink-dinein/Hyderabad-Rishta`:
    - Build command: `node website/build.mjs` (no packages needed) · Output directory: `website/dist`
-   - Environment variable: `SITE_URL` = `https://hyderabadrishta.com`
+   - Environment variable: `SITE_URL` = `https://hyderabadrishta.com`)
 2. **Point the domain.** Easiest: add the site to Cloudflare (free plan) and, in Spaceship → Domains →
    hyderabadrishta.com → Nameservers, replace Spaceship's nameservers with the two Cloudflare gives you.
    Then in the Pages project → Custom domains, add `hyderabadrishta.com` and `www.hyderabadrishta.com`
