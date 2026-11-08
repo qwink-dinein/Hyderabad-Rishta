@@ -195,6 +195,7 @@ Reset everything: Settings → “Reset demo data”.
 - A duplicate artifact https://claude.ai/artifact/Pyd1ttmH9LJ82zgYQwuLDD was created by mistake. Ask the owner before deleting it.
 
 ## Next session — start here
+0. **EAS free Android builds are used up until 2026-12-01.** On/after that date: `npx eas-cli@latest build --platform android --profile preview` from the latest commit (includes `be2e327`: app landing without the greeting, privacy pill below the fold), then set website `ANDROID_APK_URL` to the new APK and publish (deploy branch `claude/sharp-bell-xxyxmj`, owner approval each time). Live tester APK until then: build a1a6c0c6.
 1. Read "Start here" above. Only open the files named in the features table for the area you're changing.
 2. Open questions for the owner:
    - permanently ban numbers of admin-deleted accounts?
