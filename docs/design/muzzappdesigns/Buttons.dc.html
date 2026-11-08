@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hyderabad Rishta — Buttons and motion</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Lora:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#4A0E1F}a:hover{color:#330915}
+.hr *{box-sizing:border-box}
+.hr h1,.hr h2{font-family:Lora,Georgia,serif;margin:0;letter-spacing:-0.02em}
+.pill{display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:9999px;font-family:Inter,sans-serif;font-weight:600;text-decoration:none;min-height:48px;padding:14px 32px;font-size:16px;line-height:1;border:2px solid transparent;transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .18s ease,background-color .18s ease,color .18s ease}
+.pill:hover{transform:translateY(-2px)}
+.pill:active{transform:scale(.97)}
+.pill-gold{background:#C9A05A;color:#330915;box-shadow:0 8px 22px -10px rgba(201,160,90,.9)}
+.pill-gold:hover{background:#D4AE6C;color:#330915}
+.pill-maroon{background:#4A0E1F;color:#FAF6F1}
+.pill-maroon:hover{background:#330915;color:#FAF6F1}
+.pill-ghost{border-color:#4A0E1F;color:#4A0E1F}
+.pill-ghost:hover{background:#4A0E1F;color:#FAF6F1}
+.pill-sm{min-height:44px;padding:11px 22px;font-size:15px}
+.arrow{transition:transform .18s ease}
+.pill:hover .arrow{transform:translateX(4px)}
+.demo{width:120px;height:70px;border-radius:16px;background:#F6ECDD;border:1px solid #E3CFA8}
+@keyframes floatA{0%,100%{translate:0 0}50%{translate:0 -10px}}
+@keyframes riseLoop{0%,15%{opacity:0;transform:translateY(24px)}35%,85%{opacity:1;transform:none}100%{opacity:0}}
+@keyframes liftLoop{0%,30%,100%{transform:none;box-shadow:none}50%,80%{transform:translateY(-6px);box-shadow:0 18px 34px -20px rgba(74,14,31,.5)}}
+.m-float{animation:floatA 3s ease-in-out infinite}
+.m-rise{animation:riseLoop 3.2s cubic-bezier(.2,.8,.2,1) infinite}
+.m-lift{animation:liftLoop 3s ease infinite}
+@media (prefers-reduced-motion: reduce){.m-float,.m-rise,.m-lift{animation:none}}
+</style>
+</helmet>
+<div class="hr" style="width: 880px; height: 640px; padding: 48px; background: #FAF6F1; font-family: Inter, sans-serif; color: #2A0B13; display: flex; flex-direction: column; gap: 32px;">
+<div style="display: flex; flex-direction: column; gap: 6px;"><h1 style="font-size: 34px; color: #4A0E1F;">Buttons and motion</h1><p style="margin: 0; font-size: 15px; color: #6B5A5D;">Pill buttons: lift 2px on hover, press to 97%, arrow slides right. Hover them.</p></div>
+<div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center;">
+<a class="pill pill-gold" href="#a">Create your biodata <span class="arrow" aria-hidden="true">→</span></a>
+<a class="pill pill-maroon" href="#b">View all guides</a>
+<a class="pill pill-ghost" href="#c">How it works <span class="arrow" aria-hidden="true">→</span></a>
+<a class="pill pill-gold pill-sm" href="#d">Create Biodata</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px;">
+<div style="background: #FFFFFF; border: 1px solid #EADFD6; border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 14px; align-items: flex-start;"><div class="demo m-rise"></div><strong style="font-size: 16px;">Rise on scroll</strong><span style="font-size: 14px; line-height: 1.5; color: #6B5A5D;">Sections fade up 28px as they enter the screen.</span></div>
+<div style="background: #FFFFFF; border: 1px solid #EADFD6; border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 14px; align-items: flex-start;"><div class="demo m-float"></div><strong style="font-size: 16px;">Floating phones</strong><span style="font-size: 14px; line-height: 1.5; color: #6B5A5D;">App screenshots tilt ±7° and drift gently, slide in from the side.</span></div>
+<div style="background: #FFFFFF; border: 1px solid #EADFD6; border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 14px; align-items: flex-start;"><div class="demo m-lift"></div><strong style="font-size: 16px;">Card lift</strong><span style="font-size: 14px; line-height: 1.5; color: #6B5A5D;">Cards rise 6px with a gold edge on hover.</span></div>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 1.6; color: #6B5A5D;">Header stays on top and gains a soft shadow once you scroll. Guide pages show a gold reading-progress line. Everything stops for visitors who turn on “reduce motion”.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":880,"height":640}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

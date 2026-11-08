@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>App — Requests</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Lora:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#4A0E1F}a:hover{color:#330915}
+.app *{box-sizing:border-box}
+.app h1,.app h2,.app h3{font-family:Lora,Georgia,serif;margin:0;letter-spacing:-0.02em}
+.btn{display:flex;align-items:center;justify-content:center;gap:6px;border-radius:9999px;font-weight:600;text-decoration:none;min-height:44px;padding:0 16px;font-size:14px;border:2px solid transparent;flex:1 1 0;transition:transform .16s cubic-bezier(.2,.8,.2,1)}
+.btn:active{transform:scale(.96)}
+.item{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid #F1E7DF;text-decoration:none;color:#2A0B13}
+.av{width:54px;height:54px;border-radius:9999px;overflow:hidden;flex:none;border:2px solid #EADFD6}
+.av img{width:100%;height:100%;object-fit:cover}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;color:#6B5A5D;text-decoration:none;min-width:56px}
+@keyframes riseIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.rise{animation:riseIn .55s cubic-bezier(.2,.8,.2,1) both}.d1{animation-delay:.08s}.d2{animation-delay:.16s}.d3{animation-delay:.24s}
+@media (prefers-reduced-motion: reduce){.rise{animation:none}}
+</style>
+</helmet>
+<div class="app" style="width: 390px; height: 844px; overflow: hidden; background: #FAF6F1; color: #2A0B13; font-family: Inter, sans-serif; display: flex; flex-direction: column;">
+<div style="padding: 56px 20px 12px; display: flex; flex-direction: column; gap: 14px;">
+<h1 style="font-size: 30px; font-weight: 600; color: #4A0E1F;">Requests</h1>
+<div role="tablist" style="display: flex; background: #F1E7DF; border-radius: 9999px; padding: 4px;"><a role="tab" aria-selected="true" href="#received" style="flex: 1; text-align: center; background: #FFFFFF; border-radius: 9999px; padding: 10px; font-size: 14px; font-weight: 600; text-decoration: none; box-shadow: 0 4px 10px -6px rgba(51,9,21,.4);">Received · 2</a><a role="tab" aria-selected="false" href="#sent" style="flex: 1; text-align: center; padding: 10px; font-size: 14px; font-weight: 600; text-decoration: none; color: #6B5A5D;">Sent · 3</a></div>
+</div>
+<div style="flex: 1 1 auto; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 14px;">
+<div class="rise" style="background: #FFFFFF; border: 1.5px solid #C9A05A; border-radius: 24px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+<div style="display: flex; gap: 12px; align-items: center;"><div class="av" style="border-color: #C9A05A;"><img src="/_blob/e4641f93dc1ec87fc2d5c8cf8d26a465" alt=""></div><div style="flex: 1; min-width: 0;"><div style="display: flex; justify-content: space-between; align-items: baseline;"><span style="font-family: Lora, serif; font-size: 19px; font-weight: 600; color: #4A0E1F;">Ayesha, 24</span><span style="font-size: 12px; color: #6B5A5D;">2h</span></div><span style="font-size: 13px; color: #6B5A5D;">Tolichowki · MBA · Sunni</span></div></div>
+<p style="margin: 0; background: #FAF6F1; border-radius: 16px 16px 16px 4px; padding: 11px 13px; font-size: 14px; line-height: 1.45;">“Assalamu alaikum. Our family liked your biodata and would like to know more.”</p>
+<span style="align-self: flex-start; display: inline-flex; gap: 6px; align-items: center; background: #F6ECDD; color: #7E5F26; border-radius: 9999px; padding: 5px 11px; font-size: 12px; font-weight: 700;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7E5F26" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2"></path></svg>Offered her number</span>
+<div style="display: flex; gap: 10px;"><a class="btn" href="#decline" style="border-color: #EADFD6; color: #4E3A3F; background: #FFFFFF;">Not now</a><a class="btn" href="#accept" style="background: #4A0E1F; color: #FAF6F1;">Accept</a></div>
+</div>
+<div class="rise d1" style="display: flex; flex-direction: column;">
+<a class="item" href="#r2"><div class="av"><img src="/_blob/e4641f93dc1ec87fc2d5c8cf8d26a465" alt="" style="object-position: 30% 40%;"></div><div style="flex: 1; min-width: 0;"><div style="display: flex; justify-content: space-between;"><span style="font-weight: 600;">Mariam, 27</span><span style="font-size: 12px; color: #6B5A5D;">1d</span></div><span style="font-size: 13px; color: #6B5A5D;">Interest received · reply within 13 days</span></div><span style="width: 10px; height: 10px; border-radius: 9999px; background: #C9A05A;"></span></a>
+<a class="item" href="#r3"><div class="av"><img src="/_blob/e4641f93dc1ec87fc2d5c8cf8d26a465" alt="" style="object-position: 60% 40%;"></div><div style="flex: 1; min-width: 0;"><div style="display: flex; justify-content: space-between;"><span style="font-weight: 600;">Zainab, 25</span><span style="font-size: 12px; color: #6B5A5D;">3d</span></div><span style="font-size: 13px; color: #1E6B52; font-weight: 600;">Accepted · number shared</span></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B5A5D" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>
+</div>
+<div class="rise d2" style="background: #330915; color: #FAF6F1; border-radius: 22px; padding: 14px 16px; display: flex; gap: 12px; align-items: center;"><span style="width: 40px; height: 40px; border-radius: 9999px; background: #C9A05A; display: flex; align-items: center; justify-content: center; flex: none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#330915" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18h18M4 18l-1-10 5 4 4-7 4 7 5-4-1 10"></path></svg></span><div style="flex: 1;"><strong style="font-size: 15px;">Get more interests</strong><div style="font-size: 13px; color: #F4E9E5;">Refer one family for a free Boost</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A05A" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></div>
+</div>
+<nav aria-label="Tabs" style="background: #FFFFFF; border-top: 1px solid #EADFD6; padding: 10px 12px 30px; display: flex; justify-content: space-around; align-items: center;">
+<a class="tab" href="#home"><span style="padding: 5px 0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B5A5D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"></path></svg></span>Home</a>
+<a class="tab" href="#discover"><span style="padding: 5px 0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B5A5D" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg></span>Discover</a>
+<a class="tab" href="#shortlist"><span style="padding: 5px 0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B5A5D" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"></path></svg></span>Shortlist</a>
+<a class="tab" href="#requests" aria-current="page" style="color: #4A0E1F;"><span style="background: #F4E9E5; border-radius: 9999px; padding: 5px 18px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A0E1F" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg></span>Requests</a>
+<a class="tab" href="#profile"><span style="padding: 5px 0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B5A5D" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg></span>Profile</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

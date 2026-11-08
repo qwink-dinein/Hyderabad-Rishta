@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>App — Welcome</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Lora:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#4A0E1F}a:hover{color:#330915}
+.app *{box-sizing:border-box}
+.app h1,.app h2,.app h3{font-family:Lora,Georgia,serif;margin:0;letter-spacing:-0.02em}
+.pill{display:flex;align-items:center;justify-content:center;gap:10px;border-radius:9999px;font-family:Inter,sans-serif;font-weight:600;text-decoration:none;min-height:54px;padding:0 24px;font-size:17px;border:2px solid transparent;transition:transform .16s cubic-bezier(.2,.8,.2,1),background-color .16s ease}
+.pill:active{transform:scale(.97)}
+.jaali{background-image:radial-gradient(circle at 1px 1px,rgba(201,160,90,.22) 1px,transparent 0);background-size:22px 22px}
+@keyframes riseIn{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+@keyframes floatA{0%,100%{translate:0 0}50%{translate:0 -8px}}
+.rise{animation:riseIn .7s cubic-bezier(.2,.8,.2,1) both}.d1{animation-delay:.1s}.d2{animation-delay:.2s}.d3{animation-delay:.32s}
+.fl{animation:floatA 6s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.rise,.fl{animation:none}}
+</style>
+</helmet>
+<div class="app jaali" style="width: 390px; height: 844px; overflow: hidden; background-color: #330915; color: #FAF6F1; font-family: Inter, sans-serif; display: flex; flex-direction: column; position: relative;">
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 56px 20px 0;">
+<div style="display: flex; align-items: center; gap: 10px;"><img src="/_blob/e29fa85e1aaa3897eb6dd87f61b54e0c" alt="" style="width: 40px; height: 40px; border-radius: 11px;"><span style="font-family: Lora, serif; font-size: 19px; font-weight: 600;">Hyderabad Rishta</span></div>
+<div style="display: flex; gap: 4px; background: rgba(250,246,241,.1); border-radius: 9999px; padding: 4px;"><span style="background: #C9A05A; color: #330915; border-radius: 9999px; padding: 6px 10px; font-size: 13px; font-weight: 700;">EN</span><span style="padding: 6px 8px; font-size: 13px;">اردو</span><span style="padding: 6px 8px; font-size: 13px;">తె</span></div>
+</div>
+<div style="position: relative; height: 330px; margin-top: 18px;">
+<div class="fl" style="position: absolute; left: 34px; top: 34px; width: 150px; height: 210px; border-radius: 26px; overflow: hidden; transform: rotate(-8deg); border: 3px solid rgba(201,160,90,.6); box-shadow: 0 30px 50px -24px rgba(0,0,0,.6);"><img src="/_blob/fb5256d60d53b779f9785df70ccdce2a" alt="Illustrated groom" style="width: 100%; height: 100%; object-fit: cover;"></div>
+<div class="fl" style="position: absolute; right: 30px; top: 12px; width: 170px; height: 236px; border-radius: 28px; overflow: hidden; transform: rotate(7deg); border: 3px solid #C9A05A; box-shadow: 0 30px 50px -20px rgba(0,0,0,.6); animation-delay: -3s;"><img src="/_blob/e4641f93dc1ec87fc2d5c8cf8d26a465" alt="Illustrated bride" style="width: 100%; height: 100%; object-fit: cover;"></div>
+<div style="position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); background: #FAF6F1; color: #4A0E1F; border-radius: 9999px; padding: 10px 16px; font-size: 13px; font-weight: 600; display: flex; gap: 8px; align-items: center; white-space: nowrap; box-shadow: 0 14px 28px -16px rgba(0,0,0,.6);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7E5F26" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 018 0v4"></path></svg>Your number stays private</div>
+</div>
+<div style="padding: 0 24px; display: flex; flex-direction: column; gap: 14px; flex: 1 1 auto;">
+<span class="rise" style="color: #E6C995; font-size: 15px; font-weight: 600;">Assalamu alaikum</span>
+<h1 class="rise d1" style="font-size: 38px; line-height: 1.08; font-weight: 600;">Find the right rishta for your family</h1>
+<p class="rise d2" style="margin: 0; font-size: 16px; line-height: 1.5; color: #F4E9E5;">From Hyderabadi families like yours. You decide who sees photos, and you connect only when both families agree.</p>
+</div>
+<div class="rise d3" style="padding: 0 20px 40px; display: flex; flex-direction: column; gap: 10px;">
+<a class="pill" href="#start" style="background: #C9A05A; color: #330915;">Find a rishta for my family <span aria-hidden="true">→</span></a>
+<a class="pill" href="#login" style="border-color: rgba(250,246,241,.5); color: #FAF6F1;">I already have an account · Log in</a>
+<span style="text-align: center; font-size: 13px; color: #D9C7C1;">Free · about 2 minutes · no password</span>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

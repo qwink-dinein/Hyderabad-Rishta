@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>App — Boost and refer</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Lora:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#4A0E1F}a:hover{color:#330915}
+.app *{box-sizing:border-box}
+.app h1,.app h2,.app h3{font-family:Lora,Georgia,serif;margin:0;letter-spacing:-0.02em}
+.pill{display:flex;align-items:center;justify-content:center;gap:8px;border-radius:9999px;font-weight:600;text-decoration:none;min-height:52px;padding:0 20px;font-size:16px;border:2px solid transparent;transition:transform .16s cubic-bezier(.2,.8,.2,1)}
+.pill:active{transform:scale(.97)}
+.jaali{background-image:radial-gradient(circle at 1px 1px,rgba(201,160,90,.25) 1px,transparent 0);background-size:20px 20px}
+@keyframes ring{0%,100%{transform:scale(1);opacity:.55}50%{transform:scale(1.18);opacity:0}}
+@keyframes spinIn{from{stroke-dashoffset:276}to{stroke-dashoffset:3}}
+@keyframes riseIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.ring{animation:ring 2.6s ease-out infinite}
+.arc{animation:spinIn 1.4s cubic-bezier(.2,.8,.2,1) .2s both}
+.rise{animation:riseIn .6s cubic-bezier(.2,.8,.2,1) both}.d1{animation-delay:.1s}.d2{animation-delay:.2s}
+@media (prefers-reduced-motion: reduce){.ring,.arc,.rise{animation:none}}
+</style>
+</helmet>
+<div class="app" style="width: 390px; height: 844px; overflow: hidden; background: #FAF6F1; color: #2A0B13; font-family: Inter, sans-serif; display: flex; flex-direction: column;">
+<div class="jaali" style="background-color: #330915; color: #FAF6F1; padding: 52px 20px 26px; border-radius: 0 0 32px 32px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center;">
+<div style="width: 100%; display: flex; justify-content: space-between; align-items: center;"><a href="#back" aria-label="Back" style="width: 40px; height: 40px; border-radius: 9999px; background: rgba(250,246,241,.12); display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FAF6F1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></a><span style="font-weight: 600;">Boost</span><span style="width: 40px;"></span></div>
+<div style="position: relative; width: 104px; height: 104px; margin-top: 6px;">
+<span class="ring" style="position: absolute; inset: -6px; border-radius: 9999px; border: 2px solid #C9A05A;"></span>
+<svg width="104" height="104" viewBox="0 0 100 100" role="img" aria-label="Profile 99% complete"><circle cx="50" cy="50" r="44" fill="none" stroke="rgba(250,246,241,.15)" stroke-width="7"></circle><circle class="arc" cx="50" cy="50" r="44" fill="none" stroke="#C9A05A" stroke-width="7" stroke-linecap="round" stroke-dasharray="276" stroke-dashoffset="3" transform="rotate(-90 50 50)"></circle></svg>
+<div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;"><span style="font-family: Lora, serif; font-size: 26px; font-weight: 600;">99%</span><span style="font-size: 11px; color: #E6C995;">profile</span></div>
+</div>
+<h1 class="rise" style="font-size: 28px; line-height: 1.1; font-weight: 600; color: #E6C995;">Get Boosted. Be seen first.</h1>
+<p class="rise d1" style="margin: 0; font-size: 14px; line-height: 1.5; color: #F4E9E5; max-width: 300px;">Your profile goes to the top, in Featured, for 7 days — free when you refer one family.</p>
+</div>
+<div style="flex: 1 1 auto; overflow: hidden; padding: 18px 20px 0; display: flex; flex-direction: column; gap: 14px;">
+<div class="rise d1" style="display: flex; flex-direction: column; gap: 10px;">
+<div style="display: flex; gap: 12px; align-items: center; background: #FFFFFF; border: 1px solid #EADFD6; border-radius: 18px; padding: 12px 14px;"><span style="width: 30px; height: 30px; border-radius: 9999px; background: #F6ECDD; color: #7E5F26; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none;">1</span><div style="flex: 1;"><strong style="font-size: 14px;">Complete your profile</strong><div style="font-size: 12px; color: #6B5A5D;">Add a photo to reach 100%</div></div><a href="#photo" style="font-size: 13px; font-weight: 700;">Add</a></div>
+<div style="display: flex; gap: 12px; align-items: center; background: #FFFFFF; border: 1px solid #EADFD6; border-radius: 18px; padding: 12px 14px;"><span style="width: 30px; height: 30px; border-radius: 9999px; background: #F6ECDD; color: #7E5F26; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none;">2</span><div style="flex: 1;"><strong style="font-size: 14px;">Refer one family</strong><div style="font-size: 12px; color: #6B5A5D;">They join and complete their biodata</div></div></div>
+</div>
+<div class="rise d2" style="background: #F6ECDD; border: 1.5px dashed #C9A05A; border-radius: 22px; padding: 16px; display: flex; justify-content: space-between; align-items: center;"><div style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #7E5F26;">Your code</span><span style="font-family: Lora, serif; font-size: 28px; font-weight: 600; letter-spacing: .12em; color: #330915;">HRAB23</span></div><a href="#copy" style="background: #FFFFFF; border: 1px solid #E3CFA8; border-radius: 9999px; padding: 10px 16px; font-size: 14px; font-weight: 600; text-decoration: none;">Copy</a></div>
+<div style="display: flex; justify-content: space-between; font-size: 13px; color: #6B5A5D;"><span>Families referred: 1</span><span>Free Boosts: 0</span></div>
+</div>
+<div style="padding: 12px 20px 34px; display: flex; flex-direction: column; gap: 10px;">
+<a class="pill" href="#whatsapp" style="background: #C9A05A; color: #330915; box-shadow: 0 12px 24px -12px rgba(201,160,90,1);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#330915" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 01-13.4 7.8L3 21l1.2-4.6A9 9 0 1121 12z"></path></svg>Invite on WhatsApp</a>
+<a class="pill" href="#share" style="border-color: #4A0E1F; color: #4A0E1F;">Share link</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

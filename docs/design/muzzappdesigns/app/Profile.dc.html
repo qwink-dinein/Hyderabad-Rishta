@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>App — Profile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Lora:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#4A0E1F}a:hover{color:#330915}
+.app *{box-sizing:border-box}
+.app h1,.app h2,.app h3{font-family:Lora,Georgia,serif;margin:0;letter-spacing:-0.02em}
+.pill{display:flex;align-items:center;justify-content:center;gap:8px;border-radius:9999px;font-weight:600;text-decoration:none;min-height:54px;padding:0 20px;font-size:16px;border:2px solid transparent;transition:transform .16s cubic-bezier(.2,.8,.2,1)}
+.pill:active{transform:scale(.97)}
+.tag{display:inline-flex;align-items:center;gap:6px;background:#FFFFFF;border:1px solid #EADFD6;border-radius:9999px;padding:7px 12px;font-size:13px;font-weight:500;color:#2A0B13}
+.row{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid #F1E7DF;font-size:14px}
+.row span:first-child{color:#6B5A5D}
+.round{width:42px;height:42px;border-radius:9999px;background:rgba(250,246,241,.92);display:flex;align-items:center;justify-content:center}
+@keyframes riseIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.rise{animation:riseIn .6s cubic-bezier(.2,.8,.2,1) both}.d1{animation-delay:.1s}
+@media (prefers-reduced-motion: reduce){.rise{animation:none}}
+</style>
+</helmet>
+<div class="app" style="width: 390px; height: 844px; overflow: hidden; background: #FAF6F1; color: #2A0B13; font-family: Inter, sans-serif; display: flex; flex-direction: column; position: relative;">
+<div style="position: relative; height: 380px; flex: none;">
+<img src="/_blob/e4641f93dc1ec87fc2d5c8cf8d26a465" alt="Fatima" style="width: 100%; height: 100%; object-fit: cover;">
+<div style="position: absolute; top: 52px; left: 16px; right: 16px; display: flex; justify-content: space-between;">
+<a class="round" href="#back" aria-label="Back"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4A0E1F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></a>
+<div style="display: flex; gap: 10px;"><a class="round" href="#share" aria-label="Share"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4A0E1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4-4 4M12 2v13"></path></svg></a><a class="round" href="#more" aria-label="More"><svg width="18" height="18" viewBox="0 0 24 24" fill="#4A0E1F" aria-hidden="true"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg></a></div>
+</div>
+<div style="position: absolute; bottom: 44px; left: 16px; display: flex; gap: 6px;"><span style="width: 22px; height: 4px; border-radius: 4px; background: #FAF6F1;"></span><span style="width: 8px; height: 4px; border-radius: 4px; background: rgba(250,246,241,.55);"></span><span style="width: 8px; height: 4px; border-radius: 4px; background: rgba(250,246,241,.55);"></span></div>
+</div>
+<div class="rise" style="margin-top: -28px; position: relative; background: #FAF6F1; border-radius: 28px 28px 0 0; padding: 22px 20px 0; flex: 1 1 auto; overflow: hidden; display: flex; flex-direction: column; gap: 14px;">
+<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+<div style="display: flex; flex-direction: column; gap: 4px;"><h1 style="font-size: 30px; font-weight: 600; color: #4A0E1F;">Fatima, 26</h1><span style="font-size: 14px; color: #6B5A5D;">Hyderabad, Telangana · HR-10003</span></div>
+<span style="background: #F6ECDD; color: #7E5F26; border: 1px solid #E3CFA8; border-radius: 9999px; padding: 6px 11px; font-size: 12px; font-weight: 700; white-space: nowrap;">★ Boosted</span>
+</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap;"><span class="tag">5′ 1″</span><span class="tag">Bachelor’s</span><span class="tag">Teacher</span><span class="tag">Never married</span><span class="tag">Urdu</span></div>
+<div class="d1 rise" style="background: #FFFFFF; border: 1px solid #EADFD6; border-radius: 22px; padding: 16px 16px 6px;">
+<h2 style="font-size: 18px; font-weight: 600; color: #4A0E1F; margin-bottom: 4px;">About</h2>
+<p style="margin: 0 0 10px; font-size: 14px; line-height: 1.55; color: #4E3A3F;">Family comes first. I teach and love reading Urdu poetry.</p>
+<div class="row"><span>Religion</span><span>Shia · Twelver · Prays regularly</span></div>
+<div class="row"><span>Family</span><span>Nuclear · 1 brother</span></div>
+<div class="row"><span>Photos</span><span style="color: #7E5F26; font-weight: 600;">More after she accepts</span></div>
+</div>
+</div>
+<div style="position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(transparent, #FAF6F1 30%); padding: 26px 20px 34px; display: flex; gap: 10px;">
+<a class="pill" href="#shortlist" style="flex: 0 0 auto; width: 120px; border-color: #4A0E1F; color: #4A0E1F; background: #FFFFFF;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4A0E1F" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"></path></svg>Save</a>
+<a class="pill" href="#interest" style="flex: 1 1 auto; background: #4A0E1F; color: #FAF6F1; box-shadow: 0 14px 26px -14px rgba(74,14,31,.9);">Express Interest <span aria-hidden="true">→</span></a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

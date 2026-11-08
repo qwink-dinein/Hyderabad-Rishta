@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>App — Discover</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Lora:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#4A0E1F}a:hover{color:#330915}
+.app *{box-sizing:border-box}
+.app h1,.app h2,.app h3{font-family:Lora,Georgia,serif;margin:0;letter-spacing:-0.02em}
+.seg{border-radius:9999px;padding:9px 15px;font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap;border:1.5px solid #EADFD6;color:#4E3A3F;background:#FFFFFF}
+.chip{display:inline-flex;align-items:center;gap:5px;background:rgba(250,246,241,.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#FAF6F1;border-radius:9999px;padding:6px 11px;font-size:13px;font-weight:600}
+.act{display:flex;align-items:center;justify-content:center;border-radius:9999px;text-decoration:none;transition:transform .16s cubic-bezier(.2,.8,.2,1)}
+.act:active{transform:scale(.9)}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;color:#6B5A5D;text-decoration:none;min-width:56px}
+@keyframes cardIn{from{opacity:0;transform:translateY(30px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes peek{0%,100%{transform:rotate(-3deg) translateY(10px)}50%{transform:rotate(-4deg) translateY(6px)}}
+.card-in{animation:cardIn .7s cubic-bezier(.2,.8,.2,1) both}
+.peek{animation:peek 5s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.card-in,.peek{animation:none}}
+</style>
+</helmet>
+<div class="app" style="width: 390px; height: 844px; overflow: hidden; background: #FAF6F1; color: #2A0B13; font-family: Inter, sans-serif; display: flex; flex-direction: column;">
+<div style="padding: 56px 20px 10px; display: flex; justify-content: space-between; align-items: center;">
+<h1 style="font-size: 30px; font-weight: 600; color: #4A0E1F;">Discover</h1>
+<a href="#filters" aria-label="Filters, 2 active" style="position: relative; height: 44px; padding: 0 16px; border-radius: 9999px; background: #4A0E1F; color: #FAF6F1; display: flex; align-items: center; gap: 8px; text-decoration: none; font-size: 14px; font-weight: 600;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FAF6F1" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"></path><circle cx="16" cy="6" r="2"></circle><circle cx="10" cy="12" r="2"></circle><circle cx="18" cy="18" r="2"></circle></svg>Filters · 2</a>
+</div>
+<div style="display: flex; gap: 8px; padding: 0 20px 14px; overflow: hidden;">
+<a class="seg" href="#featured" style="background: #4A0E1F; color: #FAF6F1; border-color: #4A0E1F;">★ Featured</a><a class="seg" href="#new">New</a><a class="seg" href="#rec">Recommended</a><a class="seg" href="#all">All</a>
+</div>
+<div style="flex: 1 1 auto; position: relative; padding: 0 20px;">
+<div class="peek" style="position: absolute; left: 34px; right: 34px; top: 8px; bottom: 96px; border-radius: 30px; background: #E9D9CF; border: 1px solid #EADFD6;"></div>
+<div class="card-in" style="position: absolute; left: 20px; right: 20px; top: 0; bottom: 104px; border-radius: 30px; overflow: hidden; box-shadow: 0 30px 50px -28px rgba(51,9,21,.6); border: 2px solid #C9A05A;">
+<img src="/_blob/e4641f93dc1ec87fc2d5c8cf8d26a465" alt="Fatima" style="width: 100%; height: 100%; object-fit: cover;">
+<span style="position: absolute; top: 14px; left: 14px; background: #C9A05A; color: #330915; border-radius: 9999px; padding: 6px 12px; font-size: 12px; font-weight: 700;">★ Boosted</span>
+<a href="#more" aria-label="More" style="position: absolute; top: 12px; right: 12px; width: 38px; height: 38px; border-radius: 9999px; background: rgba(51,9,21,.45); display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="#FAF6F1" aria-hidden="true"><circle cx="5" cy="12" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle></svg></a>
+<div style="position: absolute; inset: auto 0 0 0; padding: 70px 18px 18px; background: linear-gradient(transparent, rgba(51,9,21,.95) 55%); display: flex; flex-direction: column; gap: 8px;">
+<div style="display: flex; align-items: baseline; gap: 8px;"><span style="font-family: Lora, serif; font-size: 30px; font-weight: 600; color: #FAF6F1;">Fatima</span><span style="font-size: 22px; color: #F4E9E5;">26</span></div>
+<span style="font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #E6C995;">Hyderabad, Telangana · HR-10003</span>
+<div style="display: flex; gap: 6px; flex-wrap: wrap;"><span class="chip">5′ 1″</span><span class="chip">Bachelor’s</span><span class="chip">Education</span><span class="chip">Never married</span><span class="chip">Shia · Twelver</span></div>
+<p style="margin: 2px 0 0; font-size: 14px; line-height: 1.45; color: #F4E9E5; font-style: italic;">“Family comes first. I teach and love reading Urdu poetry.”</p>
+</div>
+</div>
+<div style="position: absolute; left: 0; right: 0; bottom: 18px; display: flex; justify-content: center; align-items: center; gap: 22px;">
+<a class="act" href="#skip" aria-label="Not now" style="width: 60px; height: 60px; background: #FFFFFF; border: 1.5px solid #EADFD6; box-shadow: 0 10px 20px -14px rgba(51,9,21,.5);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B5A5D" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></a>
+<a class="act" href="#interest" aria-label="Express interest" style="width: 76px; height: 76px; background: #4A0E1F; box-shadow: 0 16px 28px -14px rgba(74,14,31,.9);"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#FAF6F1" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13"></path><path d="M22 2l-7 20-4-9-9-4z"></path></svg></a>
+<a class="act" href="#shortlist" aria-label="Shortlist" style="width: 60px; height: 60px; background: #F6ECDD; border: 1.5px solid #E3CFA8; box-shadow: 0 10px 20px -14px rgba(51,9,21,.5);"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7E5F26" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"></path></svg></a>
+</div>
+</div>
+<nav aria-label="Tabs" style="background: #FFFFFF; border-top: 1px solid #EADFD6; padding: 10px 12px 30px; display: flex; justify-content: space-around; align-items: center;">
+<a class="tab" href="#home"><span style="padding: 5px 0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B5A5D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"></path></svg></span>Home</a>
+<a class="tab" href="#discover" aria-current="page" style="color: #4A0E1F;"><span style="background: #F4E9E5; border-radius: 9999px; padding: 5px 18px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A0E1F" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg></span>Discover</a>
+<a class="tab" href="#shortlist"><span style="padding: 5px 0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B5A5D" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"></path></svg></span>Shortlist</a>
+<a class="tab" href="#requests"><span style="padding: 5px 0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B5A5D" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg></span>Requests</a>
+<a class="tab" href="#profile"><span style="padding: 5px 0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B5A5D" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg></span>Profile</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

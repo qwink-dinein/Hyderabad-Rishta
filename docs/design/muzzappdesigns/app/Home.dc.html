@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>App — Home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Lora:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#4A0E1F}a:hover{color:#330915}
+.app *{box-sizing:border-box}
+.app h1,.app h2,.app h3{font-family:Lora,Georgia,serif;margin:0;letter-spacing:-0.02em}
+.pill{display:flex;align-items:center;justify-content:center;gap:8px;border-radius:9999px;font-weight:600;text-decoration:none;min-height:48px;padding:0 20px;font-size:16px;border:2px solid transparent;transition:transform .16s cubic-bezier(.2,.8,.2,1)}
+.pill:active{transform:scale(.97)}
+.chip{display:inline-flex;align-items:center;gap:5px;background:rgba(250,246,241,.18);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#FAF6F1;border-radius:9999px;padding:5px 10px;font-size:12px;font-weight:600}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;color:#6B5A5D;text-decoration:none;min-width:56px}
+.jaali{background-image:radial-gradient(circle at 1px 1px,rgba(201,160,90,.22) 1px,transparent 0);background-size:20px 20px}
+@keyframes riseIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.rise{animation:riseIn .6s cubic-bezier(.2,.8,.2,1) both}.d1{animation-delay:.08s}.d2{animation-delay:.16s}.d3{animation-delay:.24s}
+@media (prefers-reduced-motion: reduce){.rise{animation:none}}
+</style>
+</helmet>
+<div class="app" style="width: 390px; height: 844px; overflow: hidden; background: #FAF6F1; color: #2A0B13; font-family: Inter, sans-serif; display: flex; flex-direction: column;">
+<div style="padding: 56px 20px 12px; display: flex; justify-content: space-between; align-items: center;">
+<div style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 14px; color: #6B5A5D;">Assalamu alaikum</span><h1 style="font-size: 28px; font-weight: 600; color: #4A0E1F;">Imran</h1></div>
+<a href="#notifications" aria-label="Notifications, 1 new" style="position: relative; width: 46px; height: 46px; border-radius: 9999px; background: #FFFFFF; border: 1px solid #EADFD6; display: flex; align-items: center; justify-content: center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A0E1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.9 1.9 0 003.4 0"></path></svg><span style="position: absolute; top: 6px; right: 7px; width: 10px; height: 10px; border-radius: 9999px; background: #C9A05A; border: 2px solid #FFFFFF;"></span></a>
+</div>
+<div style="flex: 1 1 auto; overflow: hidden; display: flex; flex-direction: column; gap: 18px; padding: 4px 0 0;">
+<div class="rise jaali" style="margin: 0 20px; background-color: #330915; border-radius: 26px; padding: 20px; color: #FAF6F1; display: flex; flex-direction: column; gap: 12px;">
+<div style="display: flex; justify-content: space-between; align-items: center;"><span style="display: inline-flex; gap: 6px; align-items: center; background: #C9A05A; color: #330915; border-radius: 9999px; padding: 5px 11px; font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;">Boost</span><span style="font-size: 13px; color: #E6C995;">Free · 7 days</span></div>
+<h2 style="font-size: 24px; line-height: 1.15; font-weight: 600;">Get Boosted. Be seen first.</h2>
+<div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px;">
+<div style="display: flex; gap: 10px; align-items: center;"><span style="width: 22px; height: 22px; border-radius: 9999px; border: 2px solid #C9A05A; flex: none;"></span><span style="flex: 1;">Complete your profile</span><span style="color: #E6C995; font-weight: 600;">99%</span></div>
+<div style="height: 6px; border-radius: 9999px; background: rgba(250,246,241,.15); margin-left: 32px;"><div style="width: 99%; height: 6px; border-radius: 9999px; background: #C9A05A;"></div></div>
+<div style="display: flex; gap: 10px; align-items: center;"><span style="width: 22px; height: 22px; border-radius: 9999px; border: 2px solid #C9A05A; flex: none;"></span><span>Refer one family</span></div>
+</div>
+<a class="pill" href="#complete" style="background: #C9A05A; color: #330915; margin-top: 4px;">Add a photo · 99% <span aria-hidden="true">→</span></a>
+</div>
+<div class="rise d1" style="display: flex; flex-direction: column; gap: 10px;">
+<div style="display: flex; justify-content: space-between; align-items: baseline; padding: 0 20px;"><h2 style="font-size: 22px; font-weight: 600; color: #4A0E1F;">Featured</h2><a href="#all" style="font-size: 14px; font-weight: 600;">View all</a></div>
+<div style="display: flex; gap: 12px; padding: 0 20px; overflow: hidden;">
+<a href="#p2" style="position: relative; flex: none; width: 172px; height: 236px; border-radius: 24px; overflow: hidden; text-decoration: none; border: 2px solid #C9A05A;"><img src="/_blob/e4641f93dc1ec87fc2d5c8cf8d26a465" alt="Fatima" style="width: 100%; height: 100%; object-fit: cover;"><div style="position: absolute; inset: auto 0 0 0; padding: 40px 12px 12px; background: linear-gradient(transparent, rgba(51,9,21,.92)); display: flex; flex-direction: column; gap: 6px;"><span style="font-family: Lora, serif; font-size: 19px; font-weight: 600; color: #FAF6F1;">Fatima, 26</span><div style="display: flex; gap: 4px; flex-wrap: wrap;"><span class="chip">Hyderabad</span><span class="chip">Bachelor’s</span></div></div><span style="position: absolute; top: 10px; left: 10px; background: #C9A05A; color: #330915; border-radius: 9999px; padding: 4px 9px; font-size: 11px; font-weight: 700;">★ Boosted</span></a>
+<a href="#p3" style="position: relative; flex: none; width: 172px; height: 236px; border-radius: 24px; overflow: hidden; text-decoration: none; border: 2px solid #C9A05A;"><img src="/_blob/e4641f93dc1ec87fc2d5c8cf8d26a465" alt="Ayesha" style="width: 100%; height: 100%; object-fit: cover; object-position: 30% 50%;"><div style="position: absolute; inset: auto 0 0 0; padding: 40px 12px 12px; background: linear-gradient(transparent, rgba(51,9,21,.92)); display: flex; flex-direction: column; gap: 6px;"><span style="font-family: Lora, serif; font-size: 19px; font-weight: 600; color: #FAF6F1;">Ayesha, 24</span><div style="display: flex; gap: 4px; flex-wrap: wrap;"><span class="chip">Tolichowki</span><span class="chip">MBA</span></div></div><span style="position: absolute; top: 10px; left: 10px; background: #C9A05A; color: #330915; border-radius: 9999px; padding: 4px 9px; font-size: 11px; font-weight: 700;">★ Boosted</span></a>
+</div>
+</div>
+<div class="rise d2" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 0 20px;">
+<a href="#views" style="text-decoration: none; background: #FFFFFF; border: 1px solid #EADFD6; border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 4px;"><span style="font-family: Lora, serif; font-size: 26px; font-weight: 600; color: #4A0E1F;">12</span><span style="font-size: 12px; color: #6B5A5D;">Profile views</span></a>
+<a href="#short" style="text-decoration: none; background: #FFFFFF; border: 1px solid #EADFD6; border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 4px;"><span style="font-family: Lora, serif; font-size: 26px; font-weight: 600; color: #4A0E1F;">3</span><span style="font-size: 12px; color: #6B5A5D;">Shortlisted you</span></a>
+<a href="#req" style="text-decoration: none; background: #F6ECDD; border: 1px solid #E3CFA8; border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 4px;"><span style="font-family: Lora, serif; font-size: 26px; font-weight: 600; color: #7E5F26;">1</span><span style="font-size: 12px; color: #6B5A5D;">New interest</span></a>
+</div>
+</div>
+<nav aria-label="Tabs" style="background: #FFFFFF; border-top: 1px solid #EADFD6; padding: 10px 12px 30px; display: flex; justify-content: space-around; align-items: center;">
+<a class="tab" href="#home" aria-current="page" style="color: #4A0E1F;"><span style="background: #F4E9E5; border-radius: 9999px; padding: 5px 18px;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A0E1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"></path></svg></span>Home</a>
+<a class="tab" href="#discover"><span style="padding: 5px 0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B5A5D" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg></span>Discover</a>
+<a class="tab" href="#shortlist"><span style="padding: 5px 0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B5A5D" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"></path></svg></span>Shortlist</a>
+<a class="tab" href="#requests" style="position: relative;"><span style="padding: 5px 0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B5A5D" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg></span>Requests<span style="position: absolute; top: 0; right: 10px; min-width: 18px; height: 18px; border-radius: 9999px; background: #4A0E1F; color: #FFFFFF; font-size: 11px; display: flex; align-items: center; justify-content: center;">1</span></a>
+<a class="tab" href="#profile"><span style="padding: 5px 0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B5A5D" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg></span>Profile</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

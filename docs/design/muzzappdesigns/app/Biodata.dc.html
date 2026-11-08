@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>App — Biodata question</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Lora:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#4A0E1F}a:hover{color:#330915}
+.app *{box-sizing:border-box}
+.app h1,.app h2,.app h3{font-family:Lora,Georgia,serif;margin:0;letter-spacing:-0.02em}
+.opt{display:flex;align-items:center;justify-content:space-between;min-height:58px;padding:0 18px;border-radius:18px;background:#FFFFFF;border:1.5px solid #EADFD6;font-size:17px;font-weight:500;color:#2A0B13;text-decoration:none;transition:transform .14s cubic-bezier(.2,.8,.2,1),border-color .14s ease}
+.opt:active{transform:scale(.98)}
+.opt.on{border-color:#4A0E1F;background:#F4E9E5;font-weight:600}
+.pill{display:flex;align-items:center;justify-content:center;gap:8px;border-radius:9999px;font-weight:600;text-decoration:none;min-height:56px;padding:0 20px;font-size:17px;border:2px solid transparent;transition:transform .16s cubic-bezier(.2,.8,.2,1)}
+.pill:active{transform:scale(.97)}
+@keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+@keyframes grow{from{width:44%}to{width:57%}}
+.slide{animation:slideIn .55s cubic-bezier(.2,.8,.2,1) both}.s1{animation-delay:.06s}.s2{animation-delay:.12s}.s3{animation-delay:.18s}.s4{animation-delay:.24s}.s5{animation-delay:.3s}
+.bar{animation:grow .8s cubic-bezier(.2,.8,.2,1) both}
+@media (prefers-reduced-motion: reduce){.slide,.bar{animation:none}}
+</style>
+</helmet>
+<div class="app" style="width: 390px; height: 844px; overflow: hidden; background: #FAF6F1; color: #2A0B13; font-family: Inter, sans-serif; display: flex; flex-direction: column;">
+<div style="padding: 56px 20px 0; display: flex; flex-direction: column; gap: 16px;">
+<div style="display: flex; align-items: center; gap: 14px;"><a href="#back" aria-label="Back" style="width: 40px; height: 40px; border-radius: 9999px; background: #FFFFFF; border: 1px solid #EADFD6; display: flex; align-items: center; justify-content: center; flex: none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4A0E1F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></a><div style="flex: 1; height: 8px; border-radius: 9999px; background: #EADFD6; overflow: hidden;"><div class="bar" style="width: 57%; height: 8px; border-radius: 9999px; background: #4A0E1F;"></div></div><span style="font-size: 13px; font-weight: 600; color: #6B5A5D;">4 of 7</span></div>
+</div>
+<div style="flex: 1 1 auto; padding: 36px 20px 0; display: flex; flex-direction: column; gap: 22px;">
+<div class="slide" style="display: flex; flex-direction: column; gap: 8px;"><span style="font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #7E5F26;">About your son</span><h1 style="font-size: 32px; line-height: 1.12; font-weight: 600; color: #4A0E1F;">Which language does he speak at home?</h1><p style="margin: 0; font-size: 15px; color: #6B5A5D;">Families often look for the same mother tongue.</p></div>
+<div style="display: flex; flex-direction: column; gap: 10px;">
+<a class="opt on slide s1" href="#urdu">Urdu <span style="width: 26px; height: 26px; border-radius: 9999px; background: #4A0E1F; display: flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FAF6F1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg></span></a>
+<a class="opt slide s2" href="#dakhini">Dakhini <span style="width: 26px; height: 26px; border-radius: 9999px; border: 2px solid #EADFD6;"></span></a>
+<a class="opt slide s3" href="#telugu">Telugu <span style="width: 26px; height: 26px; border-radius: 9999px; border: 2px solid #EADFD6;"></span></a>
+<a class="opt slide s4" href="#english">English <span style="width: 26px; height: 26px; border-radius: 9999px; border: 2px solid #EADFD6;"></span></a>
+<a class="opt slide s5" href="#other">Something else <span style="width: 26px; height: 26px; border-radius: 9999px; border: 2px solid #EADFD6;"></span></a>
+</div>
+</div>
+<div style="padding: 12px 20px 34px; display: flex; flex-direction: column; gap: 10px; align-items: center;"><a class="pill" href="#next" style="background: #4A0E1F; color: #FAF6F1; width: 100%; box-shadow: 0 14px 26px -14px rgba(74,14,31,.9);">Continue <span aria-hidden="true">→</span></a><span style="font-size: 13px; color: #6B5A5D;">3 more to go live</span></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

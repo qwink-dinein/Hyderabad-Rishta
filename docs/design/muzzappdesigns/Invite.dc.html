@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hyderabad Rishta — Invitation</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Lora:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#4A0E1F}a:hover{color:#330915}
+.hr *{box-sizing:border-box}
+.hr h1,.hr h2{font-family:Lora,Georgia,serif;margin:0;letter-spacing:-0.02em}
+.pill{display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:9999px;font-family:Inter,sans-serif;font-weight:600;text-decoration:none;min-height:52px;padding:15px 28px;font-size:16px;line-height:1;border:2px solid transparent;transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .18s ease,background-color .18s ease}
+.pill:hover{transform:translateY(-2px)}
+.pill:active{transform:scale(.97)}
+.pill-gold{background:#C9A05A;color:#330915;box-shadow:0 10px 24px -12px rgba(201,160,90,1)}
+.pill-ghost-light{border-color:rgba(250,246,241,.55);color:#FAF6F1}
+.jaali{background-image:radial-gradient(circle at 1px 1px,rgba(201,160,90,.22) 1px,transparent 0);background-size:22px 22px}
+@keyframes riseIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{opacity:0;transform:scale(.9)}60%{opacity:1;transform:scale(1.03)}100%{transform:scale(1)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.rise{animation:riseIn .7s cubic-bezier(.2,.8,.2,1) both}
+.d1{animation-delay:.1s}.d2{animation-delay:.22s}.d3{animation-delay:.34s}
+.code{animation:pop .7s cubic-bezier(.2,.8,.2,1) .25s both;background:linear-gradient(100deg,#F6ECDD 40%,#FFF8EC 50%,#F6ECDD 60%);background-size:200% 100%}
+.code span{animation:shimmer 3.2s linear 1.2s infinite}
+@media (prefers-reduced-motion: reduce){.rise,.code,.code span{animation:none!important}}
+</style>
+</helmet>
+<div class="hr jaali" style="width: 390px; height: 844px; overflow: hidden; background-color: #330915; color: #FAF6F1; font-family: Inter, sans-serif; display: flex; flex-direction: column;">
+<header style="display: flex; align-items: center; gap: 10px; padding: 18px 20px;"><img src="/_blob/e29fa85e1aaa3897eb6dd87f61b54e0c" alt="" style="width: 38px; height: 38px; border-radius: 10px;"><span style="font-family: Lora, serif; font-size: 19px; font-weight: 600;">Hyderabad Rishta</span></header>
+<main style="flex: 1 1 auto; padding: 18px 24px 0; display: flex; flex-direction: column; gap: 18px;">
+<span class="rise" style="align-self: flex-start; border: 1px solid rgba(201,160,90,.6); color: #E6C995; border-radius: 9999px; padding: 6px 13px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;">You are invited</span>
+<h1 class="rise d1" style="font-size: 40px; line-height: 1.06; font-weight: 600;">A family invited you to Hyderabad Rishta</h1>
+<p class="rise d2" style="margin: 0; font-size: 16px; line-height: 1.55; color: #F4E9E5;">Join with their code. Once your biodata is complete and approved, both families get a free 7-day Boost.</p>
+<div class="code" style="border-radius: 22px; padding: 20px; display: flex; flex-direction: column; gap: 6px; align-items: center; color: #330915;"><span style="font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #7E5F26;">Invitation code</span><span style="font-family: Lora, serif; font-size: 42px; font-weight: 600; letter-spacing: .14em;">HRAB23</span></div>
+<div class="rise d3" style="display: flex; flex-direction: column; gap: 10px;"><a class="pill pill-gold" href="#open">Open Hyderabad Rishta <span aria-hidden="true">→</span></a><a class="pill pill-ghost-light" href="#play">Get the app</a></div>
+<ol style="margin: 4px 0 0; padding-left: 20px; font-size: 14px; line-height: 1.6; color: #F4E9E5;"><li>Open or install the app.</li><li>Tap Find a rishta and sign up with your own number.</li><li>The code is filled in for you.</li></ol>
+</main>
+<p style="margin: 0; padding: 14px 24px 22px; font-size: 12px; line-height: 1.5; color: #D9C7C1;">Your number and biodata are never shown to the family who invited you.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
