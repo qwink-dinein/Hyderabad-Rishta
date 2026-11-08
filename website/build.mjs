@@ -260,6 +260,7 @@ ${CF_ANALYTICS_TOKEN ? `<script defer src="https://static.cloudflareinsights.com
 `;
 }
 
+// Cloudflare injects its cookie-free Web Analytics beacon on the live domain, so the CSP always allows it.
 // ───────────── build ─────────────
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
@@ -413,7 +414,7 @@ writeFileSync(join(OUT, '_headers'), `/*
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
   Strict-Transport-Security: max-age=31536000; includeSubDomains
-  Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' ${cssCsp}; font-src 'self'; script-src 'self'${CF_ANALYTICS_TOKEN ? ' https://static.cloudflareinsights.com' : ''}; connect-src 'self'${CF_ANALYTICS_TOKEN ? ' https://cloudflareinsights.com' : ''}; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' ${cssCsp}; font-src 'self'; script-src 'self' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 ${PRODUCTION ? '' : '  X-Robots-Tag: noindex, nofollow\n'}/site.*.css
   Cache-Control: public, max-age=31536000, immutable
 /fonts/*
