@@ -41,7 +41,7 @@ const KIND: Record<Kind, { bg: string; fg: string; border: string; gilded?: bool
   light: { bg: 'transparent', fg: colors.cream, border: colors.borderGold },
 };
 // A soft light-to-deep sweep, not a shine: champagne at the top edge settling into royal gold.
-const GILD = ['#E9CB6E', colors.gold, '#C29A2B'] as const;
+const GILD = ['#E8DCC0', colors.gold, '#C7B07F'] as const;
 const DONE: { bg: string; fg: string; border: string; gilded?: boolean } = { bg: colors.success, fg: colors.white, border: colors.success };
 
 export const Button = memo(function Button({ label, onPress, kind = 'primary', size = 'md', loading, disabled, icon, arrow, full, style, accessibilityHint, testID, done }: ButtonProps) {
@@ -108,7 +108,7 @@ function splitStyle(style: StyleProp<ViewStyle>): [ViewStyle, ViewStyle] {
 
 const styles = StyleSheet.create({
   base: { borderRadius: radius.pill, borderWidth: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  gilded: { shadowColor: '#7A5C27', shadowOpacity: 0.28, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
+  gilded: { shadowColor: '#A8935F', shadowOpacity: 0.28, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
   gild: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   md: { minHeight: 52, paddingHorizontal: space.lg, paddingVertical: space.sm },
   sm: { minHeight: 38, paddingHorizontal: space.lg, paddingVertical: space.xs },

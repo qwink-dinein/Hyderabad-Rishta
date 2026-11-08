@@ -19,7 +19,7 @@ const POSTER = require('../../assets/hero/hero-poster.webp');
 
 // Dark under the status bar and logo, clearer through the picture, then deep burgundy behind the headline and
 // solid at the foot so the text below sits on the brand colour.
-const VEIL = ['rgba(58,0,18,0.62)', 'rgba(58,0,18,0.18)', 'rgba(58,0,18,0.42)', 'rgba(58,0,18,0.8)', colors.forest] as const;
+const VEIL = ['rgba(63,47,72,0.62)', 'rgba(63,47,72,0.18)', 'rgba(63,47,72,0.42)', 'rgba(63,47,72,0.8)', colors.forest] as const;
 const VEIL_AT = [0, 0.14, 0.42, 0.66, 1] as const;
 
 export function HeroVideo({ style }: { style?: StyleProp<ViewStyle> }) {

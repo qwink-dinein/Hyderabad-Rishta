@@ -11,8 +11,6 @@ export const baseFontAssets = {
   // Montserrat for buttons, labels and navigation.
   'Playfair-SemiBold': require('@expo-google-fonts/playfair-display/600SemiBold/PlayfairDisplay_600SemiBold.ttf'),
   'Playfair-SemiBoldItalic': require('@expo-google-fonts/playfair-display/600SemiBold_Italic/PlayfairDisplay_600SemiBold_Italic.ttf'),
-  // Landing headline (owner 2026-11-08): Mogra brush display, Latin subset (en + Roman Urdu only).
-  Mogra: require('../../assets/fonts/Mogra-Regular.ttf'),
   'Montserrat-Medium': require('@expo-google-fonts/montserrat/500Medium/Montserrat_500Medium.ttf'),
   'Montserrat-SemiBold': require('@expo-google-fonts/montserrat/600SemiBold/Montserrat_600SemiBold.ttf'),
   'Inter-Regular': require('@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf'),

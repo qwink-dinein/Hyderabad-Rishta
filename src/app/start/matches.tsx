@@ -18,7 +18,7 @@ import { STEP_PROGRESS, useOnboarding } from '@/state/onboarding';
 import { useSession } from '@/state/session';
 import { colors, radius, space } from '@/theme/tokens';
 
-const TINTS = ['#F3DDE0', '#EFE4D4', '#DCEBE3', '#E3E3F0', '#F1E2D6'];
+const TINTS = ['#EDE3F0', '#EFE4D4', '#DCEBE3', '#E3E3F0', '#F1E2D6'];
 
 /** Step 3: real matching profiles BEFORE any number is asked — a live count and 3 safe rows. */
 export default function Matches() {
