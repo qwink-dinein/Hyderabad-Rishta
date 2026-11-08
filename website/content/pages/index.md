@@ -14,8 +14,8 @@ layout: home
 <div class="wrap">
 <p class="badge rise"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3a0012" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>Your number stays private</p>
 <p class="eyebrow rise d1 after-badge">Hyderabad Rishta · Assalamu alaikum</p>
-<h1 id="hero-title" class="h-display rise d1">Find a <em>rishta</em> your whole family will love</h1>
-<p class="tagline rise d2">Rishton Ka Safar, Ab Bina Kisi Fees Ke.</p>
+<h1 id="hero-title" class="h-display rise d1">Bringing Hyderabad’s Muslim Families Closer, <em>One Rishta at a Time.</em></h1>
+<p class="tagline subhero rise d2">Hyderabadi’s Own Muslim Matrimony App</p>
 <p class="sub rise d2">See Muslim brides and grooms from Hyderabadi families who match what you want — before you share your number. Connect only when both families agree.</p>
 <div class="rise d3 hero-stores">{{STORES:home-hero}}</div>
 <p class="note-small rise d3">Free app for Android and iPhone · about 2 minutes to see your matches · no number needed to look</p>

@@ -42,13 +42,14 @@ const STEPS: [IconName, string, string][] = [
 const WHY: string[] = ['onb.welcome.w1', 'onb.welcome.w2', 'onb.welcome.w3', 'onb.welcome.w4'];
 
 /**
- * "Find a *rishta* your whole family will love": the word between asterisks is set in gold — in Playfair
- * italics for English and Roman Urdu; Urdu and Telugu keep their own script font (no faux italics).
+ * "Bringing Hyderabad's Muslim Families Closer, *One Rishta at a Time.*": the words between asterisks are set in
+ * gold. English and Roman Urdu use Mogra (brush display, owner 2026-11-08); Urdu and Telugu keep their own
+ * script font. Mogra has no italic or bold, so neither is faked.
  */
 function headline(text: string, size: number, latin: boolean) {
   return text.split('*').map((part, i) =>
     i % 2 ? (
-      <Text key={i} variant="display" color={colors.gold} style={[{ fontSize: size }, latin && { fontFamily: 'Playfair-SemiBoldItalic' }]}>
+      <Text key={i} variant="display" color={colors.gold} style={[{ fontSize: size }, latin && { fontFamily: 'Mogra', fontWeight: 'normal' }]}>
         {part}
       </Text>
     ) : (
@@ -69,7 +70,7 @@ export function Welcome() {
   const [heroCtaY, setHeroCtaY] = useState(0);
   const [sticky, setSticky] = useState(false);
   const heroH = tiny ? 200 : short ? 250 : 310;
-  const h1Size = tiny ? 29 : short ? 33 : 37;
+  const h1Size = tiny ? 26 : short ? 29 : 32;
   const lang = useUiLang();
   const latin = lang === 'en' || lang === 'ur-Latn';
 
@@ -122,10 +123,10 @@ export function Welcome() {
               </Text>
               <View style={styles.rule} />
             </View>
-            <Text variant="display" color={colors.champagne} accessibilityRole="header" center style={[styles.h1, { fontSize: h1Size, lineHeight: Math.round(h1Size * (latin ? 1.22 : lang === 'ur' ? 1.9 : 1.5)) }]}>
+            <Text variant="display" color={colors.champagne} accessibilityRole="header" center style={[styles.h1, latin && { fontFamily: 'Mogra', fontWeight: 'normal' }, { fontSize: h1Size, lineHeight: Math.round(h1Size * (latin ? 1.25 : lang === 'ur' ? 1.9 : 1.5)) }]}>
               {headline(t('onb.welcome.headline'), h1Size, latin)}
             </Text>
-            <Text variant="body" color={colors.gold} center style={[styles.tagline, latin && { fontStyle: 'italic' }]}>
+            <Text variant="body" color={colors.gold} center style={[styles.tagline, latin && styles.taglineLatin]}>
               {t('onb.welcome.tagline')}
             </Text>
             <Text variant="body" color={colors.beige} center style={[styles.lede, short && { fontSize: 15.5 }]}>
@@ -259,6 +260,7 @@ const styles = StyleSheet.create({
   eyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, alignSelf: 'stretch' },
   rule: { flex: 1, height: 1, backgroundColor: colors.borderGold },
   tagline: { fontSize: 15, marginTop: space.xs },
+  taglineLatin: { fontFamily: 'Montserrat-SemiBold', fontSize: 13, letterSpacing: 0.8, textTransform: 'uppercase' },
   h1: { fontSize: 37, lineHeight: 45, marginTop: space.sm },
   lede: { fontSize: 16, lineHeight: 24, marginTop: space.sm, maxWidth: 420 },
   skyline: { alignItems: 'center', marginTop: space.lg, marginBottom: -space.xxl },
