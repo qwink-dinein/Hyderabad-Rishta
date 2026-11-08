@@ -443,8 +443,10 @@ ${store}
 <p class="meta">The code can only be added while signing up. Your number and biodata are never shown to the family who invited you.</p>
 <script src="/r.js" defer></script>`,
 }));
-// Home hero video: loads only when motion and data are welcome; plays only while the hero is on screen.
-writeFileSync(join(OUT, 'hero.js'), `(function(){var v=document.getElementById('hero-video');if(!v||!v.play)return;var c=navigator.connection||{};if(matchMedia('(prefers-reduced-motion: reduce)').matches||c.saveData||/2g/.test(c.effectiveType||''))return;v.src=v.getAttribute(matchMedia('(max-aspect-ratio: 1/1)').matches?'data-tall':'data-wide');v.addEventListener('playing',function(){v.classList.add('on');},{once:true});function go(){var p=v.play();if(p&&p.catch)p.catch(function(){});}if('IntersectionObserver' in window){new IntersectionObserver(function(e){e[0].isIntersecting?go():v.pause();}).observe(v);}else go();})();\n`);
+// Home hero video: loads only when motion and data are welcome; plays only while the hero is on screen. It is fetched
+// whole and played from a blob: URL because the host ignores Range requests, and iPhone Safari refuses to stream video
+// without them (CSP allows media-src blob:).
+writeFileSync(join(OUT, 'hero.js'), `(function(){var v=document.getElementById('hero-video');if(!v||!v.play||!window.fetch||!window.URL)return;var c=navigator.connection||{};if(matchMedia('(prefers-reduced-motion: reduce)').matches||c.saveData||/2g/.test(c.effectiveType||''))return;var u=v.getAttribute(matchMedia('(max-aspect-ratio: 1/1)').matches?'data-tall':'data-wide');v.muted=true;v.defaultMuted=true;v.setAttribute('muted','');v.setAttribute('playsinline','');v.addEventListener('playing',function(){v.classList.add('on');},{once:true});var seen=false;function go(){if(!seen||!v.src)return;var p=v.play();if(p&&p.catch)p.catch(function(){});}if('IntersectionObserver' in window){new IntersectionObserver(function(e){seen=e[0].isIntersecting;seen?go():v.pause();}).observe(v);}else seen=true;fetch(u).then(function(r){if(!r.ok)throw 0;return r.blob();}).then(function(b){v.src=URL.createObjectURL(b);go();}).catch(function(){});})();\n`);
 writeFileSync(join(OUT, 'contact.js'), `(function(){var b=document.getElementById('show-email');if(!b)return;b.addEventListener('click',function(){var u=['mukarram','jahmm'].join(''),d=['gmail','com'].join('.'),a=u+'@'+d,o=document.getElementById('email-out');o.innerHTML='';var l=document.createElement('a');l.href='mailto:'+a+'?subject='+encodeURIComponent('Hyderabad Rishta support');l.textContent=a;o.appendChild(l);o.hidden=false;b.hidden=true;window.location.href=l.href;});})();\n`);
 writeFileSync(join(OUT, 'r.js'), `(function(){var m=location.pathname.match(/^\\/r\\/([A-Za-z0-9]{6,8})\\/?$/);var c=m?m[1].toUpperCase():'';if(!/^HR[2-9A-HJKMNP-Z]{4,6}$/.test(c))return;document.getElementById('invite-code').textContent=c;document.getElementById('invite-open').href='hyderabadrishta://r/'+c;})();\n`);
 mkdirSync(join(OUT, '.well-known'), { recursive: true });
@@ -461,7 +463,7 @@ writeFileSync(join(OUT, '_headers'), `/*
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
   Strict-Transport-Security: max-age=31536000; includeSubDomains
-  Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' ${cssCsp}; font-src 'self'; script-src 'self' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' ${cssCsp}; font-src 'self'; media-src 'self' blob:; script-src 'self' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
 ${PRODUCTION ? '' : '  X-Robots-Tag: noindex, nofollow\n'}/site.*.css
   Cache-Control: public, max-age=31536000, immutable
 /fonts/*
