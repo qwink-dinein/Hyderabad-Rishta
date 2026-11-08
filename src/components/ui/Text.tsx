@@ -8,9 +8,9 @@ import { useUiLang } from '@/i18n/uiLang';
 type Variant = 'display' | 'h1' | 'h2' | 'h3' | 'body' | 'bodyStrong' | 'label' | 'caption' | 'overline' | 'button';
 
 const VARIANTS: Record<Variant, { size: number; role: FontRole; color?: string; upper?: boolean; spacing?: number }> = {
-  display: { size: 34, role: 'display', color: colors.emerald },
-  h1: { size: 27, role: 'display', color: colors.emerald },
-  h2: { size: 20, role: 'display', color: colors.emerald },
+  display: { size: 36, role: 'display', color: colors.emerald },
+  h1: { size: 29, role: 'display', color: colors.emerald },
+  h2: { size: 21, role: 'display', color: colors.emerald },
   h3: { size: 17, role: 'semibold', color: colors.charcoal },
   body: { size: 15, role: 'body', color: colors.charcoal },
   bodyStrong: { size: 15, role: 'semibold', color: colors.charcoal },

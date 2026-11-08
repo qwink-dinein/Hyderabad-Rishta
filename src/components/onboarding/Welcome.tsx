@@ -42,21 +42,12 @@ const STEPS: [IconName, string, string][] = [
 const WHY: string[] = ['onb.welcome.w1', 'onb.welcome.w2', 'onb.welcome.w3', 'onb.welcome.w4'];
 
 /**
- * "Bringing Hyderabad's Muslim Families Closer, *One Rishta at a Time.*": the words between asterisks are set in
- * soft champagne. English and Roman Urdu use Playfair Display with the accent in Playfair italic (lavender
- * redesign, owner 2026-11-08); Urdu and Telugu keep their own script font (no faux italics).
+ * Headline (owner 2026-11-08): "Bringing Hyderabad's Muslim Families Closer…" then the accent between asterisks,
+ * "One Rishta at a Time.", on its OWN single line in Great Vibes calligraphy (English, Roman Urdu), soft champagne.
+ * The accent is sized from the column width so it never wraps on any phone; numberOfLines + adjustsFontSizeToFit
+ * are a native safety net. Urdu and Telugu keep their own script fonts.
  */
-function headline(text: string, size: number, latin: boolean) {
-  return text.split('*').map((part, i) =>
-    i % 2 ? (
-      <Text key={i} variant="display" color={colors.gold} style={[{ fontSize: size }, latin && { fontFamily: 'Playfair-SemiBoldItalic' }]}>
-        {part}
-      </Text>
-    ) : (
-      part
-    ),
-  );
-}
+const ACCENT_WIDTH: Partial<Record<string, number>> = { en: 7.37, 'ur-Latn': 8.03 }; // Great Vibes text width ÷ font size
 
 export function Welcome() {
   const { t } = useTranslation();
@@ -70,9 +61,13 @@ export function Welcome() {
   const [heroCtaY, setHeroCtaY] = useState(0);
   const [sticky, setSticky] = useState(false);
   const heroH = tiny ? 200 : short ? 250 : 310;
-  const h1Size = tiny ? 26 : short ? 29 : 32;
+  const h1Size = tiny ? 28 : short ? 31 : 35;
   const lang = useUiLang();
   const latin = lang === 'en' || lang === 'ur-Latn';
+  const [mainLine, accentLine] = t('onb.welcome.headline').split('*');
+  const columnW = Math.min(winW, 520) - space.xl * 2;
+  const accentRatio = ACCENT_WIDTH[lang];
+  const accentSize = latin && accentRatio ? Math.min(Math.round(h1Size * 1.3), Math.floor(columnW / (accentRatio * 1.06))) : h1Size;
 
   const find = () => {
     // Coming back before signing up: continue where they left off, never re-ask.
@@ -116,9 +111,14 @@ export function Welcome() {
               </Text>
               <View style={styles.rule} />
             </View>
-            <Text variant="display" color={colors.champagne} accessibilityRole="header" center style={[styles.h1, latin && { fontFamily: 'Playfair-SemiBold' }, { fontSize: h1Size, lineHeight: Math.round(h1Size * (latin ? 1.25 : lang === 'ur' ? 1.9 : 1.5)) }]}>
-              {headline(t('onb.welcome.headline'), h1Size, latin)}
+            <Text variant="display" color={colors.champagne} accessibilityRole="header" center style={[styles.h1, { fontSize: h1Size, lineHeight: Math.round(h1Size * (latin ? 1.15 : lang === 'ur' ? 1.9 : 1.5)) }]}>
+              {mainLine.trim()}
             </Text>
+            {accentLine ? (
+              <Text variant="display" color={colors.gold} center numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[{ fontSize: accentSize, lineHeight: Math.round(accentSize * (latin ? 1.3 : lang === 'ur' ? 1.9 : 1.5)) }, latin && { fontFamily: 'GreatVibes', fontWeight: 'normal' }]}>
+                {accentLine.trim()}
+              </Text>
+            ) : null}
             <Text variant="body" color={colors.gold} center style={[styles.tagline, latin && styles.taglineLatin]}>
               {t('onb.welcome.tagline')}
             </Text>
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   eyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, alignSelf: 'stretch' },
   rule: { flex: 1, height: 1, backgroundColor: colors.borderGold },
   tagline: { fontSize: 15, marginTop: space.xs },
-  taglineLatin: { fontFamily: 'Montserrat-SemiBold', fontSize: 13, letterSpacing: 0.8, textTransform: 'uppercase' },
+  taglineLatin: { fontFamily: 'Lato-Bold', fontSize: 13, letterSpacing: 0.8, textTransform: 'uppercase' },
   h1: { fontSize: 37, lineHeight: 45, marginTop: space.sm },
   lede: { fontSize: 16, lineHeight: 24, marginTop: space.sm, maxWidth: 420 },
   skyline: { alignItems: 'center', marginTop: space.lg, marginBottom: -space.xxl },

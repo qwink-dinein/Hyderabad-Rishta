@@ -58,4 +58,9 @@ Button gilded gradient `#E9CB6E/#C29A2B/#7A5C27` → `#E8DCC0/#C7B07F/#A8935F`. 
 - Accent words ("One Rishta at a Time.", "in your pocket"): **Great Vibes** calligraphy (`greatvibes-400.woff2`) in soft champagne — heading sizes only, never buttons or small text.
 - Body, buttons, labels: **Lato 400 / 700** (`lato-400/700.woff2`).
 - Home hero: "Bringing Hyderabad's Muslim Families Closer…" then *One Rishta at a Time.* on its own line, `white-space: nowrap`, `font-size: min(1.25em, 12.4vw)` — one line from 320px to 1600px.
-- Playfair, Inter and Montserrat removed from the website. The app still uses Playfair/Inter/Montserrat until the owner picks its typography.
+- Playfair, Inter and Montserrat removed from the website.
+
+## App typography (owner, 2026-11-08) — same set as the website
+- `src/theme/fonts.ts`: `display` → `Cormorant-SemiBold`; `body`/`uiMedium` → `Lato-Regular`; `medium`/`semibold`/`ui` → `Lato-Bold` (English, Roman Urdu). Urdu and Telugu keep Noto Nastaliq / Noto Sans Telugu. Fonts are Latin-subset TTFs in `assets/fonts/`.
+- Text sizes: display 36, h1 29, h2 21 (Cormorant runs small).
+- Landing: main line then the accent ("One Rishta at a Time.") as its own `Text` in `GreatVibes`, `numberOfLines={1}` + `adjustsFontSizeToFit`, sized `min(h1×1.3, columnWidth ÷ (7.37 × 1.06))` (Roman Urdu ratio 8.03) — one line on every phone (checked 320–430 px). Translations use "…" before the accent.

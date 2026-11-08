@@ -1290,7 +1290,7 @@ const urLatn: DeepPartial<Translation> = {
     next: "Aage",
     welcome: {
       title: "Assalamu alaikum",
-      headline: "Hyderabad ke Muslim Khandaanon ko Qareeb Laate Hue, *Ek Rishta, Ek Qadam.*",
+      headline: "Hyderabad ke Muslim Khandaanon ko Qareeb Laate Hue… *Ek Rishta, Ek Qadam.*",
       tagline: "Hyderabadiyon ki Apni Muslim Matrimony App",
       lede: "Hyderabadi khandanon ki Muslim dulhanein aur dulhe dekhiye jo aap ki pasand se milte hain — apna number dene se pehle.",
       badge: "Aap ka number private rehta hai",

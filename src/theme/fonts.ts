@@ -7,15 +7,12 @@ import type { Lang } from '@/domain/types';
  * Subpath imports keep unused weights out of the bundle.
  */
 export const baseFontAssets = {
-  // Premium redesign 2026-11-08: Playfair Display (editorial serif) for headings, Inter for reading,
-  // Montserrat for buttons, labels and navigation.
-  'Playfair-SemiBold': require('@expo-google-fonts/playfair-display/600SemiBold/PlayfairDisplay_600SemiBold.ttf'),
-  'Playfair-SemiBoldItalic': require('@expo-google-fonts/playfair-display/600SemiBold_Italic/PlayfairDisplay_600SemiBold_Italic.ttf'),
-  'Montserrat-Medium': require('@expo-google-fonts/montserrat/500Medium/Montserrat_500Medium.ttf'),
-  'Montserrat-SemiBold': require('@expo-google-fonts/montserrat/600SemiBold/Montserrat_600SemiBold.ttf'),
-  'Inter-Regular': require('@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf'),
-  'Inter-Medium': require('@expo-google-fonts/inter/500Medium/Inter_500Medium.ttf'),
-  'Inter-SemiBold': require('@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf'),
+  // Typography "wedding card" (owner 2026-11-08, same as the website): Cormorant Garamond for headings, Lato for
+  // reading, buttons and labels, Great Vibes calligraphy for the landing accent line only. Latin subsets.
+  'Cormorant-SemiBold': require('../../assets/fonts/CormorantGaramond-SemiBold.ttf'),
+  'Lato-Regular': require('../../assets/fonts/Lato-Regular.ttf'),
+  'Lato-Bold': require('../../assets/fonts/Lato-Bold.ttf'),
+  GreatVibes: require('../../assets/fonts/GreatVibes-Regular.ttf'),
 };
 
 const scriptFontAssets: Record<Exclude<Lang, 'en' | 'ur-Latn'>, Record<string, number>> = {
@@ -42,14 +39,14 @@ export async function ensureFonts(lang: Lang): Promise<void> {
 
 export const isFontLoaded = (lang: Lang) => loaded.has(lang);
 
-/** `ui` / `uiMedium` = buttons, labels, navigation and section labels (Montserrat in Latin scripts). */
+/** `ui` / `uiMedium` = buttons, labels, navigation and section labels (Lato in Latin scripts). */
 export type FontRole = 'display' | 'body' | 'medium' | 'semibold' | 'ui' | 'uiMedium';
 
 const families: Record<Lang, Record<FontRole, string>> = {
-  en: { display: 'Playfair-SemiBold', body: 'Inter-Regular', medium: 'Inter-Medium', semibold: 'Inter-SemiBold', ui: 'Montserrat-SemiBold', uiMedium: 'Montserrat-Medium' },
+  en: { display: 'Cormorant-SemiBold', body: 'Lato-Regular', medium: 'Lato-Bold', semibold: 'Lato-Bold', ui: 'Lato-Bold', uiMedium: 'Lato-Regular' },
   // Nastaliq conveys emphasis through size rather than weight; one weight keeps the download small.
   ur: { display: 'Urdu-Regular', body: 'Urdu-Regular', medium: 'Urdu-Regular', semibold: 'Urdu-Regular', ui: 'Urdu-Regular', uiMedium: 'Urdu-Regular' },
-  'ur-Latn': { display: 'Playfair-SemiBold', body: 'Inter-Regular', medium: 'Inter-Medium', semibold: 'Inter-SemiBold', ui: 'Montserrat-SemiBold', uiMedium: 'Montserrat-Medium' },
+  'ur-Latn': { display: 'Cormorant-SemiBold', body: 'Lato-Regular', medium: 'Lato-Bold', semibold: 'Lato-Bold', ui: 'Lato-Bold', uiMedium: 'Lato-Regular' },
   te: { display: 'Telugu-SemiBold', body: 'Telugu-Regular', medium: 'Telugu-Regular', semibold: 'Telugu-SemiBold', ui: 'Telugu-SemiBold', uiMedium: 'Telugu-Regular' },
 };
 

@@ -1287,7 +1287,7 @@ const en = {
     next: "Next",
     welcome: {
       title: "Assalamu alaikum",
-      headline: "Bringing Hyderabad's Muslim Families Closer, *One Rishta at a Time.*",
+      headline: "Bringing Hyderabad's Muslim Families Closer… *One Rishta at a Time.*",
       tagline: "Hyderabadi's Own Muslim Matrimony App",
       lede: "See Muslim brides and grooms from Hyderabadi families who match what you want — before you share your number.",
       badge: "Your number stays private",
