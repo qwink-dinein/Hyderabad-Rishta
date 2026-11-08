@@ -383,5 +383,5 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -space.xs },
   cell: { width: '50%', padding: space.xs },
   place: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.lg, borderWidth: 2, borderColor: colors.emerald, backgroundColor: colors.white },
-  pin: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#FBF0EE', alignItems: 'center', justifyContent: 'center' },
+  pin: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.goldSoft, alignItems: 'center', justifyContent: 'center' },
 });

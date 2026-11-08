@@ -1,5 +1,6 @@
 import { memo, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors, radius, space } from '@/theme/tokens';
 import { isRTL } from '@/i18n';
 import { Icon } from './Icon';
@@ -27,15 +28,21 @@ export interface ButtonProps {
   done?: boolean;
 }
 
-const KIND: Record<Kind, { bg: string; fg: string; border: string }> = {
-  primary: { bg: colors.emerald, fg: colors.white, border: colors.emerald },
-  secondary: { bg: colors.white, fg: colors.emerald, border: colors.emerald },
+/**
+ * Premium redesign 2026-11-08: primary and gold actions are a champagne-to-gold surface with royal-maroon
+ * text (8.4:1); secondary is warm ivory with a thin antique-gold outline; `light` sits on dark screens.
+ */
+const KIND: Record<Kind, { bg: string; fg: string; border: string; gilded?: boolean }> = {
+  primary: { bg: colors.gold, fg: colors.forest, border: colors.gold, gilded: true },
+  secondary: { bg: colors.white, fg: colors.emerald, border: colors.borderGold },
   ghost: { bg: 'transparent', fg: colors.emerald, border: 'transparent' },
-  gold: { bg: colors.gold, fg: colors.emerald, border: colors.gold },
+  gold: { bg: colors.gold, fg: colors.forest, border: colors.gold, gilded: true },
   danger: { bg: colors.white, fg: colors.dangerText, border: colors.danger },
-  light: { bg: 'transparent', fg: colors.ivory, border: 'rgba(250,246,241,0.7)' },
+  light: { bg: 'transparent', fg: colors.cream, border: colors.borderGold },
 };
-const DONE = { bg: colors.success, fg: colors.white, border: colors.success };
+// A soft light-to-deep sweep, not a shine: champagne at the top edge settling into royal gold.
+const GILD = ['#E9CB6E', colors.gold, '#C29A2B'] as const;
+const DONE: { bg: string; fg: string; border: string; gilded?: boolean } = { bg: colors.success, fg: colors.white, border: colors.success };
 
 export const Button = memo(function Button({ label, onPress, kind = 'primary', size = 'md', loading, disabled, icon, arrow, full, style, accessibilityHint, testID, done }: ButtonProps) {
   const k = done ? DONE : KIND[kind];
@@ -66,16 +73,18 @@ export const Button = memo(function Button({ label, onPress, kind = 'primary', s
           styles.base,
           size === 'sm' ? styles.sm : styles.md,
           { backgroundColor: k.bg, borderColor: k.border },
+          k.gilded && !done && styles.gilded,
           (disabled || (loading && !done)) && styles.disabled,
           inner,
           press.style,
         ]}
       >
+        {k.gilded && !done ? <LinearGradient colors={GILD} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.gild} pointerEvents="none" /> : null}
         {/* Label changes (Send → Sending… → Sent) cross-fade instead of snapping. */}
         <FadeIn key={`${label}|${loading ? 1 : 0}|${done ? 1 : 0}`} rise={0} duration={180}>
           <View style={styles.row}>
             {loading ? <ActivityIndicator color={k.fg} size="small" /> : done ? <Icon name="check" size={18} color={k.fg} /> : icon}
-            <Text variant={size === 'sm' ? 'label' : 'bodyStrong'} color={k.fg} numberOfLines={2} center>
+            <Text variant="button" color={k.fg} numberOfLines={2} center style={size === 'sm' ? { fontSize: 14 } : undefined}>
               {label}
             </Text>
             {arrow && !loading && !done ? <Icon name={rtl ? 'arrowLeft' : 'arrowRight'} size={18} color={k.fg} /> : null}
@@ -98,7 +107,9 @@ function splitStyle(style: StyleProp<ViewStyle>): [ViewStyle, ViewStyle] {
 }
 
 const styles = StyleSheet.create({
-  base: { borderRadius: radius.pill, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  base: { borderRadius: radius.pill, borderWidth: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  gilded: { shadowColor: '#7A5C27', shadowOpacity: 0.28, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
+  gild: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   md: { minHeight: 52, paddingHorizontal: space.lg, paddingVertical: space.sm },
   sm: { minHeight: 38, paddingHorizontal: space.lg, paddingVertical: space.xs },
   full: { alignSelf: 'stretch' },

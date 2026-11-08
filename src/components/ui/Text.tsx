@@ -5,7 +5,7 @@ import { fontFamily, lineHeightScale, type FontRole } from '@/theme/fonts';
 import { isRTL } from '@/i18n';
 import { useUiLang } from '@/i18n/uiLang';
 
-type Variant = 'display' | 'h1' | 'h2' | 'h3' | 'body' | 'bodyStrong' | 'label' | 'caption' | 'overline';
+type Variant = 'display' | 'h1' | 'h2' | 'h3' | 'body' | 'bodyStrong' | 'label' | 'caption' | 'overline' | 'button';
 
 const VARIANTS: Record<Variant, { size: number; role: FontRole; color?: string; upper?: boolean; spacing?: number }> = {
   display: { size: 34, role: 'display', color: colors.emerald },
@@ -14,9 +14,10 @@ const VARIANTS: Record<Variant, { size: number; role: FontRole; color?: string; 
   h3: { size: 17, role: 'semibold', color: colors.charcoal },
   body: { size: 15, role: 'body', color: colors.charcoal },
   bodyStrong: { size: 15, role: 'semibold', color: colors.charcoal },
-  label: { size: 13, role: 'medium', color: colors.charcoal },
+  label: { size: 13, role: 'uiMedium', color: colors.charcoal },
   caption: { size: 13, role: 'body', color: colors.muted },
-  overline: { size: 12, role: 'semibold', color: colors.goldDeep, upper: true, spacing: 1.2 },
+  overline: { size: 12, role: 'ui', color: colors.goldDeep, upper: true, spacing: 1.4 },
+  button: { size: 15.5, role: 'ui', color: colors.charcoal, spacing: 0.2 },
 };
 
 export interface AppTextProps extends TextProps {

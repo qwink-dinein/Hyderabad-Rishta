@@ -578,7 +578,7 @@ const styles = StyleSheet.create({
   bar: { height: 12, borderRadius: 6, backgroundColor: colors.skeleton },
   // List card (Discover / Shortlist)
   lcard: { backgroundColor: colors.white, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.md, gap: space.md, ...shadow.card },
-  lcardBoosted: { borderColor: colors.gold, borderWidth: 1.5, backgroundColor: '#FFFDF8', shadowColor: colors.goldMuted, shadowOpacity: 0.16, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
+  lcardBoosted: { borderColor: colors.gold, borderWidth: 1.5, backgroundColor: colors.white, shadowColor: colors.goldMuted, shadowOpacity: 0.16, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
   lrow: { flexDirection: 'row', gap: space.md },
   lphoto: { borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.sage },
   lphotoBoosted: { width: '45%', aspectRatio: 0.74, borderWidth: 1.5, borderColor: colors.gold },

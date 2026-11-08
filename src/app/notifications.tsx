@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.ivory },
   column: { width: '100%', maxWidth: maxContentWidth, alignSelf: 'center' },
   item: { flexDirection: 'row', gap: space.md, padding: space.md, borderRadius: radius.md, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, alignItems: 'flex-start' },
-  itemUnread: { borderColor: colors.gold, backgroundColor: '#FFFDF7' },
+  itemUnread: { borderColor: colors.gold, backgroundColor: colors.white },
   icon: { width: 38, height: 38, borderRadius: 19, backgroundColor: colors.sage, alignItems: 'center', justifyContent: 'center' },
   dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.gold, marginTop: 6 },
 });

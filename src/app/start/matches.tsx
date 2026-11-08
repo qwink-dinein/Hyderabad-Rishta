@@ -117,5 +117,5 @@ const styles = StyleSheet.create({
   rule: { borderTopWidth: 1, borderTopColor: colors.border },
   avatar: { width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center' },
   more: { paddingVertical: space.md },
-  done: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, borderRadius: radius.lg, backgroundColor: '#FBF0EE' },
+  done: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, borderRadius: radius.lg, backgroundColor: colors.goldSoft },
 });

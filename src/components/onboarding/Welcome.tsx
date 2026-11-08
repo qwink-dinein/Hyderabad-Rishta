@@ -3,7 +3,9 @@ import { Image, type ImageSourcePropType, ScrollView, StyleSheet, useWindowDimen
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { BrandMark } from '@/components/art/Illustrations';
+import { Charminar } from '@/components/art/Charminar';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { InvitedBanner } from '@/components/referral/ReferralCards';
 import { Button } from '@/components/ui/Button';
@@ -11,6 +13,7 @@ import { Icon, type IconName } from '@/components/ui/Icon';
 import { FadeIn, Stagger } from '@/components/ui/motion';
 import { Text } from '@/components/ui/Text';
 import { useFit } from '@/hooks/useFit';
+import { useUiLang } from '@/i18n/uiLang';
 import { useOnboarding } from '@/state/onboarding';
 import { colors, radius, space } from '@/theme/tokens';
 
@@ -41,6 +44,22 @@ const STEPS: [IconName, string, string][] = [
 ];
 const WHY: string[] = ['onb.welcome.w1', 'onb.welcome.w2', 'onb.welcome.w3', 'onb.welcome.w4'];
 
+/**
+ * "Find a *rishta* your whole family will love": the word between asterisks is set in gold — in Playfair
+ * italics for English and Roman Urdu; Urdu and Telugu keep their own script font (no faux italics).
+ */
+function headline(text: string, size: number, latin: boolean) {
+  return text.split('*').map((part, i) =>
+    i % 2 ? (
+      <Text key={i} variant="display" color={colors.gold} style={[{ fontSize: size }, latin && { fontFamily: 'Playfair-SemiBoldItalic' }]}>
+        {part}
+      </Text>
+    ) : (
+      part
+    ),
+  );
+}
+
 export function Welcome() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -51,7 +70,10 @@ export function Welcome() {
   const wide = useWindowDimensions().width >= 440;
   const [heroCtaY, setHeroCtaY] = useState(0);
   const [sticky, setSticky] = useState(false);
-  const heroH = tiny ? 190 : short ? 240 : 300;
+  const heroH = tiny ? 200 : short ? 250 : 310;
+  const h1Size = tiny ? 29 : short ? 33 : 37;
+  const lang = useUiLang();
+  const latin = lang === 'en' || lang === 'ur-Latn';
 
   const find = () => {
     // Coming back before signing up: continue where they left off, never re-ask.
@@ -83,44 +105,53 @@ export function Welcome() {
             <InvitedBanner />
           </View>
 
-          <FadeIn delay={60} rise={16} duration={520} style={[styles.hero, { height: heroH, marginTop: sp(space.lg) }]}>
-            {HERO_COUPLE ? (
-              <View style={[styles.frame, styles.couple]}>
+          {/* One arched frame with a gold hairline, as in the approved reference: the couple inside, a soft
+              fade into the maroon at the foot and the privacy promise sitting on the edge. */}
+          <FadeIn delay={60} rise={14} duration={520} style={[styles.hero, { height: heroH + 22, marginTop: sp(space.md) }]}>
+            <View style={[styles.arch, { height: heroH, borderTopLeftRadius: heroH * 0.62, borderTopRightRadius: heroH * 0.62 }]}>
+              {HERO_COUPLE ? (
                 <Image source={HERO_COUPLE} style={styles.img} resizeMode="cover" accessibilityIgnoresInvertColors />
-              </View>
-            ) : (
-              <>
-                <View style={[styles.frame, styles.groom, { width: heroH * 0.52, height: heroH * 0.72 }]}>
-                  <Image source={GROOM} style={styles.img} resizeMode="cover" accessibilityIgnoresInvertColors />
+              ) : (
+                <View style={styles.pair}>
+                  <Image source={GROOM} style={[styles.half, styles.groomImg]} resizeMode="cover" accessibilityIgnoresInvertColors />
+                  {/* The two portraits meet on a deliberate gold line (a diptych), not a raw seam. */}
+                  <View style={[styles.half, styles.brideImg, styles.seam]}>
+                    <Image source={BRIDE} style={styles.img} resizeMode="cover" accessibilityIgnoresInvertColors />
+                  </View>
                 </View>
-                <View style={[styles.frame, styles.bride, { width: heroH * 0.58, height: heroH * 0.8 }]}>
-                  <Image source={BRIDE} style={styles.img} resizeMode="cover" accessibilityIgnoresInvertColors />
-                </View>
-              </>
-            )}
+              )}
+              <LinearGradient colors={['rgba(58,0,18,0)', 'rgba(58,0,18,0.55)', colors.forest]} locations={[0.55, 0.85, 1]} style={styles.archFade} pointerEvents="none" />
+            </View>
             <View style={styles.badge}>
-              <Icon name="lock" size={15} color={colors.goldDeep} />
-              <Text variant="label" color={colors.emerald} style={{ fontSize: 13 }}>
+              <Icon name="lock" size={15} color={colors.forest} />
+              <Text variant="label" color={colors.forest} style={{ fontSize: 13 }}>
                 {t('onb.welcome.badge')}
               </Text>
             </View>
           </FadeIn>
 
-          <Stagger delay={160} step={70} style={{ marginTop: sp(space.lg) }}>
-            <Text variant="label" color="#E6C995" style={{ fontSize: 15 }}>
-              {wide ? t('onb.welcome.title') : `${t('common.appName')} · ${t('onb.welcome.title')}`}
+          <Stagger delay={160} step={70} style={{ marginTop: sp(space.lg), alignItems: 'center' }}>
+            <View style={styles.eyebrowRow}>
+              <View style={styles.rule} />
+              <Text variant="overline" color={colors.champagne} center style={{ fontSize: 11.5 }}>
+                {`${t('common.appName')} · ${t('onb.welcome.title')}`}
+              </Text>
+              <View style={styles.rule} />
+            </View>
+            <Text variant="display" color={colors.champagne} accessibilityRole="header" center style={[styles.h1, { fontSize: h1Size, lineHeight: Math.round(h1Size * (latin ? 1.22 : lang === 'ur' ? 1.9 : 1.5)) }]}>
+              {headline(t('onb.welcome.headline'), h1Size, latin)}
             </Text>
-            <Text variant="display" color={colors.ivory} accessibilityRole="header" style={[styles.h1, short && { fontSize: tiny ? 29 : 33 }]}>
-              {t('onb.welcome.headline')}
+            <Text variant="body" color={colors.gold} center style={[styles.tagline, latin && { fontStyle: 'italic' }]}>
+              {t('onb.welcome.tagline')}
             </Text>
-            <Text variant="body" color={colors.sage} style={[styles.lede, short && { fontSize: 16 }]}>
+            <Text variant="body" color={colors.beige} center style={[styles.lede, short && { fontSize: 15.5 }]}>
               {t('onb.welcome.lede')}
             </Text>
           </Stagger>
 
           <View style={[styles.actions, { marginTop: sp(space.lg) }]} onLayout={(e) => setHeroCtaY(e.nativeEvent.layout.y + e.nativeEvent.layout.height)}>
             <Button label={t('onb.welcome.find')} kind="gold" onPress={find} full arrow testID="welcome-find-rishta" />
-            <Text variant="caption" color="#D9C7C1" center style={{ fontSize: 13 }}>
+            <Text variant="caption" color={colors.beige} center style={{ fontSize: 13 }}>
               {t('onb.welcome.findNote')}
             </Text>
             <Button label={t('onb.welcome.member')} kind="light" onPress={() => router.push('/login')} full testID="welcome-member-login" style={{ marginTop: space.xs }} />
@@ -130,13 +161,16 @@ export function Welcome() {
             {TRUST.map(([icon, key]) => (
               <View key={key} style={styles.trustRow}>
                 <View style={styles.trustIcon}>
-                  <Icon name={icon} size={18} color={colors.gold} />
+                  <Icon name={icon} size={17} color={colors.gold} />
                 </View>
-                <Text variant="body" color={colors.sage} style={{ flex: 1, fontSize: 15 }}>
+                <Text variant="body" color={colors.cream} style={{ flex: 1, fontSize: 14.5 }}>
                   {t(key)}
                 </Text>
               </View>
             ))}
+          </View>
+          <View style={styles.skyline} pointerEvents="none">
+            <Charminar width={170} opacity={0.32} />
           </View>
         </View>
 
@@ -236,19 +270,26 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.forest },
   column: { width: '100%', maxWidth: 520, alignSelf: 'center', paddingHorizontal: space.xl, paddingBottom: space.xxl },
   brand: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingTop: space.sm },
-  hero: { width: '100%', alignItems: 'center', justifyContent: 'center' },
-  frame: { position: 'absolute', borderRadius: radius.xl, overflow: 'hidden', borderWidth: 3, borderColor: colors.gold, backgroundColor: colors.emerald, shadowColor: '#000', shadowOpacity: 0.45, shadowRadius: 22, shadowOffset: { width: 0, height: 16 }, elevation: 8 },
+  hero: { width: '100%', alignItems: 'center' },
+  arch: { width: '100%', overflow: 'hidden', borderWidth: 1.2, borderColor: colors.borderGold, backgroundColor: colors.emerald },
+  pair: { flex: 1, flexDirection: 'row' },
+  half: { position: 'absolute', top: 0, bottom: 0, width: '62%' },
+  groomImg: { left: '-6%' },
+  brideImg: { right: '-6%' },
+  seam: { borderLeftWidth: 2, borderLeftColor: colors.gold, overflow: 'hidden' },
   img: { width: '100%', height: '100%' },
-  groom: { left: '6%', top: '12%', transform: [{ rotate: '-8deg' }], borderColor: 'rgba(201,160,90,0.7)' },
-  bride: { right: '5%', top: '2%', transform: [{ rotate: '7deg' }] },
-  couple: { width: '92%', height: '88%', top: '2%', transform: [{ rotate: '-2deg' }] },
-  badge: { position: 'absolute', bottom: 0, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.ivory, borderRadius: radius.pill, paddingHorizontal: space.lg, paddingVertical: 10, shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
-  h1: { fontSize: 38, lineHeight: 44, marginTop: space.xs },
-  lede: { fontSize: 17, lineHeight: 25, marginTop: space.sm },
+  archFade: { position: 'absolute', left: 0, right: 0, bottom: 0, top: 0 },
+  badge: { position: 'absolute', bottom: 0, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.cream, borderRadius: radius.pill, paddingHorizontal: space.lg, paddingVertical: 10, borderWidth: 1, borderColor: colors.champagne, shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 5 },
+  eyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, alignSelf: 'stretch' },
+  rule: { flex: 1, height: 1, backgroundColor: colors.borderGold },
+  tagline: { fontSize: 15, marginTop: space.xs },
+  h1: { fontSize: 37, lineHeight: 45, marginTop: space.sm },
+  lede: { fontSize: 16, lineHeight: 24, marginTop: space.sm, maxWidth: 420 },
+  skyline: { alignItems: 'center', marginTop: space.lg, marginBottom: -space.xxl },
   actions: { gap: space.sm },
   trust: { gap: space.md },
   trustRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  trustIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(201,160,90,0.14)', alignItems: 'center', justifyContent: 'center' },
+  trustIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(212,175,55,0.14)', alignItems: 'center', justifyContent: 'center' },
   sheet: { backgroundColor: colors.ivory, borderTopLeftRadius: 32, borderTopRightRadius: 32 },
   columnLight: { width: '100%', maxWidth: 520, alignSelf: 'center', paddingHorizontal: space.xl, paddingTop: space.xxl, paddingBottom: space.xl },
   h2: { fontSize: 26, lineHeight: 32, color: colors.emerald, marginBottom: space.lg },
@@ -256,10 +297,10 @@ const styles = StyleSheet.create({
   stepNum: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.emerald, alignItems: 'center', justifyContent: 'center' },
   whyCard: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: space.lg, gap: space.md },
   whyRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
-  boost: { marginTop: space.xl, backgroundColor: colors.goldSoft, borderWidth: 1, borderColor: '#E3CFA8', borderRadius: radius.lg, padding: space.lg, gap: space.sm },
+  boost: { marginTop: space.xl, backgroundColor: colors.goldSoft, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, padding: space.lg, gap: space.sm },
   boostBadge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.gold, borderRadius: radius.pill, paddingHorizontal: space.md, paddingVertical: 4 },
   final: { marginTop: space.xl, backgroundColor: colors.emerald, borderRadius: radius.xl, padding: space.xl, gap: space.md },
   links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: space.lg, marginTop: space.xl },
   link: { textDecorationLine: 'underline' },
-  stickyBar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.xl, paddingTop: space.md, backgroundColor: 'rgba(51,9,21,0.96)', borderTopWidth: 1, borderTopColor: 'rgba(201,160,90,0.35)' },
+  stickyBar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.xl, paddingTop: space.md, backgroundColor: 'rgba(58,0,18,0.96)', borderTopWidth: 1, borderTopColor: 'rgba(212,175,55,0.35)' },
 });

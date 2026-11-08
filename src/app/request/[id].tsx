@@ -225,7 +225,7 @@ export default function Connect() {
 const styles = StyleSheet.create({
   avatar: { width: 76, height: 76, borderRadius: 38, overflow: 'hidden', borderWidth: 2, borderColor: colors.gold },
   option: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.white },
-  optionOn: { borderColor: colors.emerald, backgroundColor: '#FBFDFB' },
+  optionOn: { borderColor: colors.emerald, backgroundColor: colors.goldSoft },
   optionIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.sage, alignItems: 'center', justifyContent: 'center' },
   radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   radioOn: { borderColor: colors.emerald },

@@ -133,9 +133,9 @@ export function Banner({ tone = 'info', children, icon }: { tone?: 'info' | 'war
 
 export function Badge({ label, tone = 'gold' }: { label: string; tone?: 'gold' | 'emerald' | 'muted' | 'danger' | 'success' }) {
   const map = {
-    gold: { bg: '#F4EBD8', fg: colors.goldDeep },
+    gold: { bg: colors.goldSoft, fg: colors.goldDeep },
     emerald: { bg: colors.sage, fg: colors.emerald },
-    muted: { bg: '#EFEDE6', fg: colors.muted },
+    muted: { bg: colors.sage, fg: colors.muted },
     danger: { bg: colors.dangerBg, fg: colors.danger },
     success: { bg: colors.successBg, fg: colors.success },
   }[tone];
