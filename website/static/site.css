@@ -198,13 +198,14 @@ button.btn { cursor: pointer; }
 .trust-row { list-style: none; padding: 0; margin: 28px 0 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 26px; font-size: 15px; color: var(--cream); }
 .trust-row li { display: flex; gap: 9px; align-items: center; max-width: none; }
 .trust-row svg { flex: none; }
-.phones { display: flex; justify-content: center; align-items: flex-end; margin-top: 56px; height: clamp(300px, 46vw, 470px); }
+/* Phone mock-ups sit fully inside the hero (owner: the cut-off phone looked broken on mobile). */
+.phones { display: flex; justify-content: center; align-items: flex-end; margin-top: 56px; padding-bottom: clamp(40px, 6vw, 72px); }
 .phone { width: clamp(170px, 22vw, 260px); border-radius: 36px; padding: 8px; background: #241a2b; box-shadow: 0 40px 70px -32px rgba(0, 0, 0, .7), 0 0 0 1px rgba(216, 196, 154, .3) inset; }
 .phone img { display: block; width: 100%; height: auto; border-radius: 29px; }
-.phones .side { margin-bottom: -18%; }
+.phones .side { margin-bottom: 4%; }
 .phones .side.l { margin-right: -5%; transform: rotate(-7deg); }
 .phones .side.r { margin-left: -5%; transform: rotate(7deg); }
-.phones .main { position: relative; z-index: 2; margin-bottom: -22%; }
+.phones .main { position: relative; z-index: 2; }
 .phones .main .phone { width: clamp(190px, 25vw, 290px); }
 .skyline { display: block; margin: 42px auto -2px; opacity: .3; }
 .band { background: var(--sand); text-align: center; }
@@ -218,7 +219,7 @@ button.btn { cursor: pointer; }
 .pair .phone { width: clamp(160px, 19vw, 240px); }
 .pair .a { transform: rotate(-7deg) translateY(30px); position: relative; z-index: 1; }
 .pair .b { transform: rotate(7deg); margin-left: -12%; position: relative; z-index: 2; }
-@media (max-width: 760px) { .feature { grid-template-columns: 1fr; text-align: center; } .feature.flip .pair { order: 0; } .feature p { margin-inline: auto; } .phones .side { display: none; } .phones .main { margin-bottom: -40%; } }
+@media (max-width: 760px) { .feature { grid-template-columns: 1fr; text-align: center; } .feature.flip .pair { order: 0; } .feature p { margin-inline: auto; } .phones .side { display: none; } .phones .main { margin-bottom: 0; } }
 .boost-card { position: relative; overflow: hidden; display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: center; background: var(--gold-soft); border: 1px solid #e3cf9a; border-radius: 36px; padding: clamp(28px, 5vw, 64px); }
 .boost-card .h-section { color: var(--gold-deep); }
 .chip { display: inline-flex; align-items: center; gap: 8px; background: var(--gild); color: var(--maroon); border-radius: 999px; padding: 7px 14px; font: 600 12.5px var(--ui); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 16px; }
