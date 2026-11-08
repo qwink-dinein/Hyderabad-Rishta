@@ -2,7 +2,7 @@
 
 Chosen by the owner from the app previews ("This has been finalised"). Inspired by the owner's lavender
 wedding artwork (cream arch, lilac walls, mauve dress, antique lantern gold). Replaces the Royal Burgundy ×
-Champagne Gold palette; fonts (Playfair Display, Inter, Montserrat, Mogra hero headline) stay the same.
+Champagne Gold palette; fonts are Playfair Display (headings, incl. the hero), Inter (body) and Montserrat (buttons/labels).
 **Status:** website BUILT (2026-11-08) with soft champagne buttons and the Playfair hero; app not built yet.
 
 **Owner changes after the first approval:** buttons/accents are **soft champagne `#D8C49A`** (bright lantern gold was "too gold for the eyes"); the hero headline is back in **Playfair Display 600 + italic accent** (Mogra dropped).
