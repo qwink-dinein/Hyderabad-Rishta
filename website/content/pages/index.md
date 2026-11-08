@@ -41,7 +41,7 @@ Read the full guide: [how Hyderabad Rishta works](/how-it-works/).
 <li><strong>Interest requests</strong>Send an introduction or offer your number. The other family decides whether to accept.</li>
 <li><strong>Consent-based contact</strong>Phone numbers are never shown on profiles. They are shared only when you offer and the other side accepts.</li>
 <li><strong>Privacy controls</strong>Choose who sees your photos, income and family details, and how your name appears.</li>
-<li><strong>Shortlist & Boost</strong>Save profiles you like. Optionally boost your profile for extra visibility (a paid, clearly labelled feature).</li>
+<li><strong>Shortlist & Boost</strong>Save profiles you like. Get a free Boost — extra, clearly labelled visibility — by inviting a family who completes their biodata.</li>
 </ul>
 
 ## Inside the app

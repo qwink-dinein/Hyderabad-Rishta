@@ -62,7 +62,7 @@ function tokens(src) {
   return src
     .replace(/\{\{FREE_LINE\}\}/g, FACTS.publicationFree ? ' Creating and publishing your biodata is currently free.' : '')
     .replace(/\{\{FREE_ANSWER\}\}/g, FACTS.publicationFree
-      ? 'Creating and publishing a biodata, discovering profiles, sending interest requests and sharing contact details are currently free. Boost — extra visibility for a set number of days — is an optional paid feature, shown with its price before you pay. Payments are one-time, with no automatic renewal.'
+      ? 'Creating and publishing a biodata, discovering profiles, sending interest requests and sharing contact details are currently free. Boost — extra visibility for a set number of days — is optional and currently free: you earn one by inviting a family who completes their biodata. It never renews by itself.'
       : 'Prices for publishing and for Boost are shown in the app before you pay. Payments are one-time, with no automatic renewal.')
     .replace(/\{\{EMAIL\}\}/g, BRAND.email);
 }

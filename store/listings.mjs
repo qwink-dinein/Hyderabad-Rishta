@@ -31,7 +31,7 @@ export const LISTINGS = {
         'Parents, brothers, sisters and relatives can create a biodata for someone, with their knowledge and consent. Every question is worded for the right person.',
         '',
         'WHAT IT COSTS',
-        'Creating and publishing your biodata is currently free. Boost — extra visibility for a set number of days — is optional and paid, with the price shown before you pay. No automatic renewals.',
+        'Creating and publishing your biodata is currently free. Boost — extra visibility for a set number of days — is optional and earned free by inviting a family. No automatic renewals.',
         '',
         'HONEST BY DESIGN',
         'Hyderabad Rishta does not verify identities. Involve your family, verify details and meet safely.',

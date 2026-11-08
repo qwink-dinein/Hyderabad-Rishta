@@ -17,7 +17,7 @@ requires: publicationFree
 
 ## What costs money
 
-**Boost** is optional. It shows your profile more prominently for a set number of days and is clearly labelled "Boosted". You never need it to create a biodata, find profiles or connect with families. Payments are one-time, with no automatic renewal.
+**Boost** is optional. It shows your profile more prominently for a set number of days and is clearly labelled "Boosted". You never need it to create a biodata, find profiles or connect with families. Right now a Boost is free: you earn one by inviting a family who completes their biodata, and it never renews by itself.
 
 ## Free rishta groups vs Hyderabad Rishta
 

@@ -32,7 +32,7 @@ Bureaus offer personal attention and local knowledge. Ask how they store and sha
 
 | | Free WhatsApp group | Marriage bureau | Matrimonial app (e.g. Hyderabad Rishta) |
 |---|---|---|---|
-| Cost | Free | Usually a fee | Biodata currently free on Hyderabad Rishta; optional paid Boost |
+| Cost | Free | Usually a fee | Biodata currently free on Hyderabad Rishta; optional Boost, earned free by inviting a family |
 | Phone number | Visible to the group | Depends on the bureau | Never on your profile; shared with consent |
 | Photos | Forwarded freely | Depends | You choose who sees them |
 | Biodata format | Varies | Bureau’s format | One structured format |
