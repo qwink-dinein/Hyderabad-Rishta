@@ -12,7 +12,7 @@ import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { APP_STORE_URL, APP_URL, BASE, BING_SITE_VERIFICATION, BRAND, CF_ANALYTICS_TOKEN, CRAWLERS, FACTS, GOOGLE_SITE_VERIFICATION, PLAY_URL, PRODUCTION } from './site.config.mjs';
+import { ANDROID_APK_URL, APP_STORE_URL, APP_URL, BASE, BING_SITE_VERIFICATION, BRAND, CF_ANALYTICS_TOKEN, CRAWLERS, FACTS, GOOGLE_SITE_VERIFICATION, PLAY_URL, PRODUCTION } from './site.config.mjs';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const OUT = join(ROOT, 'dist');
@@ -64,7 +64,9 @@ function tokens(src) {
     .replace(/\{\{FREE_ANSWER\}\}/g, FACTS.publicationFree
       ? 'Creating and publishing a biodata, discovering profiles, sending interest requests and sharing contact details are currently free. Boost — extra visibility for a set number of days — is optional and currently free: you earn one by inviting a family who completes their biodata. It never renews by itself.'
       : 'Prices for publishing and for Boost are shown in the app before you pay. Payments are one-time, with no automatic renewal.')
-    .replace(/\{\{EMAIL\}\}/g, BRAND.email);
+    // The support address is never printed in the HTML (owner 2026-11-08): it links to the contact page, where a
+    // click assembles it (contact.js) so scrapers cannot harvest it.
+    .replace(/\{\{EMAIL\}\}/g, '[our contact page](/contact/)');
 }
 function md(src) {
   src = tokens(src);
@@ -147,7 +149,6 @@ const ORG = {
   description: BRAND.description,
   areaServed: { '@type': 'City', name: 'Hyderabad', containedInPlace: { '@type': 'State', name: 'Telangana' } },
   knowsLanguage: ['en', 'ur', 'te'],
-  email: BRAND.email,
   ...(BRAND.sameAs.length ? { sameAs: BRAND.sameAs } : {}),
 };
 const WEBSITE = { '@type': 'WebSite', '@id': `${BASE}/#website`, name: BRAND.name, url: `${BASE}/`, inLanguage: 'en-IN', publisher: { '@id': `${BASE}/#organization` } };
@@ -178,6 +179,8 @@ function breadcrumbs(trail) {
 // Replace these drawn badges with Google's and Apple's official badge files before launch (brand guidelines).
 const PLAY_ICON = '<svg class="store-icon" viewBox="0 0 24 26" aria-hidden="true"><path d="M1.2.6 13.4 12.8 1.2 25a1.6 1.6 0 0 1-.7-1.4V2A1.6 1.6 0 0 1 1.2.6z" fill="#00d7fe"/><path d="m17.5 16.9-4.1-4.1 4.1-4.1 4.7 2.7c1.3.8 1.3 2 0 2.8z" fill="#ffce00"/><path d="M17.5 16.9 13.4 12.8 1.2 25c.5.5 1.2.5 2 .1z" fill="#ff3a44"/><path d="M17.5 8.7 3.2.5C2.4.1 1.7.1 1.2.6l12.2 12.2z" fill="#00f076"/></svg>';
 const APPLE_ICON = '<svg class="store-icon" viewBox="0 0 24 28" aria-hidden="true"><path fill="#fff" d="M19.7 14.9c0-3.2 2.6-4.7 2.7-4.8a5.9 5.9 0 0 0-4.6-2.5c-2-.2-3.8 1.1-4.8 1.1-1 0-2.5-1.1-4.1-1.1A6.1 6.1 0 0 0 3.8 10.8c-2.2 3.8-.6 9.4 1.6 12.5 1 1.5 2.3 3.2 3.9 3.1 1.6-.1 2.2-1 4.1-1s2.4 1 4.1 1 2.7-1.5 3.7-3a13 13 0 0 0 1.7-3.5 5.3 5.3 0 0 1-3.2-5zM16.5 5.6A5.4 5.4 0 0 0 17.8 1.6a5.5 5.5 0 0 0-3.6 1.9 5.1 5.1 0 0 0-1.3 3.8 4.6 4.6 0 0 0 3.6-1.7z"/></svg>';
+// Android robot (Google, CC BY 3.0) in the brand's gold-green.
+const ANDROID_ICON = '<svg class="store-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="#3ddc84" d="M17.6 9.48l1.84-3.18a.38.38 0 0 0-.66-.38l-1.86 3.22a11.4 11.4 0 0 0-9.84 0L5.22 5.92a.38.38 0 0 0-.66.38L6.4 9.48A10.8 10.8 0 0 0 1 18h22a10.8 10.8 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z"/></svg>';
 function storeBadges(from, { size = '' } = {}) {
   const badge = (url, store, icon, small, big) => {
     const inner = `${icon}<span class="store-text"><small>${small}</small><strong>${big}</strong></span>`;
@@ -185,7 +188,14 @@ function storeBadges(from, { size = '' } = {}) {
       ? `<a class="store ${size}" href="${esc(url)}" rel="noopener" data-cta="store" data-store="${store}" data-from="${esc(from)}">${inner}</a>`
       : `<span class="store soon ${size}" role="img" aria-label="${big}: coming soon">${inner}<em>Coming soon</em></span>`;
   };
-  return `<div class="stores">${badge(PLAY_URL, 'play', PLAY_ICON, 'GET IT ON', 'Google Play')}${badge(APP_STORE_URL, 'ios', APPLE_ICON, 'Download on the', 'App Store')}</div>`;
+  // Android: the Google Play badge once the listing is live; until then a direct APK download (never labelled
+  // "Google Play" — the Play badge may only point to Google Play).
+  const android = PLAY_URL
+    ? badge(PLAY_URL, 'play', PLAY_ICON, 'GET IT ON', 'Google Play')
+    : ANDROID_APK_URL
+      ? `<a class="store ${size}" href="${esc(ANDROID_APK_URL)}" download data-cta="store" data-store="apk" data-from="${esc(from)}">${ANDROID_ICON}<span class="store-text"><small>DOWNLOAD FOR</small><strong>Android</strong></span><em class="apk">Free APK</em></a>`
+      : badge('', 'play', PLAY_ICON, 'GET IT ON', 'Google Play');
+  return `<div class="stores">${android}${badge(APP_STORE_URL, 'ios', APPLE_ICON, 'Download on the', 'App Store')}</div>${!PLAY_URL && ANDROID_APK_URL ? '<p class="apk-note">Android: the app downloads straight to your phone. Open the file and allow installing from your browser if asked. Google Play coming soon.</p>' : ''}`;
 }
 function cta(from) {
   return `<section class="cta" aria-labelledby="cta-${esc(from)}">
@@ -261,7 +271,7 @@ ${layout === 'home'
   <div class="wrap">
     <p class="about">${esc(BRAND.description)}</p>
     <div class="cols">${FOOTER.map(([h, links]) => `<div><h2>${h}</h2><ul>${links.map(([u, n]) => `<li><a href="${u}">${n}</a></li>`).join('')}</ul></div>`).join('')}</div>
-    <p class="small">© ${new Date().getFullYear()} Hyderabad Rishta · Available in English, Urdu and Telugu · Contact: <a href="mailto:${esc(BRAND.email)}">${esc(BRAND.email)}</a></p>
+    <p class="small">© ${new Date().getFullYear()} Hyderabad Rishta · Available in English, Urdu and Telugu · <a href="/contact/">Contact support</a></p>
   </div>
 </footer>
 ${CF_ANALYTICS_TOKEN ? `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='${JSON.stringify({ token: CF_ANALYTICS_TOKEN })}'></script>` : ''}
@@ -383,7 +393,7 @@ ${pages.filter((p) => p.noindex !== true && p.slug).map((p) => `- [${p.h1 || p.t
 ${listed.map((a) => `- [${a.h1 || a.title}](${abs(`/blog/${a.slug}/`)}): ${a.description}`).join('\n')}
 
 ## Contact
-- Email: ${BRAND.email}
+- Contact page: ${abs('/contact/')}
 `);
 
 // ───────────── invitations (referral links) ─────────────
@@ -409,6 +419,7 @@ ${store}
 <p class="meta">The code can only be added while signing up. Your number and biodata are never shown to the family who invited you.</p>
 <script src="/r.js" defer></script>`,
 }));
+writeFileSync(join(OUT, 'contact.js'), `(function(){var b=document.getElementById('show-email');if(!b)return;b.addEventListener('click',function(){var u=['mukarram','jahmm'].join(''),d=['gmail','com'].join('.'),a=u+'@'+d,o=document.getElementById('email-out');o.innerHTML='';var l=document.createElement('a');l.href='mailto:'+a+'?subject='+encodeURIComponent('Hyderabad Rishta support');l.textContent=a;o.appendChild(l);o.hidden=false;b.hidden=true;window.location.href=l.href;});})();\n`);
 writeFileSync(join(OUT, 'r.js'), `(function(){var m=location.pathname.match(/^\\/r\\/([A-Za-z0-9]{6,8})\\/?$/);var c=m?m[1].toUpperCase():'';if(!/^HR[2-9A-HJKMNP-Z]{4,6}$/.test(c))return;document.getElementById('invite-code').textContent=c;document.getElementById('invite-open').href='hyderabadrishta://r/'+c;})();\n`);
 mkdirSync(join(OUT, '.well-known'), { recursive: true });
 writeFileSync(join(OUT, '.well-known', 'assetlinks.json'), JSON.stringify([{

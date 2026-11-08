@@ -44,3 +44,10 @@ Cloudflare → Workers & Pages → hyderabad-rishta → Settings → Build → *
 `APP_STORE_URL` = the App Store link → **Retry/redeploy**. Every badge on every page becomes a real link, and the
 MobileApplication structured data appears. Before launch, swap the drawn badges in `website/build.mjs`
 (`storeBadges`) for Google's and Apple's official badge artwork (their brand guidelines).
+
+### Android APK download (until Google Play is live)
+The Android badge downloads the APK directly ("Download for Android · Free APK"). It points at the latest EAS
+`preview` build, set in `website/site.config.mjs` (`ANDROID_APK_URL`) or as the Cloudflare build variable
+`ANDROID_APK_URL`. **Update it after every new Android build** (EAS gives a new link each time). It is never
+labelled "Google Play" (Google's badge rules); once `PLAY_URL` is set the Play badge replaces it.
+Support email: never printed in the website HTML — the Contact page assembles it on click (`contact.js`).

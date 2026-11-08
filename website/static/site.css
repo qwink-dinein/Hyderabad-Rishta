@@ -115,6 +115,12 @@ a.store:active { transform: scale(.97); }
 .store-text small { font: 500 10.5px var(--sans); letter-spacing: .04em; opacity: .9; }
 .store-text strong { font: 600 20px var(--sans); letter-spacing: -.01em; white-space: nowrap; }
 .store.soon { cursor: default; }
+.store em.apk { position: absolute; top: -10px; right: 10px; font: 600 10.5px var(--ui); font-style: normal; letter-spacing: .08em; text-transform: uppercase; background: #3ddc84; color: #08311b; padding: 3px 9px; border-radius: 999px; }
+.apk-note { font-size: 13.5px; color: var(--muted); margin: 10px 0 0; max-width: 520px; }
+.dark .apk-note, .cta .apk-note, .hero .apk-note { color: var(--beige); }
+.hero .apk-note { margin-inline: auto; }
+button.btn { cursor: pointer; }
+.email-out { font: 600 18px var(--ui); }
 .store.soon em { position: absolute; top: -10px; right: 10px; font: 600 10.5px var(--ui); font-style: normal; letter-spacing: .08em; text-transform: uppercase; background: var(--gild); color: var(--maroon); padding: 3px 9px; border-radius: 999px; }
 .hero .stores, .hero-stores .stores { justify-content: center; }
 .app-points { list-style: none; padding: 0; margin: 18px 0 4px; display: grid; gap: 10px; color: var(--cream); font-size: 16.5px; }

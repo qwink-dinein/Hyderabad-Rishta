@@ -3,13 +3,16 @@ slug: contact
 title: Contact Hyderabad Rishta
 description: How to contact the Hyderabad Rishta team for help, privacy requests or feedback.
 h1: Contact us
-lead: We are a small team in Hyderabad. Write to us and we will reply as soon as we can.
+lead: We are a small team in Hyderabad. Contact our support team and we will reply as soon as we can.
 crumb: Contact
 updated: 2026-11-02
 ---
-## Email
+## Write to us
 
-<p>Write to <a href="mailto:{{EMAIL}}">{{EMAIL}}</a> for help with your account, privacy requests (a copy of your data, or deletion) and feedback.</p>
+<p>Write to our support team for help with your account, privacy requests (a copy of your data, or deletion), grievances and feedback.</p>
+<p><button type="button" class="btn btn-gold" id="show-email">Contact support <span class="arrow" aria-hidden="true">→</span></button></p>
+<p id="email-out" class="email-out" hidden></p>
+<script src="/contact.js" defer></script>
 
 ## Inside the app
 
