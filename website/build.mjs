@@ -286,6 +286,7 @@ ${layout === 'home'
     <p class="about">${esc(BRAND.description)}</p>
     <div class="cols">${FOOTER.map(([h, links]) => `<div><h2>${h}</h2><ul>${links.map(([u, n]) => `<li><a href="${u}">${n}</a></li>`).join('')}</ul></div>`).join('')}</div>
     <p class="small">© ${new Date().getFullYear()} Hyderabad Rishta · In English, Urdu, Roman Urdu and Telugu · <a href="/contact/">Contact support</a></p>
+    <p class="social"><a href="${esc(BRAND.instagram)}" rel="noopener me"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg><span>Follow us on Instagram · @hyderabadrishta.official</span></a></p>
   </div>
 </footer>
 ${CF_ANALYTICS_TOKEN ? `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='${JSON.stringify({ token: CF_ANALYTICS_TOKEN })}'></script>` : ''}

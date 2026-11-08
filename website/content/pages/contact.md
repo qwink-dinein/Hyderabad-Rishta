@@ -14,6 +14,10 @@ updated: 2026-11-02
 <p id="email-out" class="email-out" hidden></p>
 <script src="/contact.js" defer></script>
 
+## Instagram
+
+Follow [@hyderabadrishta.official](https://www.instagram.com/hyderabadrishta.official/) for news and tips. Please never share your phone number or private details in comments or messages.
+
 ## Inside the app
 
 Members can also use **Help & support** in the app, and **Report** on any profile to flag a safety concern.

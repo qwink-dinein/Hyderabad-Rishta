@@ -42,7 +42,9 @@ export const BRAND = {
   // Same address the app's privacy policy and help page publish (src/app/legal/[doc].tsx).
   email: env('CONTACT_EMAIL') || 'mukarramjahmm@gmail.com',
   // Official social profiles, once they exist (used in Organization.sameAs). Never list unofficial pages.
-  sameAs: (process.env.SAME_AS || '').split(',').map((s) => s.trim()).filter(Boolean),
+  // Official profiles (owner 2026-11-08). SAME_AS (comma-separated) adds more.
+  instagram: 'https://www.instagram.com/hyderabadrishta.official/',
+  sameAs: ['https://www.instagram.com/hyderabadrishta.official/', ...(process.env.SAME_AS || '').split(',').map((s) => s.trim()).filter(Boolean)],
 };
 
 // Facts the copy may state. Keep in sync with the product; the content never claims more than this.
