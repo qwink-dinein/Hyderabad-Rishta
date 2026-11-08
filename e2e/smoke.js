@@ -19,21 +19,21 @@ const step = async (name, fn) => {
 
   await step('app opens on the welcome screen: find a rishta (gold) + member log in', async () => {
     await page.goto(BASE + '/');
-    await page.getByText('Assalamu alaikum.').first().waitFor({ timeout: 15000 });
+    await page.getByText('Assalamu alaikum').first().waitFor({ timeout: 15000 });
     await page.getByTestId('welcome-find-rishta').waitFor();
     await page.getByTestId('welcome-member-login').waitFor();
     await shot('01-landing');
   });
   await step('switch to Urdu (RTL) instantly', async () => {
     await page.getByRole('radio', { name: 'اردو' }).first().click();
-    await page.getByText('السلام علیکم۔').first().waitFor();
+    await page.getByText('السلام علیکم').first().waitFor();
     const dir = await page.evaluate(() => document.documentElement.dir);
     if (dir !== 'rtl') throw new Error('dir=' + dir);
     await shot('02-landing-urdu');
   });
   await step('switch to Telugu', async () => {
     await page.getByRole('radio', { name: 'తెలుగు' }).first().click();
-    await page.getByText('అస్సలాము అలైకుమ్.').first().waitFor();
+    await page.getByText('అస్సలాము అలైకుమ్').first().waitFor();
     await shot('03-landing-telugu');
     await page.getByRole('radio', { name: 'English' }).first().click();
   });

@@ -20,7 +20,7 @@ const step = async (name, fn) => {
 
   await step('welcome: one promise, gold "Find a rishta", member log in', async () => {
     await page.goto(BASE + '/');
-    await page.getByText('Assalamu alaikum.').first().waitFor({ timeout: 15000 });
+    await page.getByText('Assalamu alaikum').first().waitFor({ timeout: 15000 });
     await page.getByTestId('welcome-find-rishta').waitFor();
     await page.getByTestId('welcome-member-login').waitFor();
     await shot('01-welcome');

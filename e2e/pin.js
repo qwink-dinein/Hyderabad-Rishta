@@ -63,7 +63,7 @@ const step = async (name, fn) => {
     const shown = await page.getByTestId('login-phone').inputValue();
     if (shown !== '') throw new Error(`number box not blank: "${shown}"`);
     await page.getByTestId('forgot-pin').waitFor();
-    await page.getByTestId('cta-create').getByText('Find a rishta for my family').waitFor();
+    await page.getByTestId('cta-create').getByText("See my matches — it's free").waitFor();
     await page.screenshot({ path: `${SHOTS}/a4-pin-login.png` });
     await page.reload(); // still blank after the app restarts
     if ((await page.getByTestId('login-phone').inputValue()) !== '') throw new Error('number prefilled after restart');
