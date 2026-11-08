@@ -240,7 +240,7 @@ function page({ path, title, description, h1, lead, bodyHtml, trail, ld = [], ty
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${esc(url)}">
 <meta name="robots" content="${robots}">
-<meta name="theme-color" content="#3A0012">
+<meta name="theme-color" content="#3F2F48">
 <meta property="og:type" content="${type}">
 <meta property="og:site_name" content="${esc(BRAND.name)}">
 <meta property="og:title" content="${esc(title)}">

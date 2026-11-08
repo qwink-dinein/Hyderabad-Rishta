@@ -3,7 +3,9 @@
 Chosen by the owner from the app previews ("This has been finalised"). Inspired by the owner's lavender
 wedding artwork (cream arch, lilac walls, mauve dress, antique lantern gold). Replaces the Royal Burgundy ×
 Champagne Gold palette; fonts (Playfair Display, Inter, Montserrat, Mogra hero headline) stay the same.
-**Status:** approved for the app; website screens previewed next. Not built yet.
+**Status:** website BUILT (2026-11-08) with soft champagne buttons and the Playfair hero; app not built yet.
+
+**Owner changes after the first approval:** buttons/accents are **soft champagne `#D8C49A`** (bright lantern gold was "too gold for the eyes"); the hero headline is back in **Playfair Display 600 + italic accent** (Mogra dropped).
 
 ## Colours
 
@@ -15,11 +17,11 @@ Champagne Gold palette; fonts (Playfair Display, Inter, Montserrat, Mogra hero h
 | Cream | `#F4EEE8` | Light screen / page background |
 | Card white | `#FFFCF8` | Cards, inputs |
 | Lilac surface | `#EAE1EA` | Secondary cards, icon backgrounds, bands |
-| Lantern gold | `#C9A45C` | Primary buttons, Boost badges, headline accent words |
+| Soft champagne | `#D8C49A` | Primary buttons, Boost badges, headline accent words, tags, checkmarks (was lantern gold `#C9A45C`) |
 | Gold muted | `#A88446` | Pressed gold; large icons on light |
 | Gold deep | `#7A5A36` | Gold-toned small text on light |
 | Gold soft | `#EFE4D2` | Gold-tinted surfaces (badges, notices) |
-| Gold button gradient | `#E3C98A` → `#B88E45` (edge `#8A6A30`) | Gilded primary buttons |
+| Button gradient | `#E8DCC0` → `#D8C49A` → `#C7B07F` | Primary buttons (website `--gild`; app gilded gradient) |
 | Lilac outline | `#B8A4B3` | Outlines, dividers |
 | Border | `#E4D9E0` | Hairlines on light |
 | Text | `#3A2C40` | Body text on light |
@@ -35,13 +37,16 @@ backgrounds (warning `#F6EDD8`, danger `#F8E6E1`, success `#E6F1EC`).
 
 ## Mapping from the old tokens (`src/theme/tokens.ts`)
 `forest` → `#3F2F48` · `emerald` → `#5E4A6E` · `emeraldSoft` → `#76627B` · `ivory` → `#F4EEE8` ·
-`white` → `#FFFCF8` · `sage` → `#EAE1EA` · `gold` → `#C9A45C` · `goldMuted` → `#A88446` · `goldDeep` → `#7A5A36` ·
+`white` → `#FFFCF8` · `sage` → `#EAE1EA` · `gold` → `#D8C49A` · `goldMuted` → `#A88446` · `goldDeep` → `#7A5A36` ·
 `goldSoft` → `#EFE4D2` · `borderGold` → `#B8A4B3` · `border` → `#E4D9E0` · `charcoal` → `#3A2C40` ·
 `muted` → `#6B5D70` · `cream` → `#F7F2F6` · `champagne` → `#F1E6F0` · `beige` → `#CDBCCB` · `skeleton` → `#ECE3EA` ·
 `overlay` → `rgba(63, 47, 72, 0.58)`; shadows and hard-coded `rgba(58,0,18,…)` → violet `#3F2F48` / `rgba(63,47,72,…)`;
-Button gilded gradient `#E9CB6E/#C29A2B/#7A5C27` → `#E3C98A/#B88E45/#8A6A30`.
+Button gilded gradient `#E9CB6E/#C29A2B/#7A5C27` → `#E8DCC0/#C7B07F/#A8935F`. App landing headline: Mogra → Playfair (`Playfair-SemiBold` + `Playfair-SemiBoldItalic` accent).
 
 ## Still to update when building
 - Logo image (maroon background) — needs a lavender/violet version.
 - App screenshots used on the website (phone mock-ups) — retake after the app is rebuilt.
 - Optional: hero video clips are red-toned; the owner's lavender artwork could be used on the landing.
+
+## Website tokens (`website/static/site.css`)
+`--maroon` `#3f2f48` · `--burgundy` `#5e4a6e` · `--burgundy-2` `#76627b` · `--gold` `#d8c49a` · `--champagne` `#f1e6f0` · `--cream` `#f7f2f6` · `--beige` `#cdbccb` · `--ivory` `#f4eee8` · `--card` `#fffcf8` · `--ink` `#3a2c40` · `--muted` `#6b5d70` · `--line` `#e4d9e0` · `--antique` `#b8a4b3` · `--gold-deep` `#7a5a36` · `--gold-soft` `#efe4d2` · `--sand` `#eae1ea` · `theme-color` `#3F2F48`.
