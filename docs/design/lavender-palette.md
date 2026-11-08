@@ -52,3 +52,10 @@ Button gilded gradient `#E9CB6E/#C29A2B/#7A5C27` → `#E8DCC0/#C7B07F/#A8935F`. 
 
 ## Website tokens (`website/static/site.css`)
 `--maroon` `#3f2f48` · `--burgundy` `#5e4a6e` · `--burgundy-2` `#76627b` · `--gold` `#d8c49a` · `--champagne` `#f1e6f0` · `--cream` `#f7f2f6` · `--beige` `#cdbccb` · `--ivory` `#f4eee8` · `--card` `#fffcf8` · `--ink` `#3a2c40` · `--muted` `#6b5d70` · `--line` `#e4d9e0` · `--antique` `#b8a4b3` · `--gold-deep` `#7a5a36` · `--gold-soft` `#efe4d2` · `--sand` `#eae1ea` · `theme-color` `#3F2F48`.
+
+## Website typography — "wedding card" (owner, 2026-11-08)
+- Headings: **Cormorant Garamond 600** (`cormorant-600.woff2`).
+- Accent words ("One Rishta at a Time.", "in your pocket"): **Great Vibes** calligraphy (`greatvibes-400.woff2`) in soft champagne — heading sizes only, never buttons or small text.
+- Body, buttons, labels: **Lato 400 / 700** (`lato-400/700.woff2`).
+- Home hero: "Bringing Hyderabad's Muslim Families Closer…" then *One Rishta at a Time.* on its own line, `white-space: nowrap`, `font-size: min(1.25em, 12.4vw)` — one line from 320px to 1600px.
+- Playfair, Inter and Montserrat removed from the website. The app still uses Playfair/Inter/Montserrat until the owner picks its typography.

@@ -13,7 +13,7 @@ layout: home
 <div class="hero-media" aria-hidden="true"><video id="hero-video" muted loop playsinline preload="none" disablepictureinpicture data-wide="/video/hero-wide.mp4" data-tall="/video/hero-tall.mp4"></video></div>
 <div class="wrap">
 <p class="eyebrow rise d1 hero-eyebrow">Hyderabad Rishta</p>
-<h1 id="hero-title" class="h-display rise d1">Bringing Hyderabad’s Muslim Families Closer, <em>One Rishta at a Time.</em></h1>
+<h1 id="hero-title" class="h-display rise d1">Bringing Hyderabad’s Muslim Families Closer… <em>One Rishta at a Time.</em></h1>
 <p class="tagline subhero rise d2">Hyderabadi’s Own Muslim Matrimony App</p>
 <p class="sub rise d2">See Muslim brides and grooms from Hyderabadi families who match what you want — before you share your number. Connect only when both families agree.</p>
 <div class="rise d3 hero-stores">{{STORES:home-hero}}</div>

@@ -258,8 +258,8 @@ ${GOOGLE_SITE_VERIFICATION ? `<meta name="google-site-verification" content="${e
 ${BING_SITE_VERIFICATION ? `<meta name="msvalidate.01" content="${esc(BING_SITE_VERIFICATION)}">` : ''}
 <link rel="icon" href="/img/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
-<link rel="preload" href="/fonts/playfair-600.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/cormorant-600.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/lato-400.woff2" as="font" type="font/woff2" crossorigin>
 <style>${css}</style>
 <link rel="alternate" type="application/rss+xml" title="Hyderabad Rishta guides" href="/blog/feed.xml">
 ${jsonLd([ORG, WEBSITE, APP, crumbs.ld, ...ld])}
