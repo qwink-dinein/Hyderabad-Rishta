@@ -16,7 +16,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#4A0E1F",
+        "backgroundColor": "#3F2F48",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -52,8 +52,8 @@
       "output": "single",
       "bundler": "metro",
       "name": "Hyderabad Rishta",
-      "themeColor": "#4A0E1F",
-      "backgroundColor": "#FAF6F1"
+      "themeColor": "#3F2F48",
+      "backgroundColor": "#F4EEE8"
     },
     "plugins": [
       "expo-router",
@@ -70,7 +70,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FAF6F1",
+          "backgroundColor": "#F4EEE8",
           "image": "./assets/splash-icon.png",
           "imageWidth": 120,
           "resizeMode": "contain"
@@ -87,13 +87,13 @@
       [
         "expo-notifications",
         {
-          "color": "#4A0E1F",
+          "color": "#5E4A6E",
           "defaultChannel": "default"
         }
       ]
     ],
     "scheme": "hyderabadrishta",
-    "backgroundColor": "#FAF6F1",
+    "backgroundColor": "#F4EEE8",
     "extra": {
       "supportsRTL": true,
       "eas": {

@@ -3,7 +3,7 @@
 Chosen by the owner from the app previews ("This has been finalised"). Inspired by the owner's lavender
 wedding artwork (cream arch, lilac walls, mauve dress, antique lantern gold). Replaces the Royal Burgundy ×
 Champagne Gold palette; fonts are Playfair Display (headings, incl. the hero), Inter (body) and Montserrat (buttons/labels).
-**Status:** website BUILT (2026-11-08) with soft champagne buttons and the Playfair hero; app not built yet.
+**Status:** website BUILT and live (2026-11-08); **app code done (2026-11-08)** — colours, landing headline back to Playfair, app.json theme/splash/adaptive-icon colours; reaches phones with the next Android build.
 
 **Owner changes after the first approval:** buttons/accents are **soft champagne `#D8C49A`** (bright lantern gold was "too gold for the eyes"); the hero headline is back in **Playfair Display 600 + italic accent** (Mogra dropped).
 

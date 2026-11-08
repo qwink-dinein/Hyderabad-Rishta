@@ -43,13 +43,13 @@ const WHY: string[] = ['onb.welcome.w1', 'onb.welcome.w2', 'onb.welcome.w3', 'on
 
 /**
  * "Bringing Hyderabad's Muslim Families Closer, *One Rishta at a Time.*": the words between asterisks are set in
- * gold. English and Roman Urdu use Mogra (brush display, owner 2026-11-08); Urdu and Telugu keep their own
- * script font. Mogra has no italic or bold, so neither is faked.
+ * soft champagne. English and Roman Urdu use Playfair Display with the accent in Playfair italic (lavender
+ * redesign, owner 2026-11-08); Urdu and Telugu keep their own script font (no faux italics).
  */
 function headline(text: string, size: number, latin: boolean) {
   return text.split('*').map((part, i) =>
     i % 2 ? (
-      <Text key={i} variant="display" color={colors.gold} style={[{ fontSize: size }, latin && { fontFamily: 'Mogra', fontWeight: 'normal' }]}>
+      <Text key={i} variant="display" color={colors.gold} style={[{ fontSize: size }, latin && { fontFamily: 'Playfair-SemiBoldItalic' }]}>
         {part}
       </Text>
     ) : (
@@ -116,7 +116,7 @@ export function Welcome() {
               </Text>
               <View style={styles.rule} />
             </View>
-            <Text variant="display" color={colors.champagne} accessibilityRole="header" center style={[styles.h1, latin && { fontFamily: 'Mogra', fontWeight: 'normal' }, { fontSize: h1Size, lineHeight: Math.round(h1Size * (latin ? 1.25 : lang === 'ur' ? 1.9 : 1.5)) }]}>
+            <Text variant="display" color={colors.champagne} accessibilityRole="header" center style={[styles.h1, latin && { fontFamily: 'Playfair-SemiBold' }, { fontSize: h1Size, lineHeight: Math.round(h1Size * (latin ? 1.25 : lang === 'ur' ? 1.9 : 1.5)) }]}>
               {headline(t('onb.welcome.headline'), h1Size, latin)}
             </Text>
             <Text variant="body" color={colors.gold} center style={[styles.tagline, latin && styles.taglineLatin]}>
@@ -280,5 +280,5 @@ const styles = StyleSheet.create({
   final: { marginTop: space.xl, backgroundColor: colors.emerald, borderRadius: radius.xl, padding: space.xl, gap: space.md },
   links: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: space.lg, marginTop: space.xl },
   link: { textDecorationLine: 'underline' },
-  stickyBar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.xl, paddingTop: space.md, backgroundColor: 'rgba(58,0,18,0.96)', borderTopWidth: 1, borderTopColor: 'rgba(212,175,55,0.35)' },
+  stickyBar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: space.xl, paddingTop: space.md, backgroundColor: 'rgba(63,47,72,0.96)', borderTopWidth: 1, borderTopColor: 'rgba(212,175,55,0.35)' },
 });

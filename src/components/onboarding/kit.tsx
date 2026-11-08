@@ -277,11 +277,11 @@ export function Wheel({ items, value, onChange, label, width, grow, testID }: { 
           const on = i === shown;
           return (
             <Pressable key={it.value} onPress={() => go(i)} style={styles.wheelRow} accessibilityLabel={it.label} testID={testID ? `${testID}-${it.value}` : undefined}>
-              <Text variant={on ? 'bodyStrong' : 'body'} color={on ? colors.charcoal : '#A8999C'} style={{ fontSize: on ? 20 : 18 }}>
+              <Text variant={on ? 'bodyStrong' : 'body'} color={on ? colors.charcoal : '#A99CB0'} style={{ fontSize: on ? 20 : 18 }}>
                 {it.label}
               </Text>
               {it.sub ? (
-                <Text variant="caption" color={on ? colors.muted : '#B9ADAF'} style={{ fontSize: 15 }}>
+                <Text variant="caption" color={on ? colors.muted : '#BBAFC2'} style={{ fontSize: 15 }}>
                   {it.sub}
                 </Text>
               ) : null}
@@ -333,7 +333,7 @@ export function WheelField({
         accessibilityLabel={`${label}: ${display ?? placeholder}`}
         testID={testID}
       >
-        <Text variant="body" color={display ? colors.charcoal : '#8B7B7E'} style={{ fontSize: T.body + 1, flex: 1 }}>
+        <Text variant="body" color={display ? colors.charcoal : '#8B7D92'} style={{ fontSize: T.body + 1, flex: 1 }}>
           {display ?? placeholder}
         </Text>
         {display ? <Icon name="check" size={20} color={colors.success} strokeWidth={2.4} /> : <Icon name="chevronDown" size={20} color={colors.muted} />}
