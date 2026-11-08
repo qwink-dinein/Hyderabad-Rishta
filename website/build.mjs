@@ -308,7 +308,6 @@ rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 cpSync(join(ROOT, 'static', 'fonts'), join(OUT, 'fonts'), { recursive: true });
 cpSync(join(ROOT, 'static', 'img'), join(OUT, 'img'), { recursive: true });
-cpSync(join(ROOT, 'static', 'video'), join(OUT, 'video'), { recursive: true });
 writeFileSync(join(OUT, `site.${cssHash}.css`), css);
 
 const write = (p, html) => {
@@ -443,8 +442,6 @@ ${store}
 <p class="meta">The code can only be added while signing up. Your number and biodata are never shown to the family who invited you.</p>
 <script src="/r.js" defer></script>`,
 }));
-// Home hero video: loads only when motion and data are welcome; plays only while the hero is on screen.
-writeFileSync(join(OUT, 'hero.js'), `(function(){var v=document.getElementById('hero-video');if(!v||!v.play)return;var c=navigator.connection||{};if(matchMedia('(prefers-reduced-motion: reduce)').matches||c.saveData||/2g/.test(c.effectiveType||''))return;v.src=v.getAttribute(matchMedia('(max-aspect-ratio: 1/1)').matches?'data-tall':'data-wide');v.addEventListener('playing',function(){v.classList.add('on');},{once:true});function go(){var p=v.play();if(p&&p.catch)p.catch(function(){});}if('IntersectionObserver' in window){new IntersectionObserver(function(e){e[0].isIntersecting?go():v.pause();}).observe(v);}else go();})();\n`);
 writeFileSync(join(OUT, 'contact.js'), `(function(){var b=document.getElementById('show-email');if(!b)return;b.addEventListener('click',function(){var u=['mukarram','jahmm'].join(''),d=['gmail','com'].join('.'),a=u+'@'+d,o=document.getElementById('email-out');o.innerHTML='';var l=document.createElement('a');l.href='mailto:'+a+'?subject='+encodeURIComponent('Hyderabad Rishta support');l.textContent=a;o.appendChild(l);o.hidden=false;b.hidden=true;window.location.href=l.href;});})();\n`);
 writeFileSync(join(OUT, 'r.js'), `(function(){var m=location.pathname.match(/^\\/r\\/([A-Za-z0-9]{6,8})\\/?$/);var c=m?m[1].toUpperCase():'';if(!/^HR[2-9A-HJKMNP-Z]{4,6}$/.test(c))return;document.getElementById('invite-code').textContent=c;document.getElementById('invite-open').href='hyderabadrishta://r/'+c;})();\n`);
 mkdirSync(join(OUT, '.well-known'), { recursive: true });
@@ -467,8 +464,6 @@ ${PRODUCTION ? '' : '  X-Robots-Tag: noindex, nofollow\n'}/site.*.css
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
 /img/*
-  Cache-Control: public, max-age=604800
-/video/*
   Cache-Control: public, max-age=604800
 /.well-known/assetlinks.json
   Content-Type: application/json

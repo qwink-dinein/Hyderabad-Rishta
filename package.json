@@ -33,7 +33,6 @@
     "expo-splash-screen": "~58.0.11",
     "expo-status-bar": "~58.0.4",
     "expo-system-ui": "~58.0.6",
-    "expo-video": "~58.0.12",
     "i18next": "^26.5.11",
     "jest-expo": "~58.0.12",
     "react": "19.3.0",

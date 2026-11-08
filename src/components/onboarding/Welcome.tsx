@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { Image, type ImageSourcePropType, ScrollView, StyleSheet, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { BrandMark } from '@/components/art/Illustrations';
 import { Charminar } from '@/components/art/Charminar';
-import { HeroVideo } from '@/components/HeroVideo';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { InvitedBanner } from '@/components/referral/ReferralCards';
 import { Button } from '@/components/ui/Button';
@@ -24,10 +24,13 @@ import { colors, radius, space } from '@/theme/tokens';
  * why families choose us, the free Boost through referrals, and the action again. Once the hero
  * action scrolls away a sticky bar keeps it one tap away.
  *
- * Hero background (owner 2026-11-08, "like Muzz"): a muted wedding-moments loop (HeroVideo) runs behind the
- * top of the screen and fades into the maroon by the buttons; the hero window above the headline is left
- * clear so the picture shows. Never caption it as members or a success story — no such claims are published.
+ * Hero picture: HERO_COUPLE is the slot for a licensed, consented photo of a happy newly-married
+ * couple (owner request). Until that photo is added it shows the brand's bride and groom artwork.
+ * Never caption the picture as members or a success story — Hyderabad Rishta publishes no such claims.
  */
+const HERO_COUPLE: ImageSourcePropType | null = null; // e.g. require('../../../assets/hero/couple.jpg')
+const GROOM = require('../../../assets/personas/groom.webp');
+const BRIDE = require('../../../assets/personas/bride.webp');
 
 const TRUST: [IconName, string][] = [
   ['lock', 'onb.welcome.p1'],
@@ -64,8 +67,7 @@ export function Welcome() {
   const { short, tiny, sp } = useFit();
   // Logo, name and the four-language switcher only fit on one line on wider screens; phones show the
   // name with the greeting instead, so the hero starts higher.
-  const { width: winW, height: winH } = useWindowDimensions();
-  const wide = winW >= 440;
+  const wide = useWindowDimensions().width >= 440;
   const [heroCtaY, setHeroCtaY] = useState(0);
   const [sticky, setSticky] = useState(false);
   const heroH = tiny ? 200 : short ? 250 : 310;
@@ -85,11 +87,10 @@ export function Welcome() {
   };
 
   return (
-    <View style={styles.root} testID="welcome-screen">
+    <View style={[styles.root, { paddingTop: insets.top }]} testID="welcome-screen">
       <ScrollView contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, space.lg) + (sticky ? 88 : 0) }} onScroll={onScroll} scrollEventThrottle={64}>
-        {/* ───── Hero ───── (the video runs under the status bar and ends at the foot of the actions) */}
-        <HeroVideo style={{ height: heroCtaY > 0 ? heroCtaY + space.lg : Math.round(winH * 0.9) }} />
-        <View style={[styles.column, { paddingTop: insets.top }]}>
+        {/* ───── Hero ───── */}
+        <View style={styles.column}>
           <View style={styles.brand}>
             <BrandMark size={34} />
             {wide ? (
@@ -104,8 +105,23 @@ export function Welcome() {
             <InvitedBanner />
           </View>
 
-          {/* A clear window onto the video, with the privacy promise sitting at its foot. */}
+          {/* One arched frame with a gold hairline, as in the approved reference: the couple inside, a soft
+              fade into the maroon at the foot and the privacy promise sitting on the edge. */}
           <FadeIn delay={60} rise={14} duration={520} style={[styles.hero, { height: heroH + 22, marginTop: sp(space.md) }]}>
+            <View style={[styles.arch, { height: heroH, borderTopLeftRadius: heroH * 0.62, borderTopRightRadius: heroH * 0.62 }]}>
+              {HERO_COUPLE ? (
+                <Image source={HERO_COUPLE} style={styles.img} resizeMode="cover" accessibilityIgnoresInvertColors />
+              ) : (
+                <View style={styles.pair}>
+                  <Image source={GROOM} style={[styles.half, styles.groomImg]} resizeMode="cover" accessibilityIgnoresInvertColors />
+                  {/* The two portraits meet on a deliberate gold line (a diptych), not a raw seam. */}
+                  <View style={[styles.half, styles.brideImg, styles.seam]}>
+                    <Image source={BRIDE} style={styles.img} resizeMode="cover" accessibilityIgnoresInvertColors />
+                  </View>
+                </View>
+              )}
+              <LinearGradient colors={['rgba(58,0,18,0)', 'rgba(58,0,18,0.55)', colors.forest]} locations={[0.55, 0.85, 1]} style={styles.archFade} pointerEvents="none" />
+            </View>
             <View style={styles.badge}>
               <Icon name="lock" size={15} color={colors.forest} />
               <Text variant="label" color={colors.forest} style={{ fontSize: 13 }}>
@@ -255,6 +271,14 @@ const styles = StyleSheet.create({
   column: { width: '100%', maxWidth: 520, alignSelf: 'center', paddingHorizontal: space.xl, paddingBottom: space.xxl },
   brand: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingTop: space.sm },
   hero: { width: '100%', alignItems: 'center' },
+  arch: { width: '100%', overflow: 'hidden', borderWidth: 1.2, borderColor: colors.borderGold, backgroundColor: colors.emerald },
+  pair: { flex: 1, flexDirection: 'row' },
+  half: { position: 'absolute', top: 0, bottom: 0, width: '62%' },
+  groomImg: { left: '-6%' },
+  brideImg: { right: '-6%' },
+  seam: { borderLeftWidth: 2, borderLeftColor: colors.gold, overflow: 'hidden' },
+  img: { width: '100%', height: '100%' },
+  archFade: { position: 'absolute', left: 0, right: 0, bottom: 0, top: 0 },
   badge: { position: 'absolute', bottom: 0, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.cream, borderRadius: radius.pill, paddingHorizontal: space.lg, paddingVertical: 10, borderWidth: 1, borderColor: colors.champagne, shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 5 },
   eyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, alignSelf: 'stretch' },
   rule: { flex: 1, height: 1, backgroundColor: colors.borderGold },

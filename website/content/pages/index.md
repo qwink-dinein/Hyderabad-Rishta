@@ -9,10 +9,10 @@ hideCta: true
 layout: home
 ---
 
-<section class="hero dark jaali has-video" aria-labelledby="hero-title">
-<div class="hero-media" aria-hidden="true"><video id="hero-video" muted loop playsinline preload="none" disablepictureinpicture data-wide="/video/hero-wide.mp4" data-tall="/video/hero-tall.mp4"></video></div>
+<section class="hero dark jaali" aria-labelledby="hero-title">
 <div class="wrap">
-<p class="badge rise"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3a0012" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>Your number stays private</p>
+<div class="arch rise"><img class="groom" src="/img/hero-groom.webp" width="512" height="512" alt="Illustrated Hyderabadi groom in a cream sherwani and turban" fetchpriority="high"><img class="bride" src="/img/hero-bride.webp" width="512" height="512" alt="Illustrated Hyderabadi bride in a green and gold lehenga, a Charminar minaret behind her" fetchpriority="high"></div>
+<p class="badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3a0012" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>Your number stays private</p>
 <p class="eyebrow rise d1 after-badge">Hyderabad Rishta · Assalamu alaikum</p>
 <h1 id="hero-title" class="h-display rise d1">Find a <em>rishta</em> your whole family will love</h1>
 <p class="tagline rise d2">Rishton Ka Safar, Ab Bina Kisi Fees Ke.</p>
@@ -22,7 +22,6 @@ layout: home
 <ul class="trust-row rise d4"><li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>Your number stays hidden until you share it</li><li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>Photos only for families you allow</li><li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>English, Urdu, Roman Urdu and Telugu</li></ul>
 <div class="phones" aria-hidden="false"><div class="side l"><div class="float-b"><div class="phone "><img src="/img/app-discover.webp" width="360" height="779" alt="Discover screen with featured bride profiles" loading="lazy"></div></div></div><div class="main"><div class="float-a"><div class="phone "><img src="/img/app-home.webp" width="360" height="779" alt="Home screen: Get Boosted, be seen first"></div></div></div><div class="side r"><div class="float-b"><div class="phone "><img src="/img/app-profile.webp" width="360" height="779" alt="A bride’s profile with Express Interest" loading="lazy"></div></div></div></div>
 </div>
-<script src="/hero.js" defer></script>
 </section>
 
 <section class="band section">

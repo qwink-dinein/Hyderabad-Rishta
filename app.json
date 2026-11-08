@@ -61,13 +61,6 @@
       "expo-font",
       "expo-image",
       [
-        "expo-video",
-        {
-          "supportsBackgroundPlayback": false,
-          "supportsPictureInPicture": false
-        }
-      ],
-      [
         "expo-splash-screen",
         {
           "backgroundColor": "#FAF6F1",
