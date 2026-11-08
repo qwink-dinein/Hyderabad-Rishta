@@ -1,18 +1,17 @@
-/* Hyderabad Rishta website — Royal Burgundy × Champagne Gold × Warm Ivory.
-   Same tokens, fonts and buttons as the app (src/theme/tokens.ts, docs/design/premium-design-system.md). */
-@font-face { font-family: 'Playfair Display'; font-weight: 600; font-display: swap; src: url(/fonts/playfair-600.woff2) format('woff2'); }
-@font-face { font-family: 'Playfair Display'; font-weight: 600; font-style: italic; font-display: swap; src: url(/fonts/playfair-600i.woff2) format('woff2'); }
-@font-face { font-family: 'Inter'; font-weight: 400; font-display: swap; src: url(/fonts/inter-400.woff2) format('woff2'); }
-@font-face { font-family: 'Inter'; font-weight: 600; font-display: swap; src: url(/fonts/inter-600.woff2) format('woff2'); }
-@font-face { font-family: 'Montserrat'; font-weight: 500; font-display: swap; src: url(/fonts/montserrat-500.woff2) format('woff2'); }
-@font-face { font-family: 'Montserrat'; font-weight: 600; font-display: swap; src: url(/fonts/montserrat-600.woff2) format('woff2'); }
+/* Hyderabad Rishta website — lavender palette (docs/design/lavender-palette.md).
+   Typography (owner 2026-11-08, "wedding card"): Cormorant Garamond headings, Great Vibes calligraphy for accent
+   words only (large sizes), Lato for body, buttons and labels. */
+@font-face { font-family: 'Cormorant Garamond'; font-weight: 600; font-display: swap; src: url(/fonts/cormorant-600.woff2) format('woff2'); }
+@font-face { font-family: 'Great Vibes'; font-weight: 400; font-display: swap; src: url(/fonts/greatvibes-400.woff2) format('woff2'); }
+@font-face { font-family: 'Lato'; font-weight: 400; font-display: swap; src: url(/fonts/lato-400.woff2) format('woff2'); }
+@font-face { font-family: 'Lato'; font-weight: 500 700; font-display: swap; src: url(/fonts/lato-700.woff2) format('woff2'); }
 :root {
   --maroon: #3f2f48; --burgundy: #5e4a6e; --burgundy-2: #76627b; --gold: #d8c49a; --champagne: #f1e6f0;
   --cream: #f7f2f6; --beige: #cdbccb; --ivory: #f4eee8; --card: #fffcf8; --ink: #3a2c40; --muted: #6b5d70;
   --line: #e4d9e0; --antique: #b8a4b3; --gold-deep: #7a5a36; --gold-soft: #efe4d2; --sand: #eae1ea;
-  --serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --ui: 'Montserrat', 'Inter', system-ui, sans-serif;
+  --serif: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --sans: 'Lato', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --ui: 'Lato', system-ui, sans-serif;
   --gild: linear-gradient(180deg, #e8dcc0 0%, #d8c49a 52%, #c7b07f 100%);
   --ease: cubic-bezier(.2, .8, .2, 1);
   color-scheme: light;
@@ -174,10 +173,13 @@ button.btn { cursor: pointer; }
 .arch .groom { left: -6%; }
 .arch .bride { right: -6%; border-left: 2px solid var(--gold); }
 .arch::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(63, 47, 72, 0) 55%, rgba(63, 47, 72, .55) 82%, var(--maroon) 100%); }
-/* Home hero headline (owner 2026-11-08, lavender redesign): Playfair Display 600 in soft violet-white, the closing
-   phrase in soft champagne Playfair italic. */
-.hero .h-display { font-family: var(--serif); font-weight: 600; font-size: clamp(38px, 6.2vw, 72px); line-height: 1.08; letter-spacing: -.015em; max-width: 18ch; text-wrap: balance; }
-.hero .h-display em { font-style: italic; color: var(--gold); }
+/* Accent words ("One Rishta at a Time.", "in your pocket"): Great Vibes calligraphy in soft champagne — only at
+   heading sizes, never for buttons or small text. */
+.h-display em, .h-section em, .final em { font-family: 'Great Vibes', var(--serif); font-style: normal; font-weight: 400; color: var(--gold); }
+.h-section em, .final em { font-size: 1.18em; line-height: .9; }
+/* Home hero: "…Closer…" then the calligraphy line on its own line, never wrapping; sized to fit a 320px phone. */
+.hero .h-display { font-family: var(--serif); font-weight: 600; font-size: clamp(38px, 6.6vw, 78px); line-height: 1.08; letter-spacing: 0; max-width: 18ch; text-wrap: balance; }
+.hero .h-display em { display: block; white-space: nowrap; font-size: min(1.25em, 12.4vw); line-height: 1.05; margin-top: .06em; }
 .hero .tagline.subhero { font: 600 clamp(15px, 1.6vw, 18px) var(--ui); font-style: normal; letter-spacing: .06em; text-transform: uppercase; color: var(--gold); margin: 4px 0 14px; }
 /* Hero background video (home): a muted 7 s loop of wedding moments behind the hero, under a burgundy veil so
    the champagne text stays readable. The poster shows first (and only, for reduced motion, data saver or no JS);
