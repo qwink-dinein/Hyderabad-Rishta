@@ -19,7 +19,7 @@ The address everything uses is **https://hyderabadrishta.com** (`www.` should re
 ## Owner steps (accounts and DNS — only the owner can do these)
 1. **Host the website on Cloudflare Pages (free).** Cloudflare dashboard → Workers & Pages → Create → Pages →
    connect the GitHub repo `qwink-dinein/Hyderabad-Rishta`:
-   - Build command: `npm ci && npm run site:build` · Output directory: `website/dist`
+   - Build command: `node website/build.mjs` (no packages needed) · Output directory: `website/dist`
    - Environment variable: `SITE_URL` = `https://hyderabadrishta.com`
 2. **Point the domain.** Easiest: add the site to Cloudflare (free plan) and, in Spaceship → Domains →
    hyderabadrishta.com → Nameservers, replace Spaceship's nameservers with the two Cloudflare gives you.

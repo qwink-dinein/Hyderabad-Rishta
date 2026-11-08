@@ -176,7 +176,7 @@ function cta(from) {
   return `<section class="cta" aria-labelledby="cta-${esc(from)}">
   <h2 id="cta-${esc(from)}">Start your rishta search with Hyderabad Rishta</h2>
   <p>Create your biodata in a few minutes${FACTS.publicationFree ? ' — publishing it is currently free' : ''}. Your phone number stays private until you choose to share it.</p>
-  <div class="actions"><a class="btn btn-gold" href="${esc(q(CREATE))}" data-cta="create" data-from="${esc(from)}">Create Your Biodata</a><a class="btn btn-ghost" href="${esc(q(LOGIN))}" data-cta="login" data-from="${esc(from)}">Already registered? Log in</a></div>
+  <div class="actions"><a class="btn btn-gold" href="${esc(q(CREATE))}" data-cta="create" data-from="${esc(from)}">See my matches — it’s free <span class="arrow" aria-hidden="true">→</span></a><a class="btn btn-ghost" href="${esc(q(LOGIN))}" data-cta="login" data-from="${esc(from)}">Already registered? Log in</a></div>
   ${storeBadges()}
 </section>`;
 }
@@ -185,7 +185,7 @@ function storeBadges() {
   return links.length ? `<p class="stores">${links.join(' · ')}</p>` : '';
 }
 
-function page({ path, title, description, h1, lead, bodyHtml, trail, ld = [], type = 'website', noindex = false, published, updated, hideCta, image }) {
+function page({ path, title, description, h1, lead, bodyHtml, trail, ld = [], type = 'website', noindex = false, published, updated, hideCta, image, layout }) {
   const url = abs(path);
   const robots = !PRODUCTION || noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large, max-snippet:-1';
   const crumbs = breadcrumbs(trail);
@@ -199,7 +199,7 @@ function page({ path, title, description, h1, lead, bodyHtml, trail, ld = [], ty
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${esc(url)}">
 <meta name="robots" content="${robots}">
-<meta name="theme-color" content="#4A0E1F">
+<meta name="theme-color" content="#3A0012">
 <meta property="og:type" content="${type}">
 <meta property="og:site_name" content="${esc(BRAND.name)}">
 <meta property="og:title" content="${esc(title)}">
@@ -217,7 +217,7 @@ ${GOOGLE_SITE_VERIFICATION ? `<meta name="google-site-verification" content="${e
 ${BING_SITE_VERIFICATION ? `<meta name="msvalidate.01" content="${esc(BING_SITE_VERIFICATION)}">` : ''}
 <link rel="icon" href="/img/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
-<link rel="preload" href="/fonts/lora-600.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/playfair-600.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/inter-400.woff2" as="font" type="font/woff2" crossorigin>
 <style>${css}</style>
 <link rel="alternate" type="application/rss+xml" title="Hyderabad Rishta guides" href="/blog/feed.xml">
@@ -232,7 +232,10 @@ ${jsonLd([ORG, WEBSITE, APP, crumbs.ld, ...ld])}
     <a class="btn btn-small" href="${esc(CREATE)}" data-cta="create" data-from="header">Create Biodata</a>
   </div>
 </header>
-<main id="main">
+${layout === 'home'
+  // Home: full-width sections; the page's single <h1> lives in the hero (content/pages/index.md).
+  ? `<main id="main" class="home">\n${bodyHtml}\n</main>`
+  : `<main id="main">
   <div class="wrap">
     ${crumbs.html}
     <article class="content">
@@ -243,7 +246,7 @@ ${jsonLd([ORG, WEBSITE, APP, crumbs.ld, ...ld])}
     </article>
     ${hideCta ? '' : cta(path)}
   </div>
-</main>
+</main>`}
 <footer class="site-footer">
   <div class="wrap">
     <p class="about">${esc(BRAND.description)}</p>
@@ -281,7 +284,7 @@ for (const p of pages) {
   const ld = [];
   if (p.schema === 'AboutPage') ld.push({ '@type': 'AboutPage', name: p.title, url: abs(path), about: { '@id': `${BASE}/#organization` } });
   else ld.push({ '@type': 'WebPage', name: p.title, url: abs(path), description: p.description, isPartOf: { '@id': `${BASE}/#website` }, inLanguage: 'en-IN' });
-  write(path, page({ path, title: p.title, description: p.description, h1: p.h1, lead: p.lead, bodyHtml: md(p.body), trail, ld, noindex: p.noindex === true, hideCta: p.hideCta === true, updated: p.updated }));
+  write(path, page({ path, title: p.title, description: p.description, h1: p.h1, lead: p.lead, bodyHtml: md(p.body), trail, ld, noindex: p.noindex === true, hideCta: p.hideCta === true, updated: p.updated, layout: p.layout }));
   if (p.noindex !== true) sitemap.push({ loc: abs(path), lastmod: p.updated });
 }
 
