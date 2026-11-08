@@ -174,6 +174,18 @@ button.btn { cursor: pointer; }
 .arch .groom { left: -6%; }
 .arch .bride { right: -6%; border-left: 2px solid var(--gold); }
 .arch::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(58, 0, 18, 0) 55%, rgba(58, 0, 18, .55) 82%, var(--maroon) 100%); }
+/* Hero background video (home): a muted 7 s loop of wedding moments behind the hero, under a burgundy veil so
+   the champagne text stays readable. The poster shows first (and only, for reduced motion, data saver or no JS);
+   hero.js picks the portrait or landscape file and fades the video in once it is actually playing. */
+.hero.has-video { position: relative; isolation: isolate; }
+.hero.has-video > .wrap { position: relative; z-index: 1; }
+.hero-media { position: absolute; z-index: 0; inset: 0 0 auto; height: clamp(620px, 100svh, 960px); overflow: hidden; background: var(--maroon) url(/video/hero-wide.webp) center / cover no-repeat; }
+.hero-media video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.2s var(--ease); }
+.hero-media video.on { opacity: 1; }
+.hero-media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(58, 0, 18, .62) 0%, rgba(58, 0, 18, .56) 28%, rgba(58, 0, 18, .76) 62%, var(--maroon) 100%); }
+@media (max-aspect-ratio: 1/1) { .hero-media { background-image: url(/video/hero-tall.webp); } }
+.hero.has-video .badge { margin-top: clamp(24px, 8svh, 96px); }
+.hero.has-video .h-display, .hero.has-video .tagline, .hero.has-video p.sub, .hero.has-video .eyebrow { text-shadow: 0 2px 18px rgba(26, 0, 8, .55); }
 .badge { position: relative; z-index: 2; margin-top: -24px; display: inline-flex; align-items: center; gap: 9px; background: var(--cream); color: var(--maroon); border: 1px solid var(--champagne); border-radius: 999px; padding: 11px 20px; font: 600 14px var(--ui); box-shadow: 0 14px 28px -16px rgba(0, 0, 0, .7); }
 .trust-row { list-style: none; padding: 0; margin: 28px 0 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 26px; font-size: 15px; color: var(--cream); }
 .trust-row li { display: flex; gap: 9px; align-items: center; max-width: none; }
