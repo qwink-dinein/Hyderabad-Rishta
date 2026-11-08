@@ -33,3 +33,14 @@ The address everything uses is **https://hyderabadrishta.com** (`www.` should re
 5. Later: Play Console privacy-policy URL = `https://hyderabadrishta.com/privacy/`; Google Search Console
    verification token → `GOOGLE_SITE_VERIFICATION`; business email on the domain if wanted (e.g. Zoho Mail or
    Google Workspace, set up in Cloudflare DNS).
+
+## App store links (the website's only call to action — owner 2026-11-08)
+The website has no web sign-up, log-in or "create" buttons: every call to action is a pair of store badges
+(Google Play + App Store) — header "Get the app" → home `#download`, home hero, Boost card, download section,
+the box at the end of every page, How it works, and the invitation page `/r/<CODE>`.
+Until the listings are live each badge shows **Coming soon** and links nowhere. To switch them on:
+Cloudflare → Workers & Pages → hyderabad-rishta → Settings → Build → **Variables**: add
+`PLAY_URL` = `https://play.google.com/store/apps/details?id=com.hyderabadrishta.app` and/or
+`APP_STORE_URL` = the App Store link → **Retry/redeploy**. Every badge on every page becomes a real link, and the
+MobileApplication structured data appears. Before launch, swap the drawn badges in `website/build.mjs`
+(`storeBadges`) for Google's and Apple's official badge artwork (their brand guidelines).

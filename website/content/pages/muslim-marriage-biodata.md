@@ -1,7 +1,7 @@
 ---
 slug: muslim-marriage-biodata
 title: Muslim Marriage Biodata: What to Include & Free Format
-description: What a Muslim marriage biodata should contain, a clear format in English, and how to create your biodata online with privacy on Hyderabad Rishta.
+description: What a Muslim marriage biodata should contain, a clear format in English, and how to create your biodata with privacy in the Hyderabad Rishta app.
 h1: Muslim marriage biodata — what to include and how to create one online
 lead: A good biodata answers the questions families ask first, presents the person with dignity, and keeps private details private.
 crumb: Muslim Marriage Biodata
@@ -30,7 +30,7 @@ updated: 2026-11-02
 
 Copy and adapt: [Muslim marriage biodata format in English](/blog/muslim-marriage-biodata-format-english/). For writing tips, see [how to write an effective marriage biodata](/blog/how-to-create-an-effective-marriage-biodata/).
 
-## Create your biodata online
+## Create your biodata in the app
 
 On Hyderabad Rishta, the biodata is built for you as you answer short questions — one per screen — and every answer is saved straight away. You can add photos, family details, religious practice and preferences later.{{FREE_LINE}}
 

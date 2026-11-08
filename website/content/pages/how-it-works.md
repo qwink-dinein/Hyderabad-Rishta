@@ -49,4 +49,5 @@ Phone numbers are never shown on profiles. A number is revealed only when its ow
 
 <h2 id="get-started">Get started</h2>
 
-<p>Create your biodata in the Hyderabad Rishta app. <a href="{{CREATE}}" data-cta="create" data-from="how-it-works">Create your biodata</a>.</p>
+<p>Everything happens in the free Hyderabad Rishta app for Android and iPhone.</p>
+{{STORES:how-it-works}}

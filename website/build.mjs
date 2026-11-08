@@ -77,7 +77,7 @@ function md(src) {
     if (!l.trim()) { i++; continue; }
     if (l.startsWith('<')) { // raw HTML block until a blank line
       const block = [];
-      while (i < lines.length && lines[i].trim()) block.push(lines[i++].replace(/\{\{CREATE\}\}/g, esc(CREATE)).replace(/\{\{LOGIN\}\}/g, esc(LOGIN)));
+      while (i < lines.length && lines[i].trim()) block.push(lines[i++].replace(/\{\{STORES:([\w-]+)\}\}/g, (_, from) => storeBadges(from)).replace(/\{\{CREATE\}\}/g, esc(CREATE)).replace(/\{\{LOGIN\}\}/g, esc(LOGIN)));
       out.push(block.join('\n'));
       continue;
     }
@@ -171,18 +171,28 @@ function breadcrumbs(trail) {
   return { html, ld };
 }
 
-function cta(from) {
-  const q = (u) => (APP_URL ? `${u}${u.includes('?') ? '&' : '?'}utm_source=website&utm_medium=organic&utm_content=${encodeURIComponent(from)}` : u);
-  return `<section class="cta" aria-labelledby="cta-${esc(from)}">
-  <h2 id="cta-${esc(from)}">Start your rishta search with Hyderabad Rishta</h2>
-  <p>Create your biodata in a few minutes${FACTS.publicationFree ? ' — publishing it is currently free' : ''}. Your phone number stays private until you choose to share it.</p>
-  <div class="actions"><a class="btn btn-gold" href="${esc(q(CREATE))}" data-cta="create" data-from="${esc(from)}">See my matches — it’s free <span class="arrow" aria-hidden="true">→</span></a><a class="btn btn-ghost" href="${esc(q(LOGIN))}" data-cta="login" data-from="${esc(from)}">Already registered? Log in</a></div>
-  ${storeBadges()}
-</section>`;
+// ───────────── app store badges ─────────────
+// Owner decision 2026-11-08: the website sends people to the apps — no web sign-up, log-in or "create" buttons.
+// Set PLAY_URL / APP_STORE_URL (Cloudflare build variables) when the listings go live: every badge on every page
+// becomes a real link. Until then a badge shows "Coming soon" and leads nowhere (never a dead store page).
+// Replace these drawn badges with Google's and Apple's official badge files before launch (brand guidelines).
+const PLAY_ICON = '<svg class="store-icon" viewBox="0 0 24 26" aria-hidden="true"><path d="M1.2.6 13.4 12.8 1.2 25a1.6 1.6 0 0 1-.7-1.4V2A1.6 1.6 0 0 1 1.2.6z" fill="#00d7fe"/><path d="m17.5 16.9-4.1-4.1 4.1-4.1 4.7 2.7c1.3.8 1.3 2 0 2.8z" fill="#ffce00"/><path d="M17.5 16.9 13.4 12.8 1.2 25c.5.5 1.2.5 2 .1z" fill="#ff3a44"/><path d="M17.5 8.7 3.2.5C2.4.1 1.7.1 1.2.6l12.2 12.2z" fill="#00f076"/></svg>';
+const APPLE_ICON = '<svg class="store-icon" viewBox="0 0 24 28" aria-hidden="true"><path fill="#fff" d="M19.7 14.9c0-3.2 2.6-4.7 2.7-4.8a5.9 5.9 0 0 0-4.6-2.5c-2-.2-3.8 1.1-4.8 1.1-1 0-2.5-1.1-4.1-1.1A6.1 6.1 0 0 0 3.8 10.8c-2.2 3.8-.6 9.4 1.6 12.5 1 1.5 2.3 3.2 3.9 3.1 1.6-.1 2.2-1 4.1-1s2.4 1 4.1 1 2.7-1.5 3.7-3a13 13 0 0 0 1.7-3.5 5.3 5.3 0 0 1-3.2-5zM16.5 5.6A5.4 5.4 0 0 0 17.8 1.6a5.5 5.5 0 0 0-3.6 1.9 5.1 5.1 0 0 0-1.3 3.8 4.6 4.6 0 0 0 3.6-1.7z"/></svg>';
+function storeBadges(from, { size = '' } = {}) {
+  const badge = (url, store, icon, small, big) => {
+    const inner = `${icon}<span class="store-text"><small>${small}</small><strong>${big}</strong></span>`;
+    return url
+      ? `<a class="store ${size}" href="${esc(url)}" rel="noopener" data-cta="store" data-store="${store}" data-from="${esc(from)}">${inner}</a>`
+      : `<span class="store soon ${size}" role="img" aria-label="${big}: coming soon">${inner}<em>Coming soon</em></span>`;
+  };
+  return `<div class="stores">${badge(PLAY_URL, 'play', PLAY_ICON, 'GET IT ON', 'Google Play')}${badge(APP_STORE_URL, 'ios', APPLE_ICON, 'Download on the', 'App Store')}</div>`;
 }
-function storeBadges() {
-  const links = [PLAY_URL && `<a href="${esc(PLAY_URL)}" rel="noopener">Get it on Google Play</a>`, APP_STORE_URL && `<a href="${esc(APP_STORE_URL)}" rel="noopener">Download on the App Store</a>`].filter(Boolean);
-  return links.length ? `<p class="stores">${links.join(' · ')}</p>` : '';
+function cta(from) {
+  return `<section class="cta" aria-labelledby="cta-${esc(from)}">
+  <h2 id="cta-${esc(from)}">Your rishta search, in your pocket</h2>
+  <p>Get the free Hyderabad Rishta app for Android and iPhone. See matching brides and grooms before you share your number${FACTS.publicationFree ? ', create your biodata for free' : ''} and connect only when both families agree.</p>
+  ${storeBadges(from)}
+</section>`;
 }
 
 function page({ path, title, description, h1, lead, bodyHtml, trail, ld = [], type = 'website', noindex = false, published, updated, hideCta, image, layout }) {
@@ -229,7 +239,7 @@ ${jsonLd([ORG, WEBSITE, APP, crumbs.ld, ...ld])}
   <div class="wrap bar">
     <a class="brand" href="/" aria-label="Hyderabad Rishta home"><img src="/img/logo-96.webp" width="40" height="40" alt=""><span>Hyderabad Rishta</span></a>
     <nav aria-label="Main"><ul>${NAV.map(([u, n]) => `<li><a href="${u}"${path === u ? ' aria-current="page"' : ''}>${n}</a></li>`).join('')}</ul></nav>
-    <a class="btn btn-small" href="${esc(CREATE)}" data-cta="create" data-from="header">Create Biodata</a>
+    <a class="btn btn-small" href="/#download" data-cta="get-app" data-from="header">Get the app</a>
   </div>
 </header>
 ${layout === 'home'
@@ -385,7 +395,7 @@ const ANDROID_PACKAGE = 'com.hyderabadrishta.app';
 // Play listing exists (Play Console → App integrity), or links open the website instead of the app.
 const ANDROID_CERTS = (process.env.ANDROID_CERT_SHA256 || '5B:30:37:0C:07:69:41:42:5D:7A:67:25:C0:5F:9D:3A:3C:08:40:AB:7C:1E:9D:19:B7:12:72:8F:FD:0A:B2:8A')
   .split(',').map((x) => x.trim()).filter(Boolean);
-const store = PLAY_URL ? `<p><a class="btn btn-gold" href="${esc(PLAY_URL)}" rel="noopener">Get the app on Google Play</a></p>` : '';
+const store = storeBadges('invite');
 write('/r/', page({
   path: '/r/', title: 'You are invited to Hyderabad Rishta', noindex: true, hideCta: true,
   description: 'A family invited you to Hyderabad Rishta. Use their invitation code when you sign up.',
@@ -427,4 +437,4 @@ ${PRODUCTION ? '' : '  X-Robots-Tag: noindex, nofollow\n'}/site.*.css
 `);
 
 if (!existsSync(join(OUT, 'index.html'))) throw new Error('no home page built');
-console.log(`Built ${sitemap.length} indexable URLs → website/dist (${PRODUCTION ? `production: ${BASE}` : 'PREVIEW: noindex, robots blocked'})${PRODUCTION && !APP_URL ? '\nWARNING: APP_URL is not set — "Create your biodata" links point to /how-it-works/#get-started.' : ''}`);
+console.log(`Built ${sitemap.length} indexable URLs → website/dist (${PRODUCTION ? `production: ${BASE}` : 'PREVIEW: noindex, robots blocked'})${PRODUCTION && !(PLAY_URL && APP_STORE_URL) ? `\nNOTE: store badges show "Coming soon" until set: ${[!PLAY_URL && 'PLAY_URL', !APP_STORE_URL && 'APP_STORE_URL'].filter(Boolean).join(', ')}.` : ''}`);

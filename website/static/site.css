@@ -105,7 +105,24 @@ summary { cursor: pointer; font: 600 16px var(--ui); color: var(--burgundy); }
 .cta > * { position: relative; }
 .cta h2 { margin-top: 0; color: var(--champagne); }
 .cta p { color: var(--beige); }
-.stores { font-size: 15px; }
+/* App store badges (the website's only call to action) */
+.stores { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 22px; align-items: center; }
+.store { position: relative; display: inline-flex; align-items: center; gap: 11px; min-height: 58px; min-width: 196px; padding: 9px 20px 9px 16px; border-radius: 14px; background: #0b0b0d; color: #fff; text-decoration: none; border: 1px solid rgba(212, 175, 55, .55); box-shadow: 0 12px 26px -14px rgba(0, 0, 0, .7); transition: transform .18s var(--ease), box-shadow .18s ease, border-color .18s ease; }
+a.store:hover { transform: translateY(-2px); color: #fff; border-color: var(--gold); box-shadow: 0 18px 34px -16px rgba(0, 0, 0, .75); }
+a.store:active { transform: scale(.97); }
+.store-icon { width: 26px; height: 28px; flex: none; }
+.store-text { display: flex; flex-direction: column; line-height: 1.1; text-align: left; }
+.store-text small { font: 500 10.5px var(--sans); letter-spacing: .04em; opacity: .9; }
+.store-text strong { font: 600 20px var(--sans); letter-spacing: -.01em; white-space: nowrap; }
+.store.soon { cursor: default; }
+.store.soon em { position: absolute; top: -10px; right: 10px; font: 600 10.5px var(--ui); font-style: normal; letter-spacing: .08em; text-transform: uppercase; background: var(--gild); color: var(--maroon); padding: 3px 9px; border-radius: 999px; }
+.hero .stores, .hero-stores .stores { justify-content: center; }
+.app-points { list-style: none; padding: 0; margin: 18px 0 4px; display: grid; gap: 10px; color: var(--cream); font-size: 16.5px; }
+.app-points li { display: flex; gap: 10px; align-items: flex-start; max-width: none; }
+.app-points svg { flex: none; margin-top: 3px; }
+.eyebrow-left { justify-content: flex-start; color: var(--gold); }
+.eyebrow-left::before { display: none; }
+@media (max-width: 480px) { .stores { gap: 12px; } .store { min-width: 0; flex: 1 1 150px; padding: 9px 12px; gap: 9px; justify-content: center; } .store-icon { width: 22px; height: 24px; } .store-text strong { font-size: 16.5px; } .store-text small { font-size: 9.5px; } }
 
 /* Footer */
 .site-footer { background: var(--maroon); color: var(--beige); padding-block: 44px 30px; border-top: 1px solid rgba(143, 113, 59, .45); }
