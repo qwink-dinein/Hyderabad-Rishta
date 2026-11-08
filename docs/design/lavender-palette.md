@@ -43,9 +43,11 @@ backgrounds (warning `#F6EDD8`, danger `#F8E6E1`, success `#E6F1EC`).
 `overlay` → `rgba(63, 47, 72, 0.58)`; shadows and hard-coded `rgba(58,0,18,…)` → violet `#3F2F48` / `rgba(63,47,72,…)`;
 Button gilded gradient `#E9CB6E/#C29A2B/#7A5C27` → `#E8DCC0/#C7B07F/#A8935F`. App landing headline: Mogra → Playfair (`Playfair-SemiBold` + `Playfair-SemiBoldItalic` accent).
 
-## Still to update when building
-- Logo image (maroon background) — needs a lavender/violet version.
-- App screenshots used on the website (phone mock-ups) — retake after the app is rebuilt.
+## Done on the website (2026-11-08)
+- **Logo recoloured** maroon → deep violet, gold kept: website `logo-512/96`, favicon, apple-touch icon, share image (`og-default.jpg`), and the app's `assets/icon.png`, `android-icon-background/foreground.png`, `favicon.png`, `splash-icon.png`, `brand/logo.webp` (app icons ship with the next build). Monochrome Android icon unchanged. Recolour = hue shift of the red/maroon family (hue ≥ 300° or ≤ 18°, plus dark ≤ 30°) to violet 283°, saturation ×0.42; gold untouched.
+- **Website phone mock-ups** (`website/static/img/app-*.webp`) retaken from a lavender build of the app (soft champagne, Playfair hero) — demo data. Phone frames `#241a2b`.
+
+## Still to update
 - Optional: hero video clips are red-toned; the owner's lavender artwork could be used on the landing.
 
 ## Website tokens (`website/static/site.css`)
