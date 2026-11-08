@@ -105,21 +105,14 @@ export function Welcome() {
             <InvitedBanner />
           </View>
 
-          {/* A clear window onto the video, with the privacy promise sitting at its foot. */}
-          <FadeIn delay={60} rise={14} duration={520} style={[styles.hero, { height: heroH + 22, marginTop: sp(space.md) }]}>
-            <View style={styles.badge}>
-              <Icon name="lock" size={15} color={colors.forest} />
-              <Text variant="label" color={colors.forest} style={{ fontSize: 13 }}>
-                {t('onb.welcome.badge')}
-              </Text>
-            </View>
-          </FadeIn>
+          {/* A clear window onto the video (owner 2026-11-08: no badge here; the privacy pill lives below the fold). */}
+          <View style={{ height: heroH + 22, marginTop: sp(space.md) }} />
 
           <Stagger delay={160} step={70} style={{ marginTop: sp(space.lg), alignItems: 'center' }}>
             <View style={styles.eyebrowRow}>
               <View style={styles.rule} />
               <Text variant="overline" color={colors.champagne} center style={{ fontSize: 11.5 }}>
-                {`${t('common.appName')} · ${t('onb.welcome.title')}`}
+                {t('common.appName')}
               </Text>
               <View style={styles.rule} />
             </View>
@@ -188,7 +181,13 @@ export function Welcome() {
               ))}
             </View>
 
-            <Text variant="h2" style={[styles.h2, { marginTop: space.xxl }]} accessibilityRole="header">
+            <View style={[styles.badge, styles.badgeInline]}>
+              <Icon name="lock" size={15} color={colors.forest} />
+              <Text variant="label" color={colors.forest} style={{ fontSize: 13 }}>
+                {t('onb.welcome.badge')}
+              </Text>
+            </View>
+            <Text variant="h2" style={[styles.h2, { marginTop: space.md }]} accessibilityRole="header">
               {t('onb.welcome.whyTitle')}
             </Text>
             <View style={styles.whyCard}>
@@ -257,6 +256,7 @@ const styles = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: space.sm, paddingTop: space.sm },
   hero: { width: '100%', alignItems: 'center' },
   badge: { position: 'absolute', bottom: 0, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.cream, borderRadius: radius.pill, paddingHorizontal: space.lg, paddingVertical: 10, borderWidth: 1, borderColor: colors.champagne, shadowColor: '#000', shadowOpacity: 0.28, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 5 },
+  badgeInline: { position: 'relative', bottom: undefined, alignSelf: 'flex-start', marginTop: space.xxl, shadowOpacity: 0, elevation: 0 },
   eyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, alignSelf: 'stretch' },
   rule: { flex: 1, height: 1, backgroundColor: colors.borderGold },
   tagline: { fontSize: 15, marginTop: space.xs },
