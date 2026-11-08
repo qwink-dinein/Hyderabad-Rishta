@@ -5,7 +5,7 @@ description: Answers about Hyderabad Rishta — what it is, how it works, privac
 h1: Frequently asked questions
 lead: Straight answers about Hyderabad Rishta and about finding a Muslim rishta online.
 crumb: FAQs
-updated: 2026-11-02
+updated: 2026-11-08
 ---
 ## About Hyderabad Rishta
 
@@ -24,6 +24,14 @@ We are starting with Hyderabad and Telangana. Hyderabadi and Indian Muslim famil
 ### Does it cost anything?
 
 {{FREE_ANSWER}}
+
+### How do I get the app?
+
+On Android, download the free Hyderabad Rishta app from the [download section](/#download) of this website and open the file to install it. Google Play and the App Store listings are coming soon. There is no sign-up on the website — everything happens in the app.
+
+### Which languages does it support?
+
+English, Urdu, Roman Urdu and Telugu. You can switch language at any time in the app.
 
 ## How it works
 

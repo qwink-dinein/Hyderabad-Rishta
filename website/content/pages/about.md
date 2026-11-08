@@ -25,7 +25,7 @@ Hyderabad Rishta is a platform for introductions. Families and individuals creat
 
 ## Where we are
 
-We are starting with Hyderabad and Telangana, and Hyderabadi families living elsewhere in India and abroad are welcome. The app is available on Android first.
+We are starting with Hyderabad and Telangana, and Hyderabadi families living elsewhere in India and abroad are welcome. The app is available on Android now (a direct download on this website), with Google Play and the App Store coming soon.
 
 ## Contact
 

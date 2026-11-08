@@ -153,17 +153,31 @@ const ORG = {
 };
 const WEBSITE = { '@type': 'WebSite', '@id': `${BASE}/#website`, name: BRAND.name, url: `${BASE}/`, inLanguage: 'en-IN', publisher: { '@id': `${BASE}/#organization` } };
 // Only once a store listing is live (never describe an app people cannot get). No ratings/prices invented.
-const APP = PLAY_URL || APP_STORE_URL
+// The app people can actually get today: Google Play / App Store once listed, else the Android APK download.
+const APP = PLAY_URL || APP_STORE_URL || ANDROID_APK_URL
   ? {
       '@type': 'MobileApplication',
       name: BRAND.name,
-      operatingSystem: [PLAY_URL && 'Android', APP_STORE_URL && 'iOS'].filter(Boolean).join(', '),
+      operatingSystem: [(PLAY_URL || ANDROID_APK_URL) && 'Android', APP_STORE_URL && 'iOS'].filter(Boolean).join(', '),
       applicationCategory: 'LifestyleApplication',
       inLanguage: ['en', 'ur', 'te'],
-      url: PLAY_URL || APP_STORE_URL,
+      url: PLAY_URL || APP_STORE_URL || `${BASE}/#download`,
+      ...(!PLAY_URL && ANDROID_APK_URL ? { downloadUrl: ANDROID_APK_URL } : {}),
       publisher: { '@id': `${BASE}/#organization` },
     }
   : null;
+/** FAQPage data from an FAQ page written as "### Question" + answer paragraphs (helps AI answers quote us). */
+function faqLd(body) {
+  const plain = (t) => tokens(t).replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/\*\*?([^*]+)\*\*?/g, '$1').replace(/\s+/g, ' ').trim();
+  const items = [];
+  const parts = body.split(/^### /m).slice(1);
+  for (const part of parts) {
+    const [q, ...rest] = part.split('\n');
+    const answer = plain(rest.join('\n').split(/^##/m)[0]);
+    if (q.trim() && answer) items.push({ '@type': 'Question', name: q.trim(), acceptedAnswer: { '@type': 'Answer', text: answer } });
+  }
+  return items.length ? { '@type': 'FAQPage', mainEntity: items } : null;
+}
 
 function breadcrumbs(trail) {
   if (!trail || trail.length < 2) return { html: '', ld: null };
@@ -271,7 +285,7 @@ ${layout === 'home'
   <div class="wrap">
     <p class="about">${esc(BRAND.description)}</p>
     <div class="cols">${FOOTER.map(([h, links]) => `<div><h2>${h}</h2><ul>${links.map(([u, n]) => `<li><a href="${u}">${n}</a></li>`).join('')}</ul></div>`).join('')}</div>
-    <p class="small">© ${new Date().getFullYear()} Hyderabad Rishta · Available in English, Urdu and Telugu · <a href="/contact/">Contact support</a></p>
+    <p class="small">© ${new Date().getFullYear()} Hyderabad Rishta · In English, Urdu, Roman Urdu and Telugu · <a href="/contact/">Contact support</a></p>
   </div>
 </footer>
 ${CF_ANALYTICS_TOKEN ? `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='${JSON.stringify({ token: CF_ANALYTICS_TOKEN })}'></script>` : ''}
@@ -305,6 +319,7 @@ for (const p of pages) {
   const ld = [];
   if (p.schema === 'AboutPage') ld.push({ '@type': 'AboutPage', name: p.title, url: abs(path), about: { '@id': `${BASE}/#organization` } });
   else ld.push({ '@type': 'WebPage', name: p.title, url: abs(path), description: p.description, isPartOf: { '@id': `${BASE}/#website` }, inLanguage: 'en-IN' });
+  if (p.slug === 'faqs') ld.push(faqLd(p.body));
   write(path, page({ path, title: p.title, description: p.description, h1: p.h1, lead: p.lead, bodyHtml: md(p.body), trail, ld, noindex: p.noindex === true, hideCta: p.hideCta === true, updated: p.updated, layout: p.layout }));
   if (p.noindex !== true) sitemap.push({ loc: abs(path), lastmod: p.updated });
 }
@@ -384,7 +399,7 @@ writeFileSync(join(OUT, 'llms.txt'), `# ${BRAND.name}
 
 > ${BRAND.description}
 
-Hyderabad Rishta is a mobile app (Android first) and website for Muslim matrimony. Families and individuals create a structured marriage biodata, discover bride and groom profiles, send interest requests and share contact details only with consent. The app is available in English, Urdu and Telugu. Profiles are not identity-verified by the platform; members are asked to involve family and meet safely.
+Hyderabad Rishta is a mobile app for Muslim matrimony (Android now, as a direct download from ${abs('/#download')}; Google Play and the App Store are coming). The website is informational: sign-up and everything else happen in the app. Families and individuals create a structured marriage biodata, see matching brides and grooms before sharing their number, send interest requests and share contact details only with consent. Creating and publishing a biodata is currently free; a Boost (extra visibility) is earned free by inviting a family. The app is available in English, Urdu, Roman Urdu and Telugu. Profiles are not identity-verified by the platform; members are asked to involve family and meet safely.
 
 ## Key pages
 ${pages.filter((p) => p.noindex !== true && p.slug).map((p) => `- [${p.h1 || p.title}](${abs(`/${p.slug}/`)}): ${p.description}`).join('\n')}

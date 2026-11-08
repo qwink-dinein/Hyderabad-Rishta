@@ -33,6 +33,6 @@ Read the full comparison: [WhatsApp rishta groups vs matrimonial apps](/blog/wha
 
 ## Free, Muslim, and Hyderabad-first
 
-Hyderabad Rishta is a dedicated Muslim matrimonial platform, starting with Hyderabad. It is available in English, Urdu and Telugu, so parents and elders can use it comfortably.
+Hyderabad Rishta is a dedicated Muslim matrimonial platform, starting with Hyderabad. It is available in English, Urdu, Roman Urdu and Telugu, so parents and elders can use it comfortably.
 
 > Hyderabad Rishta does not charge to see anyone’s phone number. A number is shared only when its owner chooses to.
