@@ -31,10 +31,22 @@ payment or referral logic changed.
 - `Button` (`src/components/ui/Button.tsx`): primary/gold = champagne→gold gradient, royal-maroon text, soft
   shadow (no glow); secondary = warm ivory with antique-gold hairline; light = transparent + antique gold on dark.
 - `Text`: new `button` variant (Montserrat); `label` and `overline` use Montserrat.
-- Landing (`src/components/onboarding/Welcome.tsx`): arched hero frame with gold hairline, diptych of the brand's
-  bride/groom art (HERO_COUPLE slot for a licensed couple photo), uppercase eyebrow with gold rules, champagne
+- Landing (`src/components/onboarding/Welcome.tsx`): full-bleed background video (`HeroVideo`, see below) behind
+  the top of the screen with the privacy badge in a clear window over it, uppercase eyebrow with gold rules, champagne
   headline with gold-italic accent word (`*word*` in the translation), tagline "Rishton Ka Safar, Ab Bina Kisi
   Fees Ke.", gilded CTA, trust lines, faint Charminar skyline, sticky CTA after scrolling.
+
+## Hero background video (2026-11-08)
+- One muted ~7 s loop of three owner-supplied wedding clips (couple with bouquet → confetti dance → mehndi hands),
+  crossfaded and joined end-to-start so it loops without a jump. Raw clips were removed from the repo after encoding.
+- Files: `website/static/video/hero-wide.mp4` (1280×720, ~1.6 MB) and `hero-tall.mp4` (608×1080 centre crop,
+  ~1.1 MB) + first-frame `.webp` posters; the app bundles the tall loop as `assets/hero/hero-loop.mp4`.
+- Website: `.hero-media` behind the home hero, burgundy veil gradient, poster first; `/hero.js` loads the portrait
+  or landscape file, skips reduced motion / data saver / 2G, fades in once playing, pauses off screen.
+- App: `src/components/HeroVideo.tsx` (`expo-video`, needs a new native build): poster until playing, reduced
+  motion = poster only, muted and mixed with other audio, paused when the screen loses focus.
+- Clips 1–2 carry a small Gemini ✦ mark bottom-right; the portrait crop excludes it, desktop shows it faintly.
+- Replace the loop: same names and sizes, re-run the ffmpeg recipe in Memory.md.
 
 ## Not changed
 Business logic, copy elsewhere, layouts of inner screens (they inherit tokens, fonts and buttons). The artwork
