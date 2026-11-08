@@ -248,3 +248,44 @@ button.btn { cursor: pointer; }
     .reveal { animation: rise linear both; animation-timeline: view(); animation-range: entry 5% cover 28%; }
   }
 }
+
+/* ───────────── Fit any phone ─────────────
+   Grid/flex children default to min-width:auto, so one long unbreakable
+   line (a badge, an uppercase eyebrow) could widen a whole card past the
+   screen and the card's overflow:hidden then cut the text off. These rules
+   let every box shrink to the screen and let long text wrap instead. */
+html, body { max-width: 100%; }
+body { overflow-x: clip; }
+h1, h2, h3, h4, p, li, td, th, dd, dt, blockquote, figcaption { overflow-wrap: break-word; }
+.final, .feature, .boost-card, .cards, .cols, .steps, .features, .how ol { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 761px) {
+  .final { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+  .feature { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (min-width: 861px) { .boost-card { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } }
+@media (min-width: 560px) {
+  .cards { grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); }
+  .cols { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .steps, .features { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .how ol { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+}
+.final > *, .feature > *, .boost-card > *, .cta > *, .wrap > *, .stores > *, .socials > * { min-width: 0; }
+img, svg, video { max-width: 100%; }
+.content table, .prose table, main table:not(.table table) { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+@media (max-width: 480px) {
+  .eyebrow { white-space: normal; text-align: center; letter-spacing: .06em; line-height: 1.4; }
+  .eyebrow-left { text-align: left; }
+  .final { padding-inline: 22px; border-radius: 28px; }
+  .final .h-section, .h-section { font-size: clamp(27px, 8.4vw, 34px); }
+  .app-points { font-size: 15.5px; }
+  .store { flex: 1 1 100%; max-width: 100%; justify-content: flex-start; }
+  .store-text strong { white-space: normal; font-size: 16px; }
+  .soc { flex: 1 1 100%; }
+  .follow-label { letter-spacing: .06em; line-height: 1.4; }
+  .pair { min-height: 0; padding-block: 24px 40px; }
+  .pair .phone { width: min(44vw, 200px); }
+  .pair .b { margin-left: -10%; }
+}
+.soc span { min-width: 0; }
+.soc strong, .soc small { overflow-wrap: anywhere; }
+@media (max-width: 480px) { .eyebrow-left::after { display: none; } }
