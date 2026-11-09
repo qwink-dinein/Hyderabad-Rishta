@@ -1,7 +1,6 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
@@ -13,75 +12,43 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { haptic } from '@/services/feedback';
 import { backend } from '@/services';
 import { colors, motion, radius, shadow, space } from '@/theme/tokens';
-import { BrandMark } from './art/Illustrations';
 import { Button } from './ui/Button';
 import { Badge, confirm, useToast } from './ui/feedback';
-import { Icon, StarMotif, type IconName } from './ui/Icon';
+import { Icon, type IconName } from './ui/Icon';
 import { Text } from './ui/Text';
 
-const PERSONA = {
-  bride: require('../../assets/personas/bride.webp'),
-  groom: require('../../assets/personas/groom.webp'),
-};
+/** One static, pre-blurred violet image (1 KB, bundled) stands in for every photo the viewer can't see. */
+const PHOTO_ON_REQUEST = require('../../assets/placeholders/photo-on-request.webp');
 
 /**
- * Photo (respecting the owner's visibility setting) or, with no photo, the default Hyderabadi bride or
- * groom portrait (owner spec 2026-10-29) — chosen by the PROFILE's type, never the viewer's. Never
- * initials. A broken photo falls back to the portrait; a broken portrait to a neutral branded medallion.
- * Restricted photos never reach the client, so the portrait can't reveal anything.
+ * The member's photo (respecting the owner's visibility setting) — or, when there's no photo the viewer may
+ * see (photos restricted, or none uploaded), a static blurred image with a lock and "Photo on request"
+ * (owner 2026-11-09; replaces the bride/groom portraits). The placeholder is the same picture for everyone and
+ * contains no member's photo, so nothing is revealed and nothing extra is downloaded. Restricted photos never
+ * reach the client. Small avatars show the lock only.
  */
 export const ProfilePhoto = memo(function ProfilePhoto({ profile, height = 200, rounded = true, index = 0 }: { profile: PublicProfile; height?: number | '100%'; rounded?: boolean; index?: number }) {
   const { t } = useTranslation();
   // Only photos the server sent (the owner's visibility rule applied) can ever be shown.
   const uri = profile.photos[Math.min(index, Math.max(0, profile.photos.length - 1))]?.uri;
   const [photoFailed, setPhotoFailed] = useState<string | null>(null);
-  const [artFailed, setArtFailed] = useState(false);
-  const [box, setBox] = useState(0);
   const r = rounded ? { borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg } : null;
   if (uri && photoFailed !== uri) {
     return <Image source={{ uri }} onError={() => setPhotoFailed(uri)} style={[{ height, width: '100%' }, r]} contentFit="cover" contentPosition="top" transition={200} cachePolicy="memory-disk" accessibilityLabel={profile.displayName} />;
   }
-  const kind = profile.profileType === 'groom' ? 'groom' : 'bride';
-  const art = (size: number | '100%') =>
-    artFailed ? (
-      <View style={[styles.medallionFallback, { width: size, height: size }]}>
-        <BrandMark size={typeof size === 'number' ? Math.round(size * 0.42) : 28} color={colors.goldMuted} />
-      </View>
-    ) : (
-      <Image source={PERSONA[kind]} onError={() => setArtFailed(true)} style={{ width: size, height: size }} contentFit="contain" cachePolicy="memory" accessible={false} />
-    );
-  if (typeof height === 'number' && height < 120) {
-    // Avatars: the round portrait fills the (already round/square) slot.
-    return (
-      <View style={[{ height, width: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.goldSoft }, r]} accessibilityLabel={profile.displayName} testID={`persona-${kind}`}>
-        {art('100%')}
-      </View>
-    );
-  }
+  const avatar = typeof height === 'number' && height < 120;
   return (
-    <LinearGradient
-      colors={[colors.goldSoft, colors.sage]}
-      style={[{ height, width: '100%', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }, r]}
-      accessibilityLabel={profile.displayName}
-      testID={`persona-${kind}`}
-      onLayout={(e) => setBox(Math.floor(Math.min(e.nativeEvent.layout.width, e.nativeEvent.layout.height) * 0.9))}
-    >
-      <View style={styles.motifA}>
-        <StarMotif size={110} opacity={0.22} color={colors.goldMuted} />
-      </View>
-      <View style={styles.motifB}>
-        <StarMotif size={70} opacity={0.18} color={colors.goldMuted} />
-      </View>
-      {box > 0 ? <View style={styles.medallion}>{art(box)}</View> : null}
-      {profile.photosHidden ? (
-        <View style={styles.lockPill}>
-          <Icon name="lock" size={13} color={colors.ivory} />
-          <Text variant="caption" color={colors.ivory}>
+    <View style={[{ height, width: '100%', overflow: 'hidden', backgroundColor: colors.emeraldSoft }, r]} accessibilityLabel={`${profile.displayName}, ${t('card.photoHidden')}`} testID="photo-on-request">
+      <Image source={PHOTO_ON_REQUEST} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="memory" accessible={false} />
+      <View style={[StyleSheet.absoluteFill, styles.lockCenter]} pointerEvents="none">
+        <Icon name="lock" size={avatar ? 20 : 44} color={colors.white} strokeWidth={2.4} />
+        {avatar ? null : (
+          <Text variant="bodyStrong" color={colors.white} center style={styles.lockText}>
             {t('card.photoHidden')}
           </Text>
-        </View>
-      ) : null}
-    </LinearGradient>
+        )}
+      </View>
+    </View>
   );
 });
 
@@ -560,21 +527,8 @@ const styles = StyleSheet.create({
   heartOn: { backgroundColor: 'rgba(255,255,255,0.92)' },
   heartPlain: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   boost: { position: 'absolute', top: space.md, left: space.md },
-  medallion: { borderRadius: 9999, shadowColor: colors.forest, shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
-  medallionFallback: { borderRadius: 9999, borderWidth: 2, borderColor: colors.gold, backgroundColor: colors.ivory, alignItems: 'center', justifyContent: 'center' },
-  motifA: { position: 'absolute', top: -18, left: -14 },
-  motifB: { position: 'absolute', bottom: 14, right: 18 },
-  lockPill: {
-    position: 'absolute',
-    bottom: space.md,
-    flexDirection: 'row',
-    gap: 6,
-    alignItems: 'center',
-    backgroundColor: 'rgba(42,11,19,0.6)',
-    paddingHorizontal: space.md,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-  },
+  lockCenter: { alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: space.sm },
+  lockText: { fontSize: 17, textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 6 },
   bar: { height: 12, borderRadius: 6, backgroundColor: colors.skeleton },
   // List card (Discover / Shortlist)
   lcard: { backgroundColor: colors.white, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.md, gap: space.md, ...shadow.card },
