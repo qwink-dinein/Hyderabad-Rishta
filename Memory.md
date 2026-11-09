@@ -216,3 +216,4 @@ Reset everything: Settings → “Reset demo data”.
    - EAS projectId + FCM/APNs for push
    - pg_cron: `run_boost_jobs` every 5 min, `run_retention` daily, `push-dispatch` every minute
 4. Keep all docs updated (PRD, design, Architecture, Tasks, Phases, README, CHECKPOINTS, Memory) with every change.
+| 2026-11-09 | **final_version11** saved: branch `final_version11` + `docs/RELEASE_final_version11.md` (lavender palette, Cormorant/Great Vibes/Lato, Photo on Request, consent-based phone visibility, Drive APK 1aIIxL4…). Never push to it; next save = `final_version12` | Owner: "keep this version saved as final_version_11". |
