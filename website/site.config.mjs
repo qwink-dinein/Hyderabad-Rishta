@@ -21,7 +21,7 @@ export const APP_STORE_URL = env('APP_STORE_URL');
 // Direct Android download (APK) until the Play listing is live (owner 2026-11-08). Points at the latest EAS
 // "preview" build; change it after each new build (or set the ANDROID_APK_URL build variable). Ignored once
 // PLAY_URL is set — the Google Play badge then takes its place.
-export const ANDROID_APK_URL = env('ANDROID_APK_URL') || 'https://drive.google.com/uc?export=download&id=1HX4m85W_jtyJ4XRqu7KjLYa8bUewR0RC';
+export const ANDROID_APK_URL = env('ANDROID_APK_URL') || 'https://drive.google.com/uc?export=download&id=1aIIxL4Rk6iwOdxpDGDp7MPn8WrbjMLZT';
 
 // Optional, privacy-friendly analytics (no cookies): Cloudflare Web Analytics token. Leave empty to
 // ship no tracking at all. Search Console / Bing verification tokens go in the meta tags below.
