@@ -1,11 +1,11 @@
 ---
 slug: privacy
 title: Privacy Policy | Hyderabad Rishta
-description: How Hyderabad Rishta collects, uses and protects your data: who sees your biodata, consent-only photo and number sharing, retention and your rights.
+description: How Hyderabad Rishta collects, uses and protects your data: who sees your biodata, your choice of who sees your photos and number, retention and your rights.
 h1: Privacy policy
-lead: Your biodata is personal. This policy explains what we collect, who can see it, how long we keep it and what you control. It is the same policy shown inside the app. Last updated 2 November 2026.
+lead: Your biodata is personal. This policy explains what we collect, who can see it, how long we keep it and what you control. It is the same policy shown inside the app. Last updated 9 November 2026.
 crumb: Privacy
-updated: 2026-11-02
+updated: 2026-11-09
 ---
 ## Who we are
 
@@ -33,7 +33,7 @@ We use your data with your consent (given when you create an account, publish yo
 
 ## Who can see your biodata
 
-Your biodata is shown only to logged-in members, and only after you publish it. You can pause it at any time. Your mobile number is never shown on your profile. Your name is shown as you choose: your full name, first name or initials. Photos and family details can be set so that they are visible to members, or only to people you choose to share them with. Income is hidden unless you choose otherwise.
+Your biodata is shown only to logged-in members, and only after you publish it. You can pause it at any time. You choose who sees your mobile number: everyone signed in, or only people you share it with. New grooms start with their number and photos visible to signed-in members, and new brides start private; either can change this at any time in Privacy settings. Your name is shown as you choose: your full name, first name or initials. Photos and family details can be set so that they are visible to members, or only to people you choose to share them with. Income is hidden unless you choose otherwise.
 
 Biodata is never published on our website, never sent to search engines and never put on public pages. Our website only has general information.
 
@@ -43,7 +43,7 @@ Photos are kept in private storage. They are shown through short-lived links, an
 
 ## Your phone number
 
-Your number is private by default. Sending or accepting an interest never shares a number by itself. A number is shared only when its owner taps to share it with one specific person, and the app asks for that consent each time. If you offer your number with an interest, the other person sees it only if they accept. If both of you share, both numbers show. You can withdraw an offer the other person has not yet accepted. Once someone has seen your number, we cannot take it back from them.
+If your number is set to “Only people I consent to” (the starting setting for brides and for every member who joined before this option existed), it stays private. If you choose “Everyone” (the starting setting for new grooms), any signed-in member can see it on your profile until you switch it back. Sending or accepting an interest never shares a private number by itself. A number is shared only when its owner taps to share it with one specific person, and the app asks for that consent each time. If you offer your number with an interest, the other person sees it only if they accept. If both of you share, both numbers show. You can withdraw an offer the other person has not yet accepted. Once someone has seen your number, we cannot take it back from them.
 
 ## Who we share data with
 

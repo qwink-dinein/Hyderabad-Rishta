@@ -15,7 +15,8 @@ describe('privacy policy and terms', () => {
 
   it('states the promises the app keeps', () => {
     const p = PRIVACY.map(([h, b]) => `${h}\n${b}`).join('\n');
-    expect(p).toContain('never shown on your profile');
+    expect(p).toContain('You choose who sees your mobile number');
+    expect(p).toContain('stays private');
     expect(p).toContain('never sent to search engines');
   });
 

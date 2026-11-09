@@ -74,4 +74,4 @@ Copy the headings below and fill them in. Keep it to one page.
 
 ## Skip the formatting
 
-On [Hyderabad Rishta](/muslim-marriage-biodata/), you answer short questions and the biodata is built for you — and your number stays private until you choose to share it.
+On [Hyderabad Rishta](/muslim-marriage-biodata/), you answer short questions and the biodata is built for you — and you choose who sees your number: all members, or only families you approve.

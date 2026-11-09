@@ -12,7 +12,7 @@ export function toMarkdown(sections) {
 const iso = new Date(LEGAL_UPDATED + ' UTC').toISOString().slice(0, 10);
 const pages = {
   privacy: { sections: PRIVACY, title: 'Privacy Policy | Hyderabad Rishta', h1: 'Privacy policy', crumb: 'Privacy',
-    description: 'How Hyderabad Rishta collects, uses and protects your data: who sees your biodata, consent-only photo and number sharing, retention and your rights.',
+    description: 'How Hyderabad Rishta collects, uses and protects your data: who sees your biodata, your choice of who sees your photos and number, retention and your rights.',
     lead: `Your biodata is personal. This policy explains what we collect, who can see it, how long we keep it and what you control. It is the same policy shown inside the app. Last updated ${LEGAL_UPDATED}.` },
   terms: { sections: TERMS, title: 'Terms of Use | Hyderabad Rishta', h1: 'Terms of use', crumb: 'Terms',
     description: 'The rules for using Hyderabad Rishta: eligibility, family-created biodatas, honest and respectful use, safety, Boost and payments, and disputes.',

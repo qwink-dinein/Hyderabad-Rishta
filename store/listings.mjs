@@ -7,7 +7,7 @@ const features_en = [
   '• Explore profiles by age, area, education, profession, marital status and mother tongue',
   '• Send and receive marriage interest requests',
   '• Shortlist profiles you like',
-  '• Share contact details only with consent — your number is never shown on your profile',
+  '• You choose who sees your number — all members, or only families you approve',
   '• Control who sees your photos, income and family details',
   '• Use the app in English, Urdu or Telugu',
 ];
@@ -25,7 +25,7 @@ export const LISTINGS = {
         ...features_en,
         '',
         'PRIVACY FIRST',
-        'Your phone number is never shown on your profile. A number is shared only when its owner offers it and the other person accepts. Choose whether your photos are visible to everyone, only to people you approve, or no one. Block or report any profile at any time.',
+        'You choose who sees your phone number: all members, or only families you approve. A private number is shared only when its owner offers it and the other person accepts. Choose whether your photos are visible to everyone, only to people you approve, or no one. Block or report any profile at any time.',
         '',
         'FOR FAMILIES',
         'Parents, brothers, sisters and relatives can create a biodata for someone, with their knowledge and consent. Every question is worded for the right person.',
@@ -44,7 +44,7 @@ export const LISTINGS = {
       subtitle: 'Muslim Matrimony & Biodata',
       // 100 chars, comma-separated, no spaces after commas; no competitor names, no words already in name/subtitle.
       keywords: 'nikah,shaadi,marriage,muslim rishta,bride,groom,proposal,telangana,urdu,nri,matrimonial,family',
-      promo: 'Create your marriage biodata in minutes. Your phone number stays private until you choose to share it.',
+      promo: 'Create your marriage biodata in minutes. You choose who sees your phone number.',
     },
   },
   ur: {

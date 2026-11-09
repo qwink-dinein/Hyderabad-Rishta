@@ -3,9 +3,9 @@ slug: terms
 title: Terms of Use | Hyderabad Rishta
 description: The rules for using Hyderabad Rishta: eligibility, family-created biodatas, honest and respectful use, safety, Boost and payments, and disputes.
 h1: Terms of use
-lead: The short version: be honest, be respectful, involve your family, and never ask anyone for money. Last updated 2 November 2026.
+lead: The short version: be honest, be respectful, involve your family, and never ask anyone for money. Last updated 9 November 2026.
 crumb: Terms
-updated: 2026-11-02
+updated: 2026-11-09
 ---
 ## Agreement
 

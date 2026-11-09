@@ -15,7 +15,7 @@ In Hyderabad, many families still search for a rishta through WhatsApp groups, f
 ## What we believe
 
 - **Dignity:** a biodata should present a person respectfully and completely, not as a forwarded image.
-- **Privacy:** your phone number is never shown on your profile, and you decide who sees your photos.
+- **Privacy:** you decide who sees your phone number and your photos — everyone, or only people you approve.
 - **Consent:** contact details are shared only when both sides agree.
 - **Simplicity:** parents and grandparents should be able to use it, in English, Urdu or Telugu.
 
