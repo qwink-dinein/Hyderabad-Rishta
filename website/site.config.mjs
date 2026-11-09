@@ -72,3 +72,7 @@ export const CRAWLERS = {
   // Generic bulk scrapers: blocked.
   block: ['CCBot', 'Bytespider', 'Amazonbot', 'Diffbot', 'omgili', 'ImagesiftBot'],
 };
+
+// IndexNow (Bing, Yandex, Seznam, Naver — Bing feeds ChatGPT search): the key is public by design; the file
+// /<key>.txt proves we own the site. Submit URLs with https://www.bing.com/indexnow?url=<page>&key=<key>.
+export const INDEXNOW_KEY = env('INDEXNOW_KEY') || 'dded244e3849223015809980867dbe25';
