@@ -179,9 +179,23 @@ export interface PartnerPreferences {
   expectations?: string;
 }
 
+export type PhoneVisibility = 'public' | 'onConsent';
+
+/** Starting privacy for NEW members of one side (admin setting). Members can change it any time. */
+export interface PrivacyDefaults {
+  photo: Visibility;
+  phone: PhoneVisibility;
+}
+
 export interface PrivacySettings {
   displayName: 'full' | 'first' | 'initials';
   photoVisibility: Visibility;
+  /**
+   * Who sees the member's phone number on their profile (owner 2026-11-09). 'public' = every signed-in member;
+   * 'onConsent' (also when undefined — every member before this setting existed) = only after the member
+   * shares it with a family. Defaults for NEW members come from PricingConfig.privacyDefaults; never forced.
+   */
+  phoneVisibility?: PhoneVisibility;
   incomeVisibility: Visibility;
   familyVisibility: Visibility;
   acceptContactRequests: boolean;
@@ -323,6 +337,8 @@ export interface PricingConfig {
   featuredMaxCards: number;
   /** A boosted profile is featured to the same member on at most this many days in any 7 (7 = no cap). */
   featuredCapDaysPer7: number;
+  /** Starting photo / phone visibility for newly registering grooms and brides (never applied to existing members). */
+  privacyDefaults: Record<ProfileType, PrivacyDefaults>;
   updatedAt: string;
   updatedBy?: string;
 }

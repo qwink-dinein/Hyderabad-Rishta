@@ -737,7 +737,13 @@ export class SupabaseBackend implements Backend {
     const errors = validatePricing(cfg);
     if (errors.length) throw new AppError('validation', errors.join('; '));
     const synced = syncBoostSummary(cfg);
-    const config = { publication: synced.publication, boost: synced.boost, boostPlans: synced.boostPlans };
+    // The whole settings document: prices AND the Boost/Featured switches and privacy defaults (the old code
+    // sent prices only, which reset the switches to their defaults on every save).
+    const config = {
+      publication: synced.publication, boost: synced.boost, boostPlans: synced.boostPlans,
+      boostEnabled: synced.boostEnabled, boostRequirePhoto: synced.boostRequirePhoto, featuredEnabled: synced.featuredEnabled,
+      featuredMaxCards: synced.featuredMaxCards, featuredCapDaysPer7: synced.featuredCapDaysPer7, privacyDefaults: synced.privacyDefaults,
+    };
     const row = await this.rpc<Row>('admin_update_pricing', {
       p_config: config, p_boost_days: synced.boostDays, p_require_approval: synced.requireApproval,
       p_request_expiry_days: synced.requestExpiryDays, p_poke_wait_hours: synced.pokeWaitHours, p_poke_max_per_7_days: synced.pokeMaxPer7Days,

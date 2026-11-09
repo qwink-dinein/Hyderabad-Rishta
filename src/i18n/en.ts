@@ -381,6 +381,8 @@ const en = {
     incomeVisibility: 'Who can see my income',
     familyVisibility: 'Who can see family details',
     acceptRequests: 'Accept contact requests',
+    phoneVisibility: 'Who can see my phone number',
+    phonePublic: 'Your mobile number ({{phone}}) is shown to all signed-in members on your profile. Choose “Only people I consent to” to keep it private.',
     phonePrivate: 'Your mobile number ({{phone}}) is private. It is shared only if you explicitly consent after accepting a request.',
   },
   opt: {

@@ -1,5 +1,5 @@
 import { ageFromDob, displayNameFor } from './format';
-import type { ConsentScopes, Profile, ProfileType, PublicProfile, User, Visibility } from './types';
+import type { Biodata, ConsentScopes, PricingConfig, Profile, ProfileType, PublicProfile, User, Visibility } from './types';
 
 export const NO_CONSENT: ConsentScopes = { photos: false, phone: false, fullBiodata: false };
 export const FULL_ACCESS: ConsentScopes = { photos: true, phone: true, fullBiodata: true };
@@ -68,7 +68,8 @@ export function projectProfile(
     preferences: { ...preferences },
     boosted: isBoostActive(profile, now),
     publishedAt: profile.publishedAt,
-    contact: scopes.phone && owner ? { countryCode: owner.countryCode, phone: owner.phone } : undefined,
+    // The number travels only if the member shared it with this viewer, or chose "Everyone" themselves.
+    contact: (scopes.phone || privacy.phoneVisibility === 'public') && owner ? { countryCode: owner.countryCode, phone: owner.phone } : undefined,
     granted: { ...scopes },
   };
 }
@@ -79,4 +80,17 @@ export function mergeScopes(list: ConsentScopes[]): ConsentScopes {
     (acc, s) => ({ photos: acc.photos || s.photos, phone: acc.phone || s.phone, fullBiodata: acc.fullBiodata || s.fullBiodata }),
     { ...NO_CONSENT },
   );
+}
+
+/**
+ * Starting photo / phone visibility for a NEW member (owner 2026-11-09), from the admin's per-side defaults.
+ * Applied only while the member has never chosen a phone setting (phoneVisibility undefined) and their side is
+ * known; never touches existing members' choices. Members change both on the Privacy step at any time.
+ */
+export function withPrivacyDefaults(b: Biodata, defaults: PricingConfig['privacyDefaults']): Biodata {
+  if (b.privacy.phoneVisibility !== undefined) return b;
+  if (b.basic.lookingFor !== 'groom' && b.basic.lookingFor !== 'bride') return b;
+  const side: ProfileType = b.basic.lookingFor === 'groom' ? 'bride' : 'groom';
+  const d = defaults[side];
+  return { ...b, privacy: { ...b.privacy, photoVisibility: d.photo, phoneVisibility: d.phone } };
 }

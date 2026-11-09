@@ -1,4 +1,4 @@
-import { DEFAULT_PRICING, withBoostPlans } from '@/domain/pricing';
+import { DEFAULT_PRICING, withBoostPlans, withPricingDefaults } from '@/domain/pricing';
 import type {
   Announcement,
   AppNotification,
@@ -196,6 +196,7 @@ export function mapPricing(r: Row): PricingConfig {
     featuredEnabled: cfg.featuredEnabled ?? DEFAULT_PRICING.featuredEnabled,
     featuredMaxCards: cfg.featuredMaxCards ?? DEFAULT_PRICING.featuredMaxCards,
     featuredCapDaysPer7: cfg.featuredCapDaysPer7 ?? DEFAULT_PRICING.featuredCapDaysPer7,
+    privacyDefaults: withPricingDefaults({ ...DEFAULT_PRICING, privacyDefaults: cfg.privacyDefaults as PricingConfig['privacyDefaults'] }).privacyDefaults,
     version: Number(r.version ?? 1),
     currency: String(r.currency ?? 'INR'),
     boostDays: Number(r.boost_days ?? DEFAULT_PRICING.boostDays),
