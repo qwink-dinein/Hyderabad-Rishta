@@ -12,7 +12,7 @@ import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ANDROID_APK_URL, APP_STORE_URL, APP_URL, BASE, BING_SITE_VERIFICATION, BRAND, CF_ANALYTICS_TOKEN, CRAWLERS, FACTS, GOOGLE_SITE_VERIFICATION, PLAY_URL, PRODUCTION } from './site.config.mjs';
+import { INDEXNOW_KEY, ANDROID_APK_URL, APP_STORE_URL, APP_URL, BASE, BING_SITE_VERIFICATION, BRAND, CF_ANALYTICS_TOKEN, CRAWLERS, FACTS, GOOGLE_SITE_VERIFICATION, PLAY_URL, PRODUCTION } from './site.config.mjs';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const OUT = join(ROOT, 'dist');
@@ -454,6 +454,8 @@ writeFileSync(join(OUT, '.well-known', 'assetlinks.json'), JSON.stringify([{
   relation: ['delegate_permission/common.handle_all_urls'],
   target: { namespace: 'android_app', package_name: ANDROID_PACKAGE, sha256_cert_fingerprints: ANDROID_CERTS },
 }], null, 2) + '\n');
+// IndexNow ownership file at the site root.
+if (INDEXNOW_KEY) writeFileSync(join(OUT, `${INDEXNOW_KEY}.txt`), INDEXNOW_KEY);
 writeFileSync(join(OUT, '_redirects'), `/r/*  /r/  200\n`);
 
 // Hosting headers (Netlify / Cloudflare Pages format). Long cache for hashed/static assets.
