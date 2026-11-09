@@ -24,7 +24,7 @@ requires: publicationFree
 | | Free WhatsApp rishta group | Hyderabad Rishta |
 |---|---|---|
 | Cost to join | Free | Biodata currently free |
-| Your number | Visible to everyone in the group | Never on your profile |
+| Your number | Visible to everyone in the group | You choose: all members, or only families you approve |
 | Biodata | Forwarded images and long messages | One clear, comparable format |
 | Finding a match | Scroll and hope | Filters by age, area, education and more |
 | Photos | Forwarded without control | You decide who sees them |

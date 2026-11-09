@@ -55,7 +55,7 @@ Send a short, respectful introduction from the family, mention who you are writi
 
 ### Who can see my phone number?
 
-Nobody, unless you choose to offer it to a specific person and they accept. It is never shown on your profile.
+You decide. In Privacy settings, choose **Everyone** (all signed-in members can see it on your profile) or **Only people I consent to** (it stays hidden until you offer it to a specific person and they accept). New grooms start with Everyone and new brides start private; you can change this at any time.
 
 ### Who can see my photos?
 

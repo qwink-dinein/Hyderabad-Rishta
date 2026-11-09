@@ -38,7 +38,7 @@ Open a profile and choose how to connect: send a short introduction, or offer yo
 
 ## 8. Share contact details only when both agree
 
-Phone numbers are never shown on profiles. A number is revealed only when its owner offers it and the other person accepts. If you have both offered numbers, they are exchanged straight away.
+You choose who sees your number: everyone signed in, or only people you share it with. New grooms start visible and new brides start private, and anyone can change it in Privacy settings. A private number is revealed only when its owner offers it and the other person accepts. If you have both offered numbers, they are exchanged straight away.
 
 ## Your privacy controls
 
