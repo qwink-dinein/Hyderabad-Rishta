@@ -2,7 +2,7 @@ import { buildSeed } from '@/data/seed';
 import { ageFromDob, displayNameFor, formatHeight, maskPhone } from '@/domain/format';
 import { announcementStats, audienceFor, dashboardMetrics } from '@/domain/metrics';
 import { DEFAULT_PRICING, pricingCopy, resolvePricing, validatePricing } from '@/domain/pricing';
-import { FULL_ACCESS, NO_CONSENT, projectProfile } from '@/domain/privacy';
+import { FULL_ACCESS, NO_CONSENT, projectProfile, withPrivacyDefaults } from '@/domain/privacy';
 import { activeFilterCount, EMPTY_FILTERS, filtersFromPreferences, matchesFilters, sortProfiles } from '@/domain/search';
 import type { PricingConfig, Profile } from '@/domain/types';
 import { basicSchema, careerSchema, emptyBiodata, familySchema, firstInvalidStep, preferencesSchema, stepErrors } from '@/domain/validation';
@@ -103,6 +103,48 @@ describe('privacy projection (PRD §9.3, §12)', () => {
     raw.biodata.photos = [{ id: 'x', uri: 'photo' }];
     raw.biodata.privacy.photoVisibility = 'hidden';
     expect(projectProfile(raw, FULL_ACCESS, undefined, NOW).photos).toHaveLength(0);
+  });
+});
+
+describe('phone visibility and new-member privacy defaults (owner 2026-11-09)', () => {
+  const owner = { countryCode: '+91', phone: '9876543210' };
+  it('a member who chose Everyone shows the number to any member, without consent', () => {
+    const raw = profile(0);
+    raw.biodata.privacy.phoneVisibility = 'public';
+    expect(projectProfile(raw, NO_CONSENT, owner, NOW).contact).toEqual(owner);
+  });
+  it('existing members (no setting) and "only people I consent to" stay private until shared', () => {
+    const raw = profile(0);
+    delete raw.biodata.privacy.phoneVisibility;
+    expect(projectProfile(raw, NO_CONSENT, owner, NOW).contact).toBeUndefined();
+    raw.biodata.privacy.phoneVisibility = 'onConsent';
+    expect(projectProfile(raw, NO_CONSENT, owner, NOW).contact).toBeUndefined();
+    expect(projectProfile(raw, { photos: false, phone: true, fullBiodata: false }, owner, NOW).contact).toEqual(owner);
+  });
+  it('new grooms start public and new brides private (admin defaults)', () => {
+    const groom = emptyBiodata();
+    groom.basic.lookingFor = 'bride';
+    const g = withPrivacyDefaults(groom, DEFAULT_PRICING.privacyDefaults);
+    expect(g.privacy.photoVisibility).toBe('public');
+    expect(g.privacy.phoneVisibility).toBe('public');
+    const bride = emptyBiodata();
+    bride.basic.lookingFor = 'groom';
+    const b = withPrivacyDefaults(bride, DEFAULT_PRICING.privacyDefaults);
+    expect(b.privacy.photoVisibility).toBe('onConsent');
+    expect(b.privacy.phoneVisibility).toBe('onConsent');
+  });
+  it("never overrides a member's own choice, and waits until the side is known", () => {
+    const chose = emptyBiodata();
+    chose.basic.lookingFor = 'bride';
+    chose.privacy.phoneVisibility = 'onConsent';
+    chose.privacy.photoVisibility = 'hidden';
+    expect(withPrivacyDefaults(chose, DEFAULT_PRICING.privacyDefaults).privacy).toEqual(chose.privacy);
+    const unknown = emptyBiodata();
+    expect(withPrivacyDefaults(unknown, DEFAULT_PRICING.privacyDefaults)).toBe(unknown);
+  });
+  it('rejects invalid admin defaults', () => {
+    const bad = { ...DEFAULT_PRICING, privacyDefaults: { groom: { photo: 'public', phone: 'hidden' }, bride: DEFAULT_PRICING.privacyDefaults.bride } } as unknown as PricingConfig;
+    expect(validatePricing(bad).some((e) => e.startsWith('Privacy defaults'))).toBe(true);
   });
 });
 

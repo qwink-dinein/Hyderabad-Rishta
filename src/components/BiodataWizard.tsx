@@ -12,6 +12,8 @@ import { citiesOf, COUNTRIES, districtsOf, statesOf } from '@/domain/options';
 import type { Biodata, Profile } from '@/domain/types';
 import { fieldLabelKey, profileCompletion, RECOMMENDED_FIELDS } from '@/domain/completion';
 import { emptyBiodata, STEP_KEYS, stepErrors } from '@/domain/validation';
+import { withPrivacyDefaults } from '@/domain/privacy';
+import { usePricing } from '@/hooks/queries';
 import { haptic, playSound } from '@/services/feedback';
 import { useOptions } from '@/hooks/useOptions';
 import { asyncStorageKV } from '@/services/storage';
@@ -70,6 +72,10 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
   const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   // Jump to one exact field (from Home's "Complete your profile" or the "still missing" list): scroll to it
   // and highlight it for a few seconds.
+  // Brand-new biodata (e.g. an admin adding a member): when the side is chosen, start from the admin's
+  // per-side photo / phone defaults. Existing biodata is never changed (applied in `set` below).
+  const pricing = usePricing();
+  const privacyDefaults = profile ? undefined : pricing.data?.privacyDefaults;
   const [focusField, setFocusField] = useState<string | undefined>(initialFocus);
   const scrollY = useRef(0);
   useEffect(() => {
@@ -147,9 +153,13 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
   );
 
   const set = useCallback(<S extends Section>(section: S, key: string, value: unknown) => {
-    setBd((prev) => (prev ? { ...prev, [section]: { ...(prev[section] as object), [key]: value } } : prev));
+    setBd((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, [section]: { ...(prev[section] as object), [key]: value } } as Biodata;
+      return privacyDefaults && section === 'basic' && key === 'lookingFor' ? withPrivacyDefaults(next, privacyDefaults) : next;
+    });
     setTouched((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
-  }, []);
+  }, [privacyDefaults]);
 
   if (!bd) return <Loading />;
 
@@ -528,7 +538,7 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
 
     // 6 — Privacy
     <View key="privacy">
-      <Banner icon="lock">{t('f.phonePrivate', { phone: 'label' in phone ? phone.label : `${phone.countryCode} ${maskPhone(phone.phone)}` })}</Banner>
+      <Banner icon={prv.phoneVisibility === 'public' ? 'phone' : 'lock'}>{t(prv.phoneVisibility === 'public' ? 'f.phonePublic' : 'f.phonePrivate', { phone: 'label' in phone ? phone.label : `${phone.countryCode} ${maskPhone(phone.phone)}` })}</Banner>
       <View style={{ height: space.md }} />
       <Text variant="caption" style={{ marginBottom: space.lg }}>
         {t('wizard.privacyNote')}
@@ -538,6 +548,9 @@ export function BiodataWizard({ profile, loading: isLoading, phone, save, saving
       </Field>
       <Field label={t('f.photoVisibility')}>
         <ChipGroup options={opts('visibility')} value={prv.photoVisibility} onChange={(v) => v && set('privacy', 'photoVisibility', v)} />
+      </Field>
+      <Field label={t('f.phoneVisibility')}>
+        <ChipGroup options={opts('visibility').filter((o) => o.value !== 'hidden')} value={prv.phoneVisibility ?? 'onConsent'} onChange={(v) => v && set('privacy', 'phoneVisibility', v)} accessibilityLabel={t('f.phoneVisibility')} />
       </Field>
       <Field label={t('f.incomeVisibility')}>
         <ChipGroup options={opts('visibility')} value={prv.incomeVisibility} onChange={(v) => v && set('privacy', 'incomeVisibility', v)} />

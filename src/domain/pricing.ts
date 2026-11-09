@@ -1,5 +1,5 @@
 import { bidiIsolate, formatMoney } from './format';
-import type { BoostPlan, Fee, PricingConfig, ProfileType } from './types';
+import type { BoostPlan, Fee, PricingConfig, PrivacyDefaults, ProfileType } from './types';
 
 /**
  * Initial Boost options (owner PRD 2026-10-29: 7 / 14 / 30 days at ₹100 / ₹200 / ₹350). These are only
@@ -32,8 +32,15 @@ export const DEFAULT_PRICING: PricingConfig = {
   featuredEnabled: true,
   featuredMaxCards: 12,
   featuredCapDaysPer7: 3,
+  // Owner 2026-11-09: grooms start with photo + number visible to all members; brides start private.
+  privacyDefaults: { groom: { photo: 'public', phone: 'public' }, bride: { photo: 'onConsent', phone: 'onConsent' } },
   updatedAt: new Date(0).toISOString(),
 };
+
+const VIS = ['public', 'onConsent', 'hidden'];
+const PHONE_VIS = ['public', 'onConsent'];
+const okDefaults = (d: unknown): d is PrivacyDefaults =>
+  !!d && typeof d === 'object' && VIS.includes((d as PrivacyDefaults).photo) && PHONE_VIS.includes((d as PrivacyDefaults).phone);
 
 /** Fields added after configs were first saved: older saved configs get the defaults. */
 export function withPricingDefaults(cfg: PricingConfig): PricingConfig {
@@ -45,6 +52,10 @@ export function withPricingDefaults(cfg: PricingConfig): PricingConfig {
     featuredEnabled: typeof cfg.featuredEnabled === 'boolean' ? cfg.featuredEnabled : d.featuredEnabled,
     featuredMaxCards: Number.isInteger(cfg.featuredMaxCards) ? cfg.featuredMaxCards : d.featuredMaxCards,
     featuredCapDaysPer7: Number.isInteger(cfg.featuredCapDaysPer7) ? cfg.featuredCapDaysPer7 : d.featuredCapDaysPer7,
+    privacyDefaults: {
+      groom: okDefaults(cfg.privacyDefaults?.groom) ? cfg.privacyDefaults.groom : d.privacyDefaults.groom,
+      bride: okDefaults(cfg.privacyDefaults?.bride) ? cfg.privacyDefaults.bride : d.privacyDefaults.bride,
+    },
   };
 }
 export const MAX_PROMO_LABEL = 24;
@@ -162,6 +173,7 @@ export function validatePricing(cfg: PricingConfig): string[] {
     }
   }
   if (plans.filter((p) => p?.popular).length > 1) errors.push('Only one option can be marked Popular');
+  if (cfg.privacyDefaults && (!okDefaults(cfg.privacyDefaults.groom) || !okDefaults(cfg.privacyDefaults.bride))) errors.push('Privacy defaults: choose a photo and phone setting for grooms and brides');
   for (const p of plans) {
     if (p?.promoLabel == null) continue;
     if (typeof p.promoLabel !== 'string' || p.promoLabel.length > MAX_PROMO_LABEL || /[\u0000-\u001f<>]/.test(p.promoLabel))

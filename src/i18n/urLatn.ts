@@ -387,6 +387,8 @@ const urLatn: DeepPartial<Translation> = {
     incomeVisibility: 'Meri aamdani kaun dekhe',
     familyVisibility: 'Family details kaun dekhe',
     acceptRequests: 'Contact requests qubool karein',
+    phoneVisibility: 'Mera phone number kaun dekh sakta hai',
+    phonePublic: 'Aap ka mobile number ({{phone}}) aap ki profile par sab members ko dikhta hai. Private rakhne ke liye “Sirf jinhein main ijazat doon” chuniye.',
     phonePrivate: 'Aap ka mobile number ({{phone}}) private hai. Request accept karne ke baad aap khud ijazat dein tab hi share hota hai.',
   },
   opt: {

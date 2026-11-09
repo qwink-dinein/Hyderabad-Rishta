@@ -3,6 +3,7 @@ import { changeLanguage } from '@/components/LanguageSwitcher';
 import { applyAnswers, type OnboardingAnswers } from '@/domain/onboarding';
 import type { Lang, Profile, User } from '@/domain/types';
 import { emptyBiodata } from '@/domain/validation';
+import { withPrivacyDefaults } from '@/domain/privacy';
 import { backend } from '@/services';
 import { useSession } from '@/state/session';
 
@@ -22,6 +23,10 @@ export async function seedDraft(answers: OnboardingAnswers): Promise<Profile | n
   const mine = await backend.getMyProfile().catch(() => null);
   if (mine && mine.status !== 'draft' && mine.status !== 'rejected') return mine; // already live / in review
   const base = mine?.biodata ?? emptyBiodata();
-  const seeded = applyAnswers(base, answers);
+  const answered = applyAnswers(base, answers);
+  // A new member starts with the admin's photo / phone defaults for their side (grooms public, brides private
+  // by default); members who already chose a phone setting are never changed.
+  const defaults = await backend.getPricing().then((c) => c.privacyDefaults).catch(() => null);
+  const seeded = defaults ? withPrivacyDefaults(answered, defaults) : answered;
   return backend.saveDraft(seeded, mine?.lastStep ?? 0);
 }

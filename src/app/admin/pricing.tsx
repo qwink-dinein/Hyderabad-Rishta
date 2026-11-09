@@ -97,6 +97,34 @@ export default function AdminPricing() {
           </Row>
         </Card>
       </Section>
+      <Section title="Privacy for new members">
+        <Card style={{ gap: space.md }}>
+          <Text variant="caption">
+            What a NEW groom or bride starts with when they register. They can change both on the Privacy step at any time. Existing members are never changed — their own choice always wins.
+          </Text>
+          {(['groom', 'bride'] as const).map((side) => (
+            <View key={side} style={{ gap: space.sm }}>
+              <Text variant="h3">{side === 'groom' ? 'New grooms' : 'New brides'}</Text>
+              <Field label="Photos visible to">
+                <ChipGroup
+                  options={[{ value: 'public', label: 'Everyone' }, { value: 'onConsent', label: 'Only families they approve' }, { value: 'hidden', label: 'No one' }]}
+                  value={cfg.privacyDefaults[side].photo}
+                  onChange={(v) => v && setCfg({ ...cfg, privacyDefaults: { ...cfg.privacyDefaults, [side]: { ...cfg.privacyDefaults[side], photo: v } } })}
+                  accessibilityLabel={`${side} photo default`}
+                />
+              </Field>
+              <Field label="Phone number visible to">
+                <ChipGroup
+                  options={[{ value: 'public', label: 'Everyone' }, { value: 'onConsent', label: 'Only families they approve' }]}
+                  value={cfg.privacyDefaults[side].phone}
+                  onChange={(v) => v && setCfg({ ...cfg, privacyDefaults: { ...cfg.privacyDefaults, [side]: { ...cfg.privacyDefaults[side], phone: v } } })}
+                  accessibilityLabel={`${side} phone default`}
+                />
+              </Field>
+            </View>
+          ))}
+        </Card>
+      </Section>
       <Section title="Boost & Featured">
         <Card style={{ gap: space.sm }}>
           <ToggleRow

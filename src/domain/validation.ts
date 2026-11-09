@@ -142,6 +142,7 @@ export const preferencesSchema = z
 export const privacySchema = z.object({
   displayName: z.enum(['full', 'first', 'initials']),
   photoVisibility: z.enum(['public', 'onConsent', 'hidden']),
+  phoneVisibility: z.enum(['public', 'onConsent']).optional(),
   incomeVisibility: z.enum(['public', 'onConsent', 'hidden']),
   familyVisibility: z.enum(['public', 'onConsent', 'hidden']),
   acceptContactRequests: z.boolean(),
